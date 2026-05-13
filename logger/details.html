@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Details</title>
+    <style>
+        img { max-width: 200px; display: block; margin: 10px 0; }
+        .screenshot { max-width: 400px; border: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <div id="details">Loading...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { /* SAME AS ABOVE */ };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const entryId = urlParams.get('id');
+
+        if (entryId) {
+            get(ref(db, `scammers/${entryId}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById('details').innerHTML = `
+                        <img src="${data.profilePic}" alt="Profile">
+                        <h1>${data.name}</h1>
+                        <p><strong>Socials:</strong> ${data.socials}</p>
+                        <p>${data.description}</p>
+                        <h3>Screenshots:</h3>
+                        ${data.screenshots ? data.screenshots.map(url => `<img src="${url}" class="screenshot">`).join('') : 'None'}
+                        <br>
+                        <a href="index.html">Back to Home</a>
+                    `;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
