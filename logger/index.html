@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scam Reporter</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+        .entry-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; border-radius: 8px; }
+        .screenshot-input-group { margin-bottom: 5px; }
+        .btn { cursor: pointer; padding: 5px 10px; }
+        .delete-btn { color: red; }
+    </style>
+</head>
+<body>
+
+    <h2>Report Scammer</h2>
+    <form id="scamForm">
+        <input type="text" id="profilePic" placeholder="Profile Pic URL" required><br><br>
+        <input type="text" id="name" placeholder="Scammer Name" required><br><br>
+        <input type="text" id="socials" placeholder="Socials (e.g. @username)" required><br><br>
+        
+        <div id="screenshotContainer">
+            <input type="text" class="screenshot-url" placeholder="Screenshot Image URL">
+        </div>
+        <button type="button" onclick="addScreenshotField()">+ Add More Screenshots</button><br><br>
+        
+        <textarea id="description" placeholder="Description" rows="5" style="width:100%"></textarea><br><br>
+        <button type="submit">SAVE</button>
+    </form>
+
+    <hr>
+    <h3>Database</h3>
+    <div id="entriesList"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-WF53vjG-22Zdt8ZaQMVmMB4XRhB5IDg",
+            authDomain: "temp-email-aeea9.firebaseapp.com",
+            databaseURL: "https://temp-email-aeea9-default-rtdb.firebaseio.com",
+            projectId: "temp-email-aeea9",
+            storageBucket: "temp-email-aeea9.firebasestorage.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'scammers');
+
+        // Add Screenshot Field
+        window.addScreenshotField = () => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'screenshot-url';
+            input.placeholder = 'Screenshot Image URL';
+            document.getElementById('screenshotContainer').appendChild(input);
+        };
+
+        // Save Data
+        document.getElementById('scamForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const screenshots = Array.from(document.querySelectorAll('.screenshot-url'))
+                                    .map(input => input.value)
+                                    .filter(val => val !== "");
+
+            const newData = {
+                profilePic: document.getElementById('profilePic').value,
+                name: document.getElementById('name').value,
+                socials: document.getElementById('socials').value,
+                description: document.getElementById('description').value,
+                screenshots: screenshots
+            };
+
+            const newPostRef = push(dbRef);
+            await push(dbRef, newData).then((snap) => {
+                // Redirect to full info page with ID in URL
+                window.location.href = `details.html?id=${snap.key}`;
+            });
+        };
+
+        // Display List
+        onValue(dbRef, (snapshot) => {
+            const listDiv = document.getElementById('entriesList');
+            listDiv.innerHTML = "";
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                const id = childSnapshot.key;
+                listDiv.innerHTML += `
+                    <div class="entry-box">
+                        <strong>${data.name}</strong>
+                        <button class="btn" onclick="window.location.href='details.html?id=${id}'">View</button>
+                        <button class="btn delete-btn" onclick="deleteEntry('${id}')">Delete</button>
+                    </div>
+                `;
+            });
+        });
+
+        window.deleteEntry = (id) => {
+            if(confirm("Delete this?")) remove(ref(db, `scammers/${id}`));
+        };
+    </script>
+</body>
+</html>
