@@ -2,20 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Hub | Scammer Details</title>
     <style>
-        img { max-width: 200px; display: block; margin: 10px 0; }
-        .screenshot { max-width: 400px; border: 1px solid #000; }
+        :root {
+            --neon-orange: #ff6600;
+            --dark-bg: #0a0a0a;
+            --card-bg: #151515;
+            --text-gray: #b3b3b3;
+        }
+
+        body {
+            background: linear-gradient(135deg, #000000 0%, #1a0a00 100%);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 102, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 102, 0, 0.1);
+        }
+
+        .header-section {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            border-bottom: 2px solid var(--neon-orange);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid var(--neon-orange);
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--neon-orange);
+        }
+
+        h1 {
+            color: var(--neon-orange);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+        }
+
+        .social-tag {
+            background: rgba(255, 102, 0, 0.1);
+            color: var(--neon-orange);
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+            border: 1px solid var(--neon-orange);
+        }
+
+        .description-box {
+            background: #0d0d0d;
+            padding: 20px;
+            border-left: 4px solid var(--neon-orange);
+            margin: 20px 0;
+            line-height: 1.6;
+            color: var(--text-gray);
+            white-space: pre-wrap;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .screenshot-grid img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #333;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .screenshot-grid img:hover {
+            transform: scale(1.02);
+            border-color: var(--neon-orange);
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 30px;
+            color: var(--neon-orange);
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover {
+            text-shadow: 0 0 8px var(--neon-orange);
+            letter-spacing: 1px;
+        }
+
+        /* Loading Spinner */
+        #loading {
+            text-align: center;
+            color: var(--neon-orange);
+            font-size: 1.5rem;
+            margin-top: 100px;
+        }
     </style>
 </head>
 <body>
-    <div id="details">Loading...</div>
+
+    <div id="loading">FETCHING APOLLO DATABASE...</div>
+    <div class="container" id="content" style="display: none;">
+        <div class="header-section" id="headerSection">
+            <!-- Data injected here -->
+        </div>
+
+        <div class="description-box" id="descBox">
+            <!-- Description injected here -->
+        </div>
+
+        <h3 style="color: var(--neon-orange);">Evidence Log</h3>
+        <div class="screenshot-grid" id="evidenceGrid">
+            <!-- Screenshots injected here -->
+        </div>
+
+        <a href="index.html" class="back-btn">← RETURN TO TERMINAL</a>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { /* SAME AS ABOVE */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-WF53vjG-22Zdt8ZaQMVmMB4XRhB5IDg",
+            authDomain: "temp-email-aeea9.firebaseapp.com",
+            databaseURL: "https://temp-email-aeea9-default-rtdb.firebaseio.com",
+            projectId: "temp-email-aeea9",
+            storageBucket: "temp-email-aeea9.firebasestorage.app",
+            messagingSenderId: "277065724504",
+            appId: "1:277065724504:web:53c8bd434194ec66c3d02d"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -26,17 +164,37 @@
             get(ref(db, `scammers/${entryId}`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    document.getElementById('details').innerHTML = `
-                        <img src="${data.profilePic}" alt="Profile">
-                        <h1>${data.name}</h1>
-                        <p><strong>Socials:</strong> ${data.socials}</p>
-                        <p>${data.description}</p>
-                        <h3>Screenshots:</h3>
-                        ${data.screenshots ? data.screenshots.map(url => `<img src="${url}" class="screenshot">`).join('') : 'None'}
-                        <br>
-                        <a href="index.html">Back to Home</a>
+                    
+                    // Populate Header
+                    document.getElementById('headerSection').innerHTML = `
+                        <img src="${data.profilePic}" class="profile-pic" onerror="this.src='https://via.placeholder.com/120?text=No+Image'">
+                        <div>
+                            <h1>${data.name}</h1>
+                            <div class="social-tag">${data.socials}</div>
+                        </div>
                     `;
+
+                    // Populate Description
+                    document.getElementById('descBox').innerText = data.description || "No description provided.";
+
+                    // Populate Screenshots
+                    const grid = document.getElementById('evidenceGrid');
+                    if (data.screenshots && data.screenshots.length > 0) {
+                        grid.innerHTML = data.screenshots.map(url => `
+                            <img src="${url}" alt="Evidence" onerror="this.style.display='none'">
+                        `).join('');
+                    } else {
+                        grid.innerHTML = "<p style='color: #666;'>No evidence images attached.</p>";
+                    }
+
+                    // Show Content
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('content').style.display = 'block';
+                } else {
+                    document.getElementById('loading').innerText = "RECORD NOT FOUND";
                 }
+            }).catch(err => {
+                document.getElementById('loading').innerText = "CONNECTION ERROR";
             });
         }
     </script>
