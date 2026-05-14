@@ -133,18 +133,18 @@
 </div>
 
 <script type="module">
-// We use the full Firebase SDK link for browser compatibility
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Replace these strings with the actual values from your .env file
+// Fetching from environment variables
+// Note: These must be defined in your deployment settings (GitHub Actions, Vercel, etc.)
 const firebaseConfig = {
-  apiKey: "AIzaSyDY_qdBhl3OV_Poxw4hUinGkuaVudybQEU",
-  authDomain: "scammer-hubby.firebaseapp.com",
-  projectId: "scammer-hubby",
-  storageBucket: "scammer-hubby.firebasestorage.app",
-  messagingSenderId: "343577013334",
-  appId: "1:343577013334:web:9d495ca0342ea3972f1ff7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -157,7 +157,6 @@ const searchBtn = document.getElementById('search-trigger');
 
 let cache = [];
 
-// Listen for data from Firebase
 onSnapshot(scammerCol, (snap) => {
     cache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     render(cache);
@@ -178,19 +177,14 @@ function render(data) {
     });
 }
 
-// Search function
-searchBtn.addEventListener('click', () => {
+const filterResults = () => {
     const val = searchInput.value.toLowerCase();
     const filtered = cache.filter(s => s.name.toLowerCase().includes(val));
     render(filtered);
-});
+};
 
-// Also search when typing
-searchInput.addEventListener('input', () => {
-    const val = searchInput.value.toLowerCase();
-    const filtered = cache.filter(s => s.name.toLowerCase().includes(val));
-    render(filtered);
-});
+searchBtn.addEventListener('click', filterResults);
+searchInput.addEventListener('input', filterResults);
 </script>
 
 </body>
