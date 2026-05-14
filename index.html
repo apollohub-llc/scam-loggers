@@ -136,15 +136,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Fetching from environment variables
-// Note: These must be defined in your deployment settings (GitHub Actions, Vercel, etc.)
+// Directly using your Firebase config values
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID
+  apiKey: "AIzaSyDY_qdBhl3OV_Poxw4hUinGkuaVudybQEU",
+  authDomain: "scammer-hubby.firebaseapp.com",
+  projectId: "scammer-hubby",
+  storageBucket: "scammer-hubby.firebasestorage.app",
+  messagingSenderId: "343577013334",
+  appId: "1:343577013334:web:9d495ca0342ea3972f1ff7"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -186,6 +185,5 @@ const filterResults = () => {
 searchBtn.addEventListener('click', filterResults);
 searchInput.addEventListener('input', filterResults);
 </script>
-
 </body>
 </html>
