@@ -131,58 +131,6 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Directly using your Firebase config values
-const firebaseConfig = {
-  apiKey: "AIzaSyDY_qdBhl3OV_Poxw4hUinGkuaVudybQEU",
-  authDomain: "scammer-hubby.firebaseapp.com",
-  projectId: "scammer-hubby",
-  storageBucket: "scammer-hubby.firebasestorage.app",
-  messagingSenderId: "343577013334",
-  appId: "1:343577013334:web:9d495ca0342ea3972f1ff7"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const scammerCol = collection(db, "scammers");
-
-const listDiv = document.getElementById('fire-list');
-const searchInput = document.getElementById('user-input');
-const searchBtn = document.getElementById('search-trigger');
-
-let cache = [];
-
-onSnapshot(scammerCol, (snap) => {
-    cache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    render(cache);
-});
-
-function render(data) {
-    listDiv.innerHTML = '';
-    data.forEach((item) => {
-        const card = document.createElement('div');
-        card.className = 'scammer-card';
-        card.innerHTML = `
-            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="Profile">
-            <h3>${item.name}</h3>
-            <p>${item.description || 'Reported Scammer'}</p>
-            <a href="${item.redirectUrl || '#'}" target="_blank" class="view-btn">View Profile</a>
-        `;
-        listDiv.appendChild(card);
-    });
-}
-
-const filterResults = () => {
-    const val = searchInput.value.toLowerCase();
-    const filtered = cache.filter(s => s.name.toLowerCase().includes(val));
-    render(filtered);
-};
-
-searchBtn.addEventListener('click', filterResults);
-searchInput.addEventListener('input', filterResults);
-</script>
 </body>
 </html>
