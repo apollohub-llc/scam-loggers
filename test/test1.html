@@ -21,7 +21,6 @@
             position:absolute; display:flex; align-items:center; justify-content:center; box-sizing: border-box; 
         }
 
-        /* Title Styling */
         .scammer-name-text {
             font-size: 38px !important;
             color: #ff6600;
@@ -35,7 +34,7 @@
             width: 100%;
         }
 
-        /* ==================== DESKTOP ==================== */
+        /* Desktop Layout */
         @media (min-width: 601px) {
             #el-0 { left:1.5%; top:10px; width:30%; height:70px; z-index:50; }
             #el-10 { left:6.7%; top:275px; width:37%; height:52px; z-index:50; }
@@ -43,111 +42,42 @@
             #el-3 { left:5%; top:380px; width:90%; height:1350px; z-index:10; overflow-y: auto; display: block; }
         }
 
-        /* ==================== MOBILE ==================== */
+        /* Mobile Layout */
         @media (max-width: 600px) {
-            #el-0 { 
-                left:5%; 
-                top:20px; 
-                width:90%; 
-                height:70px; 
-                z-index:100; 
-            }
+            #el-0 { left:5%; top:20px; width:90%; height:70px; z-index:100; }
             #el-10 { left:5%; top:120px; width:70%; height:50px; }
             #el-11 { left:78%; top:105px; width:18%; height:75px; }
             #el-3 { left:5%; top:220px; width:90%; height:1400px; overflow-y: auto; display: block; }
-
-            .scammer-name-text {
-                font-size: 32px !important;
-            }
-
-            .scammer-card {
-                height: auto !important;
-                margin-bottom: 30px;
-            }
-
-            .scammer-content {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-                padding: 20px;
-                gap: 15px;
-            }
-
-            .scammer-content img {
-                width: 110px;
-                height: 110px;
-                margin: 0 !important;
-            }
-
-            .scammer-content button {
-                width: 100% !important;
-                max-width: 280px;
-                padding: 14px 20px !important;
-                font-size: 17px !important;
-            }
+            .scammer-name-text { font-size: 32px !important; }
+            .scammer-card { height: auto !important; margin-bottom: 30px; }
+            .scammer-content { flex-direction: column; align-items: center; text-align: center; padding: 20px; gap: 15px; }
+            .scammer-content img { width: 110px; height: 110px; margin: 0 !important; }
+            .scammer-content button { width: 100% !important; max-width: 280px; padding: 14px 20px !important; font-size: 17px !important; }
         }
 
-        .scammer-card { 
-            position:relative; 
-            width:100%; 
-            margin-bottom: 40px; 
-        }
+        .scammer-card { position:relative; width:100%; margin-bottom: 40px; }
+        .scammer-bg { position:absolute; inset:0; border: 2px solid #333; background: rgba(0,0,0,0.05); border-radius: 12px; z-index: 1; }
+        .scammer-content { position:relative; z-index: 2; padding: 20px; display: flex; justify-content: space-between; height: 100%; box-sizing: border-box; }
         
-        .scammer-bg { 
-            position:absolute; 
-            inset:0; 
-            border: 2px solid #333; 
-            background: rgba(0,0,0,0.05); 
-            border-radius: 12px; 
-            z-index: 1; 
-        }
-        
-        .scammer-content { 
-            position:relative; 
-            z-index: 2; 
-            padding: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            height: 100%; 
-            box-sizing: border-box; 
-        }
-        
-        textarea { 
-            resize: none; 
-            border-radius: 12px; 
-            padding: 10px; 
-            width: 100%; 
-            height: 100%; 
-            font-size: 14px; 
-        }
-        
-        button { 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 12px; 
-            transition: transform 0.1s; 
-        }
+        textarea { resize: none; border-radius: 12px; padding: 10px; width: 100%; height: 100%; font-size: 14px; }
+        button { cursor: pointer; border: none; border-radius: 12px; transition: transform 0.1s; }
     </style>
 </head>
 <body>
 
 <div id="site-canvas">
-    <!-- Header - Title -->
     <div id="el-0" class="dropped-element">
         <h2 class="scammer-name-text">𝕊𝕔𝕒𝕞𝕞𝕖𝕣 ℍ𝕦𝕓</h2>
     </div>
 
-    <!-- Search Input -->
     <div id="el-10" class="dropped-element">
         <textarea id="user-input" placeholder="Search for a name..."></textarea>
     </div>
 
-    <!-- Search Button -->
     <div id="el-11" class="dropped-element">
         <button id="search-trigger" style="background: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.0KdLlMlStFZ0B0USCObivAHaEk%26pid%3DApi&f=1&ipt=05455448d2ed135438a4d56f9e7a141d0335ac31cca8deec0a1488da7c41d2f0&ipo=images') center/cover; color: white; width:100%; height:100%;">🔍</button>
     </div>
 
-    <!-- List Container -->
     <div id="el-3" class="dropped-element">
         <div id="fire-list" style="width:100%;"></div>
     </div>
@@ -157,13 +87,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Fetching variables from the environment
 const firebaseConfig = {
-  apiKey: "AIzaSyDY_qdBhl3OV_Poxw4hUinGkuaVudybQEU",
-  authDomain: "scammer-hubby.firebaseapp.com",
-  projectId: "scammer-hubby",
-  storageBucket: "scammer-hubby.firebasestorage.app",
-  messagingSenderId: "343577013334",
-  appId: "1:343577013334:web:9d495ca0342ea3972f1ff7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
