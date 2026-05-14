@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scammer Hub</title>
+    <style>
+        body, html { 
+            margin:0; padding:0; width:100%; min-height:100%; overflow-x:hidden; 
+    min-height: 100vh;
+    width: 100%;
+    /* Dark background with Neon Green fallback */
+    background: radial-gradient(circle, #003300 0%, #000000 100%);
+    background-image: url("https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%2Fid%2FOIP.kQe8Ib1dIpkMKbMgb7ObAAHaEc%3Fpid%3DApi&f=1&ipt=45a9a55ae600682fdb67e1782f49b3fe17878e20330186acc64ea9aed409bd32&ipo=images");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    /* Optional: Green Glow Text Shadow to match */
+    color: #39FF14;
+    text-shadow: 0 0 5px #39FF14;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        
+        #site-canvas { 
+            position:relative; width:100%; max-width:1440px; min-height: 100vh;
+            background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), 
+                        url("https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.0gtDydRfHyNl0ocnAYRyOAHaEc%26pid%3DApi&f=1&ipt=b623b623ffee5cc9b46ab949dd634b5cf7d494e56251b5c91a7a1697d0981b88&ipo=images"); 
+            background-size:cover; background-attachment: fixed;
+            margin:0 auto; padding: 20px; box-sizing: border-box;
+        }
+
+        .header-area { text-align: center; margin-bottom: 30px; }
+
+        .scammer-name-text {
+            font-size: 42px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            margin: 10px 0;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto 40px auto;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #search-trigger {
+            padding: 0 25px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        #fire-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .scammer-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .scammer-card:hover { transform: translateY(-5px); }
+
+        .scammer-card img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 3px solid #4f46e5;
+        }
+
+        .scammer-card h3 { margin: 10px 0; color: #1f2937; }
+
+        .view-btn {
+            background: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: auto;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .scammer-name-text { font-size: 28px; }
+            .search-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="site-canvas">
+    <div class="header-area">
+        <h1 class="scammer-name-text">𝕊𝕔𝕒𝕞𝕞𝕖𝕣 ℍ𝕦𝕓</h1>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="user-input" placeholder="Search for a name...">
+        <button id="search-trigger">🔍 Search</button>
+    </div>
+
+    <div id="fire-list">
+        <!-- Scammer cards will appear here -->
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// Fetching from environment variables
+// Note: These must be defined in your deployment settings (GitHub Actions, Vercel, etc.)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const scammerCol = collection(db, "scammers");
+
+const listDiv = document.getElementById('fire-list');
+const searchInput = document.getElementById('user-input');
+const searchBtn = document.getElementById('search-trigger');
+
+let cache = [];
+
+onSnapshot(scammerCol, (snap) => {
+    cache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render(cache);
+});
+
+function render(data) {
+    listDiv.innerHTML = '';
+    data.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'scammer-card';
+        card.innerHTML = `
+            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="Profile">
+            <h3>${item.name}</h3>
+            <p>${item.description || 'Reported Scammer'}</p>
+            <a href="${item.redirectUrl || '#'}" target="_blank" class="view-btn">View Profile</a>
+        `;
+        listDiv.appendChild(card);
+    });
+}
+
+const filterResults = () => {
+    const val = searchInput.value.toLowerCase();
+    const filtered = cache.filter(s => s.name.toLowerCase().includes(val));
+    render(filtered);
+};
+
+searchBtn.addEventListener('click', filterResults);
+searchInput.addEventListener('input', filterResults);
+</script>
+
+</body>
+</html>
