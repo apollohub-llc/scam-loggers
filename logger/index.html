@@ -2,30 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scam Reporter</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-        .entry-box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; border-radius: 8px; }
-        .screenshot-input-group { margin-bottom: 5px; }
-        .btn { cursor: pointer; padding: 5px 10px; }
-        .delete-btn { color: red; }
+        :root {
+            --neon-orange: #ff6600;
+            --dark-bg: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --text-color: #ffffff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 800px; 
+            margin: auto; 
+            padding: 20px; 
+            background-color: var(--dark-bg); 
+            color: var(--text-color);
+        }
+
+        h2, h3 { color: var(--neon-orange); text-transform: uppercase; letter-spacing: 2px; }
+
+        .entry-box { 
+            background: var(--card-bg); 
+            border: 1px solid #333; 
+            padding: 15px; 
+            margin-top: 10px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        .entry-box:hover { border-color: var(--neon-orange); }
+
+        input, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            background: #222; 
+            border: 1px solid #444; 
+            color: white; 
+            border-radius: 4px; 
+            box-sizing: border-box;
+        }
+
+        input:focus { border-color: var(--neon-orange); outline: none; }
+
+        .btn { 
+            cursor: pointer; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            transition: 0.3s;
+            margin-left: 5px;
+        }
+
+        .save-btn { background: var(--neon-orange); color: black; width: 100%; font-size: 16px; }
+        .save-btn:hover { background: #ff8533; box-shadow: 0 0 10px var(--neon-orange); }
+
+        .view-btn { background: #333; color: white; }
+        .edit-btn { background: #444; color: var(--neon-orange); }
+        .delete-btn { background: #b30000; color: white; }
+        
+        .add-field-btn { background: transparent; border: 1px solid var(--neon-orange); color: var(--neon-orange); margin-bottom: 15px; }
+
+        hr { border: 0; border-top: 1px solid #333; margin: 30px 0; }
     </style>
 </head>
 <body>
 
-    <h2>Report Scammer</h2>
+    <h2>Apollo Hub: Report Scammer</h2>
     <form id="scamForm">
-        <input type="text" id="profilePic" placeholder="Profile Pic URL" required><br><br>
-        <input type="text" id="name" placeholder="Scammer Name" required><br><br>
-        <input type="text" id="socials" placeholder="Socials (e.g. @username)" required><br><br>
+        <input type="hidden" id="editId">
+        <input type="text" id="profilePic" placeholder="Profile Pic URL" required>
+        <input type="text" id="name" placeholder="Scammer Name" required>
+        <input type="text" id="socials" placeholder="Socials (e.g. @username)" required>
         
         <div id="screenshotContainer">
             <input type="text" class="screenshot-url" placeholder="Screenshot Image URL">
         </div>
-        <button type="button" onclick="addScreenshotField()">+ Add More Screenshots</button><br><br>
+        <button type="button" class="btn add-field-btn" onclick="addScreenshotField()">+ Add More Screenshots</button>
         
-        <textarea id="description" placeholder="Description" rows="5" style="width:100%"></textarea><br><br>
-        <button type="submit">SAVE</button>
+        <textarea id="description" placeholder="Description" rows="5"></textarea>
+        <button type="submit" id="submitBtn" class="btn save-btn">SAVE REPORT</button>
     </form>
 
     <hr>
@@ -34,7 +96,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD-WF53vjG-22Zdt8ZaQMVmMB4XRhB5IDg",
@@ -49,22 +111,24 @@
         const dbRef = ref(db, 'scammers');
 
         // Add Screenshot Field
-        window.addScreenshotField = () => {
+        window.addScreenshotField = (val = "") => {
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'screenshot-url';
             input.placeholder = 'Screenshot Image URL';
+            input.value = val;
             document.getElementById('screenshotContainer').appendChild(input);
         };
 
-        // Save Data
+        // Save or Update Data
         document.getElementById('scamForm').onsubmit = async (e) => {
             e.preventDefault();
+            const editId = document.getElementById('editId').value;
             const screenshots = Array.from(document.querySelectorAll('.screenshot-url'))
                                     .map(input => input.value)
                                     .filter(val => val !== "");
 
-            const newData = {
+            const entryData = {
                 profilePic: document.getElementById('profilePic').value,
                 name: document.getElementById('name').value,
                 socials: document.getElementById('socials').value,
@@ -72,12 +136,50 @@
                 screenshots: screenshots
             };
 
-            const newPostRef = push(dbRef);
-            await push(dbRef, newData).then((snap) => {
-                // Redirect to full info page with ID in URL
-                window.location.href = `details.html?id=${snap.key}`;
-            });
+            if (editId) {
+                // Update existing
+                await update(ref(db, `scammers/${editId}`), entryData);
+                alert("Report Updated!");
+                resetForm();
+            } else {
+                // Create new
+                const newPostRef = push(dbRef);
+                await update(ref(db, `scammers/${newPostRef.key}`), entryData);
+                window.location.href = `details.html?id=${newPostRef.key}`;
+            }
         };
+
+        // Edit function
+        window.editEntry = async (id) => {
+            const snapshot = await get(ref(db, `scammers/${id}`));
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                document.getElementById('editId').value = id;
+                document.getElementById('profilePic').value = data.profilePic;
+                document.getElementById('name').value = data.name;
+                document.getElementById('socials').value = data.socials;
+                document.getElementById('description').value = data.description;
+                
+                // Clear and refill screenshots
+                const container = document.getElementById('screenshotContainer');
+                container.innerHTML = "";
+                if(data.screenshots) {
+                    data.screenshots.forEach(url => addScreenshotField(url));
+                } else {
+                    addScreenshotField();
+                }
+                
+                document.getElementById('submitBtn').innerText = "UPDATE REPORT";
+                window.scrollTo(0,0);
+            }
+        };
+
+        function resetForm() {
+            document.getElementById('scamForm').reset();
+            document.getElementById('editId').value = "";
+            document.getElementById('submitBtn').innerText = "SAVE REPORT";
+            document.getElementById('screenshotContainer').innerHTML = '<input type="text" class="screenshot-url" placeholder="Screenshot Image URL">';
+        }
 
         // Display List
         onValue(dbRef, (snapshot) => {
@@ -89,15 +191,18 @@
                 listDiv.innerHTML += `
                     <div class="entry-box">
                         <strong>${data.name}</strong>
-                        <button class="btn" onclick="window.location.href='details.html?id=${id}'">View</button>
-                        <button class="btn delete-btn" onclick="deleteEntry('${id}')">Delete</button>
+                        <div>
+                            <button class="btn view-btn" onclick="window.location.href='details.html?id=${id}'">View</button>
+                            <button class="btn edit-btn" onclick="editEntry('${id}')">Edit</button>
+                            <button class="btn delete-btn" onclick="deleteEntry('${id}')">Delete</button>
+                        </div>
                     </div>
                 `;
             });
         });
 
         window.deleteEntry = (id) => {
-            if(confirm("Delete this?")) remove(ref(db, `scammers/${id}`));
+            if(confirm("Permanently delete this report from Apollo Hub?")) remove(ref(db, `scammers/${id}`));
         };
     </script>
 </body>
