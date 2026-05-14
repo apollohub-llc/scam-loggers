@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Hub | Face Generator</title>
+    <style>
+        /* Apollo Hub Orange Theme */
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --neon-orange: #ff8c00;
+            --text-color: #ffffff;
+            --shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--neon-orange);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: var(--shadow);
+        }
+
+        /* Face Display Area */
+        .image-viewer {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--neon-orange);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--neon-orange);
+            color: var(--neon-orange);
+            padding: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            border-radius: 5px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--neon-orange);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-orange);
+        }
+
+        /* Favorites Section */
+        .favorites-section {
+            width: 100%;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .fav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .fav-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Apollo Hub</h1>
+        
+        <div class="image-viewer">
+            <img id="face-display" src="https://thispersondoesnotexist.com/" alt="AI Face">
+        </div>
+
+        <div class="controls">
+            <button onclick="newFace()">New Face</button>
+            <button onclick="copyURL()">Copy URL</button>
+            <button onclick="saveFavorite()" style="grid-column: span 2;">❤ Save to Favorites</button>
+        </div>
+
+        <div class="favorites-section">
+            <h3>Saved Faces</h3>
+            <div id="fav-grid" class="fav-grid"></div>
+            <button onclick="clearFavs()" style="margin-top: 20px; font-size: 10px; border-color: #555; color: #555;">Clear All</button>
+        </div>
+    </div>
+
+    <script>
+        const faceImg = document.getElementById('face-display');
+        const favGrid = document.getElementById('fav-grid');
+
+        // 1. Generate New Face
+        function newFace() {
+            // Append timestamp to prevent the browser from using a cached version of the image
+            faceImg.src = "https://thispersondoesnotexist.com/?" + new Date().getTime();
+        }
+
+        // 2. Copy URL to Clipboard
+        function copyURL() {
+            navigator.clipboard.writeText(faceImg.src);
+            alert("URL Copied!");
+        }
+
+        // 3. Local Storage Logic
+        function saveFavorite() {
+            let favorites = JSON.parse(localStorage.getItem('apollo_faces') || '[]');
+            
+            // Note: Saving the external URL might result in the image changing later.
+            // For a true "save", you would convert to Base64, but for this demo we save the unique URL.
+            favorites.push(faceImg.src);
+            localStorage.setItem('apollo_faces', JSON.stringify(favorites));
+            renderFavorites();
+        }
+
+        function renderFavorites() {
+            const favorites = JSON.parse(localStorage.getItem('apollo_faces') || '[]');
+            favGrid.innerHTML = '';
+            
+            favorites.forEach(url => {
+                const div = document.createElement('div');
+                div.className = 'fav-item';
+                div.innerHTML = `<img src="${url}">`;
+                favGrid.appendChild(div);
+            });
+        }
+
+        function clearFavs() {
+            localStorage.removeItem('apollo_faces');
+            renderFavorites();
+        }
+
+        // Load saved faces on startup
+        renderFavorites();
+    </script>
+</body>
+</html>
