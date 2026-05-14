@@ -3,134 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scammer Hub</title>
+    <title>ScamHub</title>
     <style>
-        body, html { 
-            margin:0; padding:0; width:100%; min-height:100%; overflow-x:hidden; 
-    min-height: 100vh;
-    width: 100%;
-    /* Dark background with Neon Green fallback */
-    background: radial-gradient(circle, #003300 0%, #000000 100%);
-    background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5FZT-g4eJVJOY-gAJKABXSn-HjTsNd8KawHTqffsSyAJiArLX1osQtb8&s");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-    /* Optional: Green Glow Text Shadow to match */
-    color: #39FF14;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        * {
+            box-sizing: border-box;
         }
         
-        #site-canvas { 
-            position:relative; width:100%; max-width:1440px; min-height: 100vh;
-            background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), 
-                        url("https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.0gtDydRfHyNl0ocnAYRyOAHaEc%26pid%3DApi&f=1&ipt=b623b623ffee5cc9b46ab949dd634b5cf7d494e56251b5c91a7a1697d0981b88&ipo=images"); 
-            background-size:cover; background-attachment: fixed;
-            margin:0 auto; padding: 20px; box-sizing: border-box;
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', 'Courier New', monospace;
+            background: #000;
+            color: #00ff41;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
         }
-
-        .header-area { text-align: center; margin-bottom: 30px; }
-
-        .scammer-name-text {
-            font-size: 42px;
-            font-weight: bold;
-            color: #333;
-            text-transform: uppercase;
-            margin: 10px 0;
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0,255,65,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0,255,65,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0,255,65,0.15) 0%, transparent 50%);
+            z-index: -1;
+            animation: pulse 4s ease-in-out infinite alternate;
         }
-
-        .search-container {
-            display: flex;
-            gap: 10px;
-            max-width: 600px;
-            margin: 0 auto 40px auto;
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
-
-        #user-input {
-            flex: 1;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            outline: none;
-        }
-
-        #search-trigger {
-            padding: 0 25px;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 20px;
-        }
-
-        #fire-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+        
+        .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem 1rem;
+            position: relative;
+            z-index: 1;
         }
-
-        .scammer-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        
+        .header {
             text-align: center;
-            transition: transform 0.2s;
+            margin-bottom: 3rem;
         }
-
-        .scammer-card:hover { transform: translateY(-5px); }
-
-        .scammer-card img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
+        
+        .logo {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: linear-gradient(45deg, #00ff41, #00cc33, #00ff41);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 
+                0 0 10px #00ff41,
+                0 0 20px #00ff41,
+                0 0 30px #00ff41;
+            margin: 0;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px #00ff41); }
+            to { filter: drop-shadow(0 0 20px #00ff41); }
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin: 0.5rem 0 0 0;
+            letter-spacing: 0.05em;
+        }
+        
+        .search-box {
+            display: flex;
+            max-width: 700px;
+            margin: 0 auto 3rem;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            box-shadow: 
+                0 0 20px rgba(0,255,65,0.5),
+                inset 0 0 20px rgba(0,255,65,0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            color: #00ff41;
+            font-family: inherit;
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: rgba(0,255,65,0.6);
+        }
+        
+        .search-btn {
+            background: linear-gradient(45deg, #00ff41, #00cc33);
+            color: #000;
+            border: none;
+            padding: 1.5rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0,255,65,0.6);
+        }
+        
+        .search-btn:hover {
+            background: linear-gradient(45deg, #00cc33, #00ff41);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0,255,65,0.8);
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+        
+        .profile-card {
+            background: rgba(0,0,0,0.9);
+            border: 2px solid #00ff41;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px rgba(0,255,65,0.4),
+                inset 0 0 20px rgba(0,255,65,0.1);
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff41, #00cc33, #00ff41);
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 0 50px rgba(0,255,65,0.7),
+                inset 0 0 30px rgba(0,255,65,0.2);
+        }
+        
+        .profile-image {
+            width: 100%;
+            height: 220px;
             object-fit: cover;
-            margin-bottom: 15px;
-            border: 3px solid #4f46e5;
+            border-bottom: 2px solid rgba(0,255,65,0.3);
+            position: relative;
         }
-
-        .scammer-card h3 { margin: 10px 0; color: #1f2937; }
-
-        .view-btn {
-            background: #4f46e5;
-            color: white;
-            padding: 10px 20px;
+        
+        .profile-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff41, transparent);
+        }
+        
+        .profile-info {
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .profile-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 10px rgba(0,255,65,0.8);
+        }
+        
+        .profile-status {
+            color: rgba(0,255,65,0.7);
+            font-size: 0.95rem;
+            margin: 0 0 1.5rem 0;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+        
+        .view-profile {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff41, #00cc33);
+            color: #000;
+            padding: 1rem 2.5rem;
             text-decoration: none;
-            border-radius: 8px;
-            margin-top: auto;
-            font-weight: bold;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 0 0 20px rgba(0,255,65,0.6);
+            transition: all 0.3s ease;
         }
-
-        @media (max-width: 600px) {
-            .scammer-name-text { font-size: 28px; }
-            .search-container { flex-direction: column; }
+        
+        .view-profile:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0,255,65,0.9);
+        }
+        
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-
-<div id="site-canvas">
-    <div class="header-area">
-        <h1 class="scammer-name-text">𝕊𝕔𝕒𝕞𝕞𝕖𝕣 ℍ𝕦𝕓</h1>
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">SCAMHUB</h1>
+            <p class="tagline">Powered by Evidence Watchers</p>
+        </header>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" id="user-input" placeholder="Enter target name...">
+            <button class="search-btn" id="search-trigger">HUNT</button>
+        </div>
+        
+        <div class="results-grid" id="fire-list">
+            <!-- Targets appear here -->
+        </div>
     </div>
+    
+    <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <div class="search-container">
-        <input type="text" id="user-input" placeholder="Search for a name...">
-        <button id="search-trigger">🔍 Search</button>
-    </div>
+// Directly using your Firebase config values
+const firebaseConfig = {
+  apiKey: "AIzaSyDY_qdBhl3OV_Poxw4hUinGkuaVudybQEU",
+  authDomain: "scammer-hubby.firebaseapp.com",
+  projectId: "scammer-hubby",
+  storageBucket: "scammer-hubby.firebasestorage.app",
+  messagingSenderId: "343577013334",
+  appId: "1:343577013334:web:9d495ca0342ea3972f1ff7"
+};
 
-    <div id="fire-list">
-        <!-- Scammer cards will appear here -->
-    </div>
-</div>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const scammerCol = collection(db, "scammers");
 
+const listDiv = document.getElementById('fire-list');
+const searchInput = document.getElementById('user-input');
+const searchBtn = document.getElementById('search-trigger');
 
+let cache = [];
+
+onSnapshot(scammerCol, (snap) => {
+    cache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render(cache);
+});
+
+function render(data) {
+    listDiv.innerHTML = '';
+    data.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'scammer-card';
+        card.innerHTML = `
+            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="Profile">
+            <h3>${item.name}</h3>
+            <p>${item.description || 'Reported Scammer'}</p>
+            <a href="${item.redirectUrl || '#'}" target="_blank" class="view-btn">View Profile</a>
+        `;
+        listDiv.appendChild(card);
+    });
+}
+
+const filterResults = () => {
+    const val = searchInput.value.toLowerCase();
+    const filtered = cache.filter(s => s.name.toLowerCase().includes(val));
+    render(filtered);
+};
+
+searchBtn.addEventListener('click', filterResults);
+searchInput.addEventListener('input', filterResults);
+</script>
+    
 </body>
 </html>
