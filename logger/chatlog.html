@@ -48,7 +48,7 @@
             cursor: pointer;
             text-transform: uppercase;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             transition: 0.3s;
             box-shadow: var(--neon-glow);
         }
@@ -59,10 +59,24 @@
             box-shadow: 0 0 20px var(--primary-orange);
         }
 
+        .active-thread-indicator {
+            position: fixed;
+            top: 65px;
+            left: 20px;
+            font-size: 12px;
+            color: var(--primary-orange);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
         /* --- Chat Interface --- */
         #chat-container {
             flex: 1;
-            margin-top: 80px;
+            margin-top: 100px;
             padding: 20px;
             overflow-y: auto;
             display: flex;
@@ -79,7 +93,7 @@
             border-left: 3px solid var(--primary-orange);
             border-radius: 4px;
             word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.2s ease;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -112,46 +126,57 @@
             transform: translate(-50%, -50%);
             background: var(--surface-bg);
             border: 2px solid var(--primary-orange);
-            width: 350px;
+            width: 380px;
             padding: 20px;
             z-index: 200;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .modal-header { margin-bottom: 15px; border-bottom: 1px solid var(--primary-orange); padding-bottom: 5px; }
+        .modal-header { margin-bottom: 15px; border-bottom: 1px solid var(--primary-orange); padding-bottom: 5px; font-weight: bold; }
         
         .save-list {
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             margin: 15px 0;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
 
         .save-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
+            padding: 10px;
             background: #222;
             font-size: 13px;
             align-items: center;
+            border: 1px solid transparent;
+        }
+        
+        .save-item.active-item {
+            border-color: var(--primary-orange);
+            background: #2a1a0a;
         }
 
         .save-actions button {
             background: transparent;
-            border: none;
+            border: 1px solid #444;
             color: var(--primary-orange);
-            margin-left: 10px;
+            margin-left: 5px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
+            padding: 4px 8px;
+        }
+
+        .save-actions button:hover {
+            border-color: var(--primary-orange);
         }
 
         .overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 150;
         }
     </style>
@@ -159,39 +184,52 @@
 <body>
 
     <div class="controls">
-        <button class="btn" onclick="toggleModal()">Manage Chats</button>
-        <button class="btn" onclick="exportChat()">Export Chat</button>
-        <button class="btn" style="border-color: #ff3333; color: #ff3333;" onclick="clearCurrentChat()">Delete Chat</button>
+        <div>
+            <button class="btn" onclick="toggleModal()">Load / Switch Chat</button>
+            <button class="btn" onclick="createNewThread()">+ New Chat</button>
+        </div>
+        <div>
+            <button class="btn" onclick="exportChat()">Export</button>
+            <button class="btn" style="border-color: #ff3333; color: #ff3333;" onclick="clearThreadContent()">Clear Messages</button>
+        </div>
     </div>
+
+    <div id="active-display" class="active-thread-indicator">Thread: Unsaved Session</div>
 
     <div id="chat-container"></div>
 
     <div class="input-area">
-        <input type="text" id="chat-input" placeholder="Enter message..." onkeypress="handleKey(event)">
+        <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleKey(event)">
         <button class="btn" onclick="sendMessage()">Send</button>
     </div>
 
     <!-- Management Tab -->
     <div class="overlay" id="overlay" onclick="toggleModal()"></div>
     <div id="manage-modal">
-        <div class="modal-header">SAVE MANAGER</div>
-        <input type="text" id="save-name" placeholder="Save Name..." style="width: 100%; margin-bottom: 10px; background: #000; border: 1px solid #444; color: white; padding: 5px;">
-        <button class="btn" style="width: 100%;" onclick="saveChat()">Save / Overwrite</button>
+        <div class="modal-header">CHAT MANAGER</div>
         
         <div class="save-list" id="save-list">
-            <!-- Saves will appear here -->
+            <!-- Threads appear here -->
         </div>
         
         <button class="btn" style="width: 100%; margin-top: 10px; border-color: #777; color: #777;" onclick="toggleModal()">Close</button>
     </div>
 
     <script>
-        let currentMessages = JSON.parse(localStorage.getItem('apollo_current_chat')) || [];
+        let activeSlot = localStorage.getItem('apollo_active_slot') || null;
+        let currentMessages = [];
+
         const chatContainer = document.getElementById('chat-container');
         const chatInput = document.getElementById('chat-input');
+        const activeDisplay = document.getElementById('active-display');
 
-        // Initialize
-        renderMessages();
+        // On Start
+        if (activeSlot) {
+            loadSlotData(activeSlot);
+        } else {
+            currentMessages = JSON.parse(localStorage.getItem('apollo_current_chat')) || [];
+            renderMessages();
+        }
 
         function renderMessages() {
             chatContainer.innerHTML = '';
@@ -202,7 +240,17 @@
                 chatContainer.appendChild(div);
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Messenger style sync
             localStorage.setItem('apollo_current_chat', JSON.stringify(currentMessages));
+            if (activeSlot) {
+                let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+                saves[activeSlot] = [...currentMessages];
+                localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                activeDisplay.textContent = `Thread: ${activeSlot}`;
+            } else {
+                activeDisplay.textContent = `Thread: Unsaved Session`;
+            }
         }
 
         function sendMessage() {
@@ -216,22 +264,42 @@
 
         function handleKey(e) { if (e.key === 'Enter') sendMessage(); }
 
-        function clearCurrentChat() {
-            if (confirm("Delete current chat? This will wipe the active session.")) {
+        // Messenger "Clear Chat" behavior
+        function clearThreadContent() {
+            if (confirm("Clear all messages in this thread? (The thread itself remains active)")) {
                 currentMessages = [];
                 renderMessages();
             }
         }
 
-        function exportChat() {
-            if (currentMessages.length === 0) return alert("Nothing to export!");
-            const text = "Saved chat:\n" + currentMessages.join('\n\n');
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Chat copied to clipboard!");
-            });
+        function createNewThread() {
+            const name = prompt("Enter Name for New Chat Thread:");
+            if (name && name.trim()) {
+                const threadName = name.trim();
+                let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+                
+                // Create empty thread if doesn't exist
+                if (!saves[threadName]) saves[threadName] = [];
+                
+                localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                loadSlotData(threadName);
+            }
         }
 
-        // --- Save System ---
+        function loadSlotData(name) {
+            const saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+            currentMessages = saves[name] || [];
+            activeSlot = name;
+            localStorage.setItem('apollo_active_slot', name);
+            renderMessages();
+        }
+
+        function exportChat() {
+            if (currentMessages.length === 0) return alert("Nothing to export!");
+            const text = `Apollo Hub Log [${activeSlot || 'Unsaved'}]:\n\n` + currentMessages.join('\n\n');
+            navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+        }
+
         function toggleModal() {
             const modal = document.getElementById('manage-modal');
             const overlay = document.getElementById('overlay');
@@ -241,19 +309,6 @@
             if (!isOpen) updateSaveList();
         }
 
-        function saveChat() {
-            const name = document.getElementById('save-name').value.trim();
-            if (!name) return alert("Enter a save name");
-            
-            let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
-            saves[name] = [...currentMessages];
-            localStorage.setItem('apollo_saves', JSON.stringify(saves));
-            
-            document.getElementById('save-name').value = '';
-            updateSaveList();
-            alert("Chat saved as: " + name);
-        }
-
         function updateSaveList() {
             const list = document.getElementById('save-list');
             const saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
@@ -261,30 +316,35 @@
             
             Object.keys(saves).forEach(name => {
                 const item = document.createElement('div');
-                item.className = 'save-item';
+                item.className = `save-item ${name === activeSlot ? 'active-item' : ''}`;
                 item.innerHTML = `
                     <span>${name}</span>
                     <div class="save-actions">
-                        <button onclick="loadSave('${name}')">LOAD</button>
-                        <button style="color: #ff3333;" onclick="deleteSave('${name}')">DEL</button>
+                        <button onclick="switchAndLoad('${name}')">OPEN</button>
+                        <button style="color: #ff3333; border-color: #522;" onclick="deleteThread('${name}')">DELETE</button>
                     </div>
                 `;
                 list.appendChild(item);
             });
         }
 
-        function loadSave(name) {
-            const saves = JSON.parse(localStorage.getItem('apollo_saves'));
-            currentMessages = saves[name];
-            renderMessages();
+        function switchAndLoad(name) {
+            loadSlotData(name);
             toggleModal();
         }
 
-        function deleteSave(name) {
-            if (confirm(`Delete save "${name}"?`)) {
+        function deleteThread(name) {
+            if (confirm(`Completely delete thread "${name}" and all its logs?`)) {
                 let saves = JSON.parse(localStorage.getItem('apollo_saves'));
                 delete saves[name];
                 localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                
+                if (activeSlot === name) {
+                    activeSlot = null;
+                    localStorage.removeItem('apollo_active_slot');
+                    currentMessages = [];
+                    renderMessages();
+                }
                 updateSaveList();
             }
         }
