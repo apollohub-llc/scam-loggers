@@ -215,6 +215,27 @@
             color: #ff4757;
         }
 
+        /* --- DELETE BUTTON STYLE --- */
+        .delete-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background: #ff3333;
+            color: #fff;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .delete-btn:hover {
+            background: #cc0000;
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(255, 51, 51, 0.3);
+        }
+
         @media (max-width: 768px) {
             .scammers-grid {
                 grid-template-columns: 1fr;
@@ -289,6 +310,13 @@
             }
         }
 
+        // --- DELETE FUNCTION ---
+        function deleteScammer(id) {
+            scammers = scammers.filter(s => s.id !== id);
+            saveScammers();
+            renderScammers();
+        }
+
         function renderScammers() {
             const grid = document.getElementById('scammersGrid');
             grid.innerHTML = '';
@@ -319,6 +347,10 @@
                             ${scammer.result === 'success' ? 'Mission Successfully Completed! 🎉' : 'Mission Failed 😞'}
                         </div>
                     ` : ''}
+                    <!-- DELETE BUTTON ADDED HERE -->
+                    <button class="delete-btn" onclick="deleteScammer(${scammer.id})">
+                        🗑️ Delete
+                    </button>
                 `;
                 grid.appendChild(card);
             });
