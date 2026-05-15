@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidence Watchers - Mission Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .add-scammer {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .add-scammer input {
+            padding: 0.8rem 1.2rem;
+            border: none;
+            border-radius: 25px;
+            width: 300px;
+            margin-right: 1rem;
+            font-size: 1rem;
+        }
+
+        .add-scammer button {
+            padding: 0.8rem 2rem;
+            background: #00ff88;
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-scammer button:hover {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+
+        .scammers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .scammer-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scammer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .scammer-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .scammer-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .status {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+
+        .status-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .success-btn {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .success-btn.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #00ff88;
+        }
+
+        .fail-btn {
+            background: #ff4757;
+            color: #fff;
+        }
+
+        .fail-btn.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ff4757;
+        }
+
+        .mission-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: #000;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .mission-btn:hover:not(.completed) {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .mission-btn.completed {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .mission-active {
+            background: linear-gradient(45deg, #00ff88, #48dbfb) !important;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0,255,136,0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(0,255,136,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+        }
+
+        .completed-status {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        .success-status {
+            background: rgba(0,255,136,0.3);
+            color: #00ff88;
+        }
+
+        .fail-status {
+            background: rgba(255,71,87,0.3);
+            color: #ff4757;
+        }
+
+        @media (max-width: 768px) {
+            .scammers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .add-scammer input {
+                width: 100%;
+                margin-bottom: 1rem;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🕵️‍♂️ Evidence Watchers</h1>
+        <p>Track & Complete Missions Against Scammers</p>
+    </div>
+
+    <div class="container">
+        <div class="add-scammer">
+            <input type="text" id="scammerName" placeholder="Enter scammer name...">
+            <button onclick="addScammer()">Add Scammer 🚨</button>
+        </div>
+
+        <div class="scammers-grid" id="scammersGrid">
+            <!-- Scammers will be dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        let scammers = JSON.parse(localStorage.getItem('scammers')) || [];
+
+        function saveScammers() {
+            localStorage.setItem('scammers', JSON.stringify(scammers));
+        }
+
+        function addScammer() {
+            const nameInput = document.getElementById('scammerName');
+            const name = nameInput.value.trim();
+            
+            if (name) {
+                scammers.push({
+                    id: Date.now(),
+                    name: name,
+                    missionStarted: false,
+                    missionCompleted: false,
+                    result: null
+                });
+                saveScammers();
+                renderScammers();
+                nameInput.value = '';
+            }
+        }
+
+        function startMission(id) {
+            const scammer = scammers.find(s => s.id === id);
+            if (scammer && !scammer.missionStarted) {
+                scammer.missionStarted = true;
+                saveScammers();
+                renderScammers();
+            }
+        }
+
+        function completeMission(id, result) {
+            const scammer = scammers.find(s => s.id === id);
+            if (scammer && scammer.missionStarted && !scammer.missionCompleted) {
+                scammer.missionCompleted = true;
+                scammer.result = result;
+                saveScammers();
+                renderScammers();
+            }
+        }
+
+        function renderScammers() {
+            const grid = document.getElementById('scammersGrid');
+            grid.innerHTML = '';
+
+            scammers.forEach(scammer => {
+                const card = document.createElement('div');
+                card.className = 'scammer-card';
+                card.innerHTML = `
+                    <div class="scammer-name">${scammer.name}</div>
+                    <div class="status">
+                        <button class="status-btn success-btn ${scammer.missionStarted ? 'active' : ''}" 
+                                onclick="${scammer.missionStarted ? `completeMission(${scammer.id}, 'success')` : ''}">
+                            ✔
+                        </button>
+                        <button class="status-btn fail-btn ${scammer.missionStarted ? 'active' : ''}" 
+                                onclick="${scammer.missionStarted ? `completeMission(${scammer.id}, 'fail')` : ''}">
+                            ✘
+                        </button>
+                    </div>
+                    <button class="mission-btn ${scammer.missionStarted ? 'mission-active' : ''} ${scammer.missionCompleted ? 'completed' : ''}"
+                            onclick="${!scammer.missionStarted ? `startMission(${scammer.id})` : ''}">
+                        ${!scammer.missionStarted ? '🚀 Start Mission' : 
+                          scammer.missionCompleted ? (scammer.result === 'success' ? '✅ Mission Success!' : '❌ Mission Failed') : 
+                          '🎯 Mission Active'}
+                    </button>
+                    ${scammer.missionCompleted ? `
+                        <div class="completed-status ${scammer.result === 'success' ? 'success-status' : 'fail-status'}">
+                            ${scammer.result === 'success' ? 'Mission Successfully Completed! 🎉' : 'Mission Failed 😞'}
+                        </div>
+                    ` : ''}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Load scammers on page load
+        renderScammers();
+
+        // Allow Enter key to add scammer
+        document.getElementById('scammerName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addScammer();
+            }
+        });
+    </script>
+</body>
+</html>
