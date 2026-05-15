@@ -32,11 +32,11 @@
         /* --- UI Controls --- */
         .controls {
             position: fixed;
-            top: 20px;
+            top: 10px;
             width: 100%;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 15px;
             z-index: 100;
         }
 
@@ -44,31 +44,23 @@
             background: var(--surface-bg);
             border: 1px solid var(--primary-orange);
             color: var(--primary-orange);
-            padding: 10px 15px;
+            padding: 8px 12px;
             cursor: pointer;
             text-transform: uppercase;
             font-weight: bold;
-            font-size: 11px;
-            transition: 0.3s;
+            font-size: 10px;
             box-shadow: var(--neon-glow);
-        }
-
-        .btn:hover {
-            background: var(--primary-orange);
-            color: black;
-            box-shadow: 0 0 20px var(--primary-orange);
         }
 
         .active-thread-indicator {
             position: fixed;
-            top: 65px;
-            left: 20px;
-            font-size: 12px;
+            top: 55px;
+            left: 15px;
+            font-size: 11px;
             color: var(--primary-orange);
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             padding: 4px 8px;
             border-radius: 4px;
         }
@@ -76,14 +68,14 @@
         /* --- Chat Interface --- */
         #chat-container {
             flex: 1;
-            margin-top: 100px;
-            padding: 20px;
+            margin-top: 85px;
+            padding: 15px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             max-width: 800px;
-            width: 90%;
+            width: 100%;
             align-self: center;
         }
 
@@ -93,142 +85,111 @@
             border-left: 3px solid var(--primary-orange);
             border-radius: 4px;
             word-wrap: break-word;
-            animation: fadeIn 0.2s ease;
+            white-space: pre-wrap; /* Supports paragraphs */
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
+        /* --- Input Area with Auto-expanding Textarea --- */
         .input-area {
-            padding: 20px;
+            padding: 15px;
             background: #111;
             display: flex;
             gap: 10px;
             border-top: 1px solid #333;
+            align-items: flex-end;
         }
 
-        input[type="text"] {
+        textarea {
             flex: 1;
             background: #000;
             border: 1px solid #444;
             color: white;
             padding: 12px;
             outline: none;
+            font-size: 14px;
+            resize: none;
+            max-height: 150px;
+            border-radius: 4px;
+            line-height: 1.4;
         }
 
-        input[type="text"]:focus { border-color: var(--primary-orange); }
+        textarea:focus { border-color: var(--primary-orange); }
 
-        /* --- Manage Modal --- */
+        .send-btn {
+            background: var(--primary-orange);
+            color: black;
+            border: none;
+            padding: 12px 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            height: 45px;
+        }
+
+        /* --- Modal --- */
         #manage-modal {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             background: var(--surface-bg);
             border: 2px solid var(--primary-orange);
-            width: 380px;
-            padding: 20px;
-            z-index: 200;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            width: 90%; max-width: 380px;
+            padding: 20px; z-index: 200;
         }
 
-        .modal-header { margin-bottom: 15px; border-bottom: 1px solid var(--primary-orange); padding-bottom: 5px; font-weight: bold; }
-        
-        .save-list {
-            max-height: 250px;
-            overflow-y: auto;
-            margin: 15px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .save-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            background: #222;
-            font-size: 13px;
-            align-items: center;
-            border: 1px solid transparent;
-        }
-        
-        .save-item.active-item {
-            border-color: var(--primary-orange);
-            background: #2a1a0a;
-        }
-
-        .save-actions button {
-            background: transparent;
-            border: 1px solid #444;
-            color: var(--primary-orange);
-            margin-left: 5px;
-            cursor: pointer;
-            font-size: 10px;
-            padding: 4px 8px;
-        }
-
-        .save-actions button:hover {
-            border-color: var(--primary-orange);
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 150;
-        }
+        .save-list { max-height: 250px; overflow-y: auto; margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        .save-item { display: flex; justify-content: space-between; padding: 10px; background: #222; font-size: 13px; align-items: center; }
+        .save-item.active-item { border: 1px solid var(--primary-orange); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 150; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <div>
-            <button class="btn" onclick="toggleModal()">Load / Switch Chat</button>
-            <button class="btn" onclick="createNewThread()">+ New Chat</button>
+            <button class="btn" onclick="toggleModal()">Load</button>
+            <button class="btn" onclick="createNewThread()">+ New</button>
         </div>
         <div>
             <button class="btn" onclick="exportChat()">Export</button>
-            <button class="btn" style="border-color: #ff3333; color: #ff3333;" onclick="clearThreadContent()">Clear Messages</button>
+            <button class="btn" style="border-color: #ff3333; color: #ff3333;" onclick="clearThreadContent()">Clear</button>
         </div>
     </div>
 
-    <div id="active-display" class="active-thread-indicator">Thread: Unsaved Session</div>
+    <div id="active-display" class="active-thread-indicator">Thread: Unsaved</div>
 
     <div id="chat-container"></div>
 
     <div class="input-area">
-        <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleKey(event)">
-        <button class="btn" onclick="sendMessage()">Send</button>
+        <textarea id="chat-input" placeholder="Type message... (New lines supported)" rows="1" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">SEND</button>
     </div>
 
-    <!-- Management Tab -->
     <div class="overlay" id="overlay" onclick="toggleModal()"></div>
     <div id="manage-modal">
-        <div class="modal-header">CHAT MANAGER</div>
-        
-        <div class="save-list" id="save-list">
-            <!-- Threads appear here -->
-        </div>
-        
-        <button class="btn" style="width: 100%; margin-top: 10px; border-color: #777; color: #777;" onclick="toggleModal()">Close</button>
+        <div style="color:var(--primary-orange); font-weight:bold; margin-bottom:10px;">CHAT MANAGER</div>
+        <div class="save-list" id="save-list"></div>
+        <button class="btn" style="width: 100%;" onclick="toggleModal()">Close</button>
     </div>
 
     <script>
         let activeSlot = localStorage.getItem('apollo_active_slot') || null;
         let currentMessages = [];
-
         const chatContainer = document.getElementById('chat-container');
         const chatInput = document.getElementById('chat-input');
         const activeDisplay = document.getElementById('active-display');
 
-        // On Start
-        if (activeSlot) {
-            loadSlotData(activeSlot);
-        } else {
+        if (activeSlot) loadSlotData(activeSlot);
+        else {
             currentMessages = JSON.parse(localStorage.getItem('apollo_current_chat')) || [];
             renderMessages();
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
         }
 
         function renderMessages() {
@@ -241,7 +202,6 @@
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // Messenger style sync
             localStorage.setItem('apollo_current_chat', JSON.stringify(currentMessages));
             if (activeSlot) {
                 let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
@@ -249,7 +209,7 @@
                 localStorage.setItem('apollo_saves', JSON.stringify(saves));
                 activeDisplay.textContent = `Thread: ${activeSlot}`;
             } else {
-                activeDisplay.textContent = `Thread: Unsaved Session`;
+                activeDisplay.textContent = `Thread: Unsaved`;
             }
         }
 
@@ -258,31 +218,26 @@
             if (val) {
                 currentMessages.push(val);
                 chatInput.value = '';
+                chatInput.style.height = 'auto'; // Reset size
                 renderMessages();
             }
         }
 
-        function handleKey(e) { if (e.key === 'Enter') sendMessage(); }
-
-        // Messenger "Clear Chat" behavior
         function clearThreadContent() {
-            if (confirm("Clear all messages in this thread? (The thread itself remains active)")) {
+            if (confirm("Clear messages?")) {
                 currentMessages = [];
                 renderMessages();
             }
         }
 
         function createNewThread() {
-            const name = prompt("Enter Name for New Chat Thread:");
+            const name = prompt("Thread Name:");
             if (name && name.trim()) {
-                const threadName = name.trim();
+                const tName = name.trim();
                 let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
-                
-                // Create empty thread if doesn't exist
-                if (!saves[threadName]) saves[threadName] = [];
-                
+                if (!saves[tName]) saves[tName] = [];
                 localStorage.setItem('apollo_saves', JSON.stringify(saves));
-                loadSlotData(threadName);
+                loadSlotData(tName);
             }
         }
 
@@ -295,56 +250,40 @@
         }
 
         function exportChat() {
-            if (currentMessages.length === 0) return alert("Nothing to export!");
-            const text = `Apollo Hub Log [${activeSlot || 'Unsaved'}]:\n\n` + currentMessages.join('\n\n');
-            navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+            if (currentMessages.length === 0) return;
+            const text = `Apollo Log [${activeSlot || 'Unsaved'}]:\n\n` + currentMessages.join('\n\n');
+            navigator.clipboard.writeText(text).then(() => alert("Copied!"));
         }
 
         function toggleModal() {
-            const modal = document.getElementById('manage-modal');
-            const overlay = document.getElementById('overlay');
-            const isOpen = modal.style.display === 'block';
-            modal.style.display = isOpen ? 'none' : 'block';
-            overlay.style.display = isOpen ? 'none' : 'block';
-            if (!isOpen) updateSaveList();
+            const m = document.getElementById('manage-modal');
+            const o = document.getElementById('overlay');
+            const show = m.style.display !== 'block';
+            m.style.display = show ? 'block' : 'none';
+            o.style.display = show ? 'block' : 'none';
+            if (show) updateSaveList();
         }
 
         function updateSaveList() {
             const list = document.getElementById('save-list');
             const saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
             list.innerHTML = '';
-            
             Object.keys(saves).forEach(name => {
                 const item = document.createElement('div');
                 item.className = `save-item ${name === activeSlot ? 'active-item' : ''}`;
-                item.innerHTML = `
-                    <span>${name}</span>
-                    <div class="save-actions">
-                        <button onclick="switchAndLoad('${name}')">OPEN</button>
-                        <button style="color: #ff3333; border-color: #522;" onclick="deleteThread('${name}')">DELETE</button>
-                    </div>
-                `;
+                item.innerHTML = `<span>${name}</span><div><button onclick="switchAndLoad('${name}')" style="background:transparent; border:1px solid #444; color:var(--primary-orange); padding:4px 8px; cursor:pointer;">OPEN</button><button onclick="deleteThread('${name}')" style="background:transparent; border:1px solid #444; color:#ff3333; padding:4px 8px; cursor:pointer; margin-left:5px;">DEL</button></div>`;
                 list.appendChild(item);
             });
         }
 
-        function switchAndLoad(name) {
-            loadSlotData(name);
-            toggleModal();
-        }
+        function switchAndLoad(name) { loadSlotData(name); toggleModal(); }
 
         function deleteThread(name) {
-            if (confirm(`Completely delete thread "${name}" and all its logs?`)) {
+            if (confirm(`Delete ${name}?`)) {
                 let saves = JSON.parse(localStorage.getItem('apollo_saves'));
                 delete saves[name];
                 localStorage.setItem('apollo_saves', JSON.stringify(saves));
-                
-                if (activeSlot === name) {
-                    activeSlot = null;
-                    localStorage.removeItem('apollo_active_slot');
-                    currentMessages = [];
-                    renderMessages();
-                }
+                if (activeSlot === name) { activeSlot = null; currentMessages = []; renderMessages(); }
                 updateSaveList();
             }
         }
