@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvidenceHub • Chatlogs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --neon-green: #39ff14;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .chat-container {
+            background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+        }
+
+        .message-me {
+            background: #1f1f1f;
+            border-left: 4px solid var(--neon-green);
+        }
+
+        .message-scammer {
+            background: #2a2a2a;
+            border-left: 4px solid #ff4444;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px var(--neon-green),
+                        0 0 20px var(--neon-green);
+        }
+
+        .chat-bubble {
+            position: relative;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="border-b border-zinc-800 bg-zinc-950 py-6 px-8 flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center text-black font-bold text-2xl">E</div>
+                <div>
+                    <h1 class="title-font text-3xl font-semibold tracking-tighter neon-text">EvidenceHub</h1>
+                    <p class="text-xs text-emerald-400 -mt-1">CHATLOGS</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-sm">
+                <a href="#" onclick="showInput()" class="hover:text-emerald-400 transition-colors flex items-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    <span>New Log</span>
+                </a>
+                <div class="text-emerald-400 text-xs px-3 py-1 border border-emerald-500/30 rounded-full bg-emerald-950/50">
+                    VERIFIED REPORTS ONLY
+                </div>
+            </div>
+        </div>
+
+        <div id="input-screen" class="p-8">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-2xl font-semibold mb-6 title-font">Create Scammer Chat Log</h2>
+                
+                <!-- Scammer Name -->
+                <div class="mb-6">
+                    <label class="block text-sm text-zinc-400 mb-2">SCAMMER / PAGE NAME</label>
+                    <input id="scammer-name" 
+                           type="text" 
+                           placeholder="e.g. Michael Ross • Luxury Investments"
+                           class="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-500 rounded-2xl px-6 py-4 text-lg outline-none transition-all">
+                </div>
+
+                <!-- Chat Input -->
+                <div class="mb-6">
+                    <label class="block text-sm text-zinc-400 mb-2">CHAT LOG <span class="text-xs">(One message per line: "Me: text" or "Scammer: text")</span></label>
+                    <textarea id="chat-input" rows="14"
+                        class="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-500 rounded-3xl px-6 py-5 outline-none font-mono text-sm resize-none"
+                        placeholder="Me: Hi, I saw your post about investments&#10;Scammer: Hello dear, how are you today?&#10;Me: https://i.imgur.com/t0eXGct.jpeg&#10;Scammer: Nice! Now send me $500 to start"></textarea>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="createChatLog()" 
+                            class="flex-1 bg-emerald-500 hover:bg-emerald-400 transition-all text-black font-semibold py-5 rounded-3xl text-lg flex items-center justify-center gap-3">
+                        <i class="fas fa-bolt"></i>
+                        CREATE SHAREABLE LOG
+                    </button>
+                    
+                    <button onclick="loadExample()" 
+                            class="px-8 border border-zinc-700 hover:border-zinc-500 transition-all rounded-3xl">
+                        Example
+                    </button>
+                </div>
+
+                <div class="mt-8 text-xs text-zinc-500 space-y-1">
+                    <p>• Supports image URLs (.jpg, .png, .gif) and direct video links</p>
+                    <p>• YouTube links will be embedded automatically</p>
+                    <p>• Share the generated URL - data is stored in the link</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Viewer Screen -->
+        <div id="viewer-screen" class="hidden">
+            <div class="chat-container min-h-screen pb-20">
+                <!-- Dynamic Header -->
+                <div id="viewer-header" class="sticky top-0 bg-zinc-950 border-b border-zinc-800 p-6 z-40">
+                    <div class="flex items-center gap-4">
+                        <div onclick="showInput()" class="cursor-pointer w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-2xl flex items-center justify-center transition-colors">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                        <div>
+                            <div id="viewer-title" class="font-semibold text-xl title-font"></div>
+                            <div class="text-emerald-400 text-xs flex items-center gap-2">
+                                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                VERIFIED CHAT LOG
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div id="chat-display" class="p-6 max-w-3xl mx-auto space-y-8 pt-8"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script already loaded
+
+        function parseChatLog(text) {
+            const lines = text.trim().split('\n');
+            const messages = [];
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                let sender = 'Me';
+                let content = line;
+                
+                if (line.toLowerCase().startsWith('me:')) {
+                    content = line.substring(3).trim();
+                } else if (line.toLowerCase().startsWith('scammer:')) {
+                    sender = 'Scammer';
+                    content = line.substring(8).trim();
+                }
+                
+                messages.push({ sender, content });
+            }
+            return messages;
+        }
+
+        function isImage(url) {
+            return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+        }
+
+        function isYouTube(url) {
+            return url.includes('youtube.com') || url.includes('youtu.be');
+        }
+
+        function getYouTubeId(url) {
+            if (url.includes('youtu.be')) {
+                return url.split('youtu.be/')[1].split('?')[0];
+            }
+            const regExp = /v=([^&]+)/;
+            const match = url.match(regExp);
+            return match ? match[1] : null;
+        }
+
+        function createMessageElement(msg) {
+            const div = document.createElement('div');
+            div.className = `flex ${msg.sender === 'Me' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble message-${msg.sender.toLowerCase()} ${msg.sender === 'Me' ? 'ml-auto' : 'mr-auto'}`;
+            
+            const header = document.createElement('div');
+            header.className = `text-xs mb-1 ${msg.sender === 'Me' ? 'text-emerald-400' : 'text-red-400'} font-medium`;
+            header.textContent = msg.sender;
+            bubble.appendChild(header);
+            
+            const content = msg.content.trim();
+            
+            if (isImage(content)) {
+                const img = document.createElement('img');
+                img.src = content;
+                img.className = "max-w-full rounded-2xl mt-2 border border-zinc-700";
+                img.style.maxHeight = "420px";
+                bubble.appendChild(img);
+            } 
+            else if (isYouTube(content)) {
+                const ytId = getYouTubeId(content);
+                if (ytId) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = `https://www.youtube.com/embed/${ytId}`;
+                    iframe.className = "w-full aspect-video rounded-2xl mt-2";
+                    iframe.allowFullscreen = true;
+                    bubble.appendChild(iframe);
+                } else {
+                    const p = document.createElement('p');
+                    p.className = "whitespace-pre-wrap break-words";
+                    p.textContent = content;
+                    bubble.appendChild(p);
+                }
+            } 
+            else if (content.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
+                // Direct video
+                const video = document.createElement('video');
+                video.src = content;
+                video.controls = true;
+                video.className = "max-w-full rounded-2xl mt-2";
+                bubble.appendChild(video);
+            } 
+            else {
+                const p = document.createElement('p');
+                p.className = "whitespace-pre-wrap break-words text-[15px] leading-relaxed";
+                p.textContent = content;
+                bubble.appendChild(p);
+            }
+            
+            div.appendChild(bubble);
+            return div;
+        }
+
+        function createChatLog() {
+            const name = document.getElementById('scammer-name').value.trim() || "Unknown Scammer";
+            const input = document.getElementById('chat-input').value.trim();
+            
+            if (!input) {
+                alert("Please enter a chat log");
+                return;
+            }
+            
+            const messages = parseChatLog(input);
+            
+            // Encode data
+            const data = {
+                title: name,
+                messages: messages,
+                timestamp: new Date().toISOString()
+            };
+            
+            const encoded = encodeURIComponent(JSON.stringify(data));
+            const url = `\( {window.location.origin} \){window.location.pathname}?data=${encoded}`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(url).then(() => {
+                alert("✅ Chat log created!\n\nLink copied to clipboard.\n\nOpening preview...");
+                window.location.href = url;
+            });
+        }
+
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const dataStr = params.get('data');
+            
+            if (!dataStr) {
+                document.getElementById('input-screen').classList.remove('hidden');
+                document.getElementById('viewer-screen').classList.add('hidden');
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(decodeURIComponent(dataStr));
+                
+                // Switch to viewer
+                document.getElementById('input-screen').classList.add('hidden');
+                const viewer = document.getElementById('viewer-screen');
+                viewer.classList.remove('hidden');
+                
+                // Set title
+                document.getElementById('viewer-title').textContent = data.title || "Scammer Chat Log";
+                
+                // Render chat
+                const container = document.getElementById('chat-display');
+                container.innerHTML = '';
+                
+                data.messages.forEach(msg => {
+                    const el = createMessageElement(msg);
+                    container.appendChild(el);
+                });
+                
+            } catch(e) {
+                console.error(e);
+                alert("Invalid chat data");
+                window.location.href = window.location.pathname;
+            }
+        }
+
+        function showInput() {
+            window.location.href = window.location.pathname;
+        }
+
+        function loadExample() {
+            document.getElementById('scammer-name').value = "Michael Ross - Premium Investments";
+            document.getElementById('chat-input').value = `Me: Hi, interested in your investment opportunity
+Scammer: Hello my friend! How are you doing today?
+Me: Good thanks. Can I see your portfolio?
+Scammer: Of course! Here you go
+Me: https://i.imgur.com/t0eXGct.jpeg
+Scammer: Beautiful right? Now just send $300 to start earning
+Me: Can you show live proof?
+Scammer: Sorry I can't right now, trust me`;
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadFromURL();
+        };
+
+        // Keyboard shortcut
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Enter" && e.ctrlKey && !document.getElementById('viewer-screen').classList.contains('hidden') === false) {
+                createChatLog();
+            }
+        });
+    </script>
+</body>
+</html>
