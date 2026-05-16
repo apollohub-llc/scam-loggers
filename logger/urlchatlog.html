@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
         
         :root {
             --neon-green: #39ff14;
@@ -70,6 +70,7 @@
             </div>
         </div>
 
+        <!-- Input Screen -->
         <div id="input-screen" class="p-8">
             <div class="max-w-2xl mx-auto">
                 <h2 class="text-2xl font-semibold mb-6 title-font">Create Scammer Chat Log</h2>
@@ -128,6 +129,10 @@
                                 VERIFIED CHAT LOG
                             </div>
                         </div>
+                        <button onclick="copyShareLink()" class="ml-auto flex items-center gap-2 text-xs px-4 py-2 border border-zinc-700 hover:border-emerald-500 hover:text-emerald-400 rounded-full transition-all">
+                            <i class="fas fa-link"></i>
+                            Copy Link
+                        </button>
                     </div>
                 </div>
 
@@ -138,7 +143,26 @@
     </div>
 
     <script>
-        // Tailwind script already loaded
+        // ── Encoding helpers ──────────────────────────────────────────────────────
+        // Use Base64 via btoa/atob (with UTF-8 support for non-ASCII characters)
+
+        function encodeData(obj) {
+            const json = JSON.stringify(obj);
+            // encodeURIComponent handles UTF-8, then we Base64 it
+            return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+                String.fromCharCode(parseInt(p1, 16))
+            ));
+        }
+
+        function decodeData(b64) {
+            const decoded = atob(b64);
+            const percent = decoded.split('').map(c =>
+                '%' + c.charCodeAt(0).toString(16).padStart(2, '0')
+            ).join('');
+            return JSON.parse(decodeURIComponent(percent));
+        }
+
+        // ── Chat parsing ──────────────────────────────────────────────────────────
 
         function parseChatLog(text) {
             const lines = text.trim().split('\n');
@@ -163,6 +187,8 @@
             return messages;
         }
 
+        // ── Media detection ───────────────────────────────────────────────────────
+
         function isImage(url) {
             return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
         }
@@ -175,10 +201,11 @@
             if (url.includes('youtu.be')) {
                 return url.split('youtu.be/')[1].split('?')[0];
             }
-            const regExp = /v=([^&]+)/;
-            const match = url.match(regExp);
+            const match = url.match(/v=([^&]+)/);
             return match ? match[1] : null;
         }
+
+        // ── Message rendering ─────────────────────────────────────────────────────
 
         function createMessageElement(msg) {
             const div = document.createElement('div');
@@ -200,8 +227,7 @@
                 img.className = "max-w-full rounded-2xl mt-2 border border-zinc-700";
                 img.style.maxHeight = "420px";
                 bubble.appendChild(img);
-            } 
-            else if (isYouTube(content)) {
+            } else if (isYouTube(content)) {
                 const ytId = getYouTubeId(content);
                 if (ytId) {
                     const iframe = document.createElement('iframe');
@@ -215,16 +241,13 @@
                     p.textContent = content;
                     bubble.appendChild(p);
                 }
-            } 
-            else if (content.match(/\.(mp4|webm|ogg)(\?.*)?$/i)) {
-                // Direct video
+            } else if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(content)) {
                 const video = document.createElement('video');
                 video.src = content;
                 video.controls = true;
                 video.className = "max-w-full rounded-2xl mt-2";
                 bubble.appendChild(video);
-            } 
-            else {
+            } else {
                 const p = document.createElement('p');
                 p.className = "whitespace-pre-wrap break-words text-[15px] leading-relaxed";
                 p.textContent = content;
@@ -233,6 +256,13 @@
             
             div.appendChild(bubble);
             return div;
+        }
+
+        // ── Core actions ──────────────────────────────────────────────────────────
+
+        function buildShareURL(data) {
+            const encoded = encodeData(data);
+            return `${window.location.origin}${window.location.pathname}?data=${encoded}`;
         }
 
         function createChatLog() {
@@ -245,21 +275,27 @@
             }
             
             const messages = parseChatLog(input);
-            
-            // Encode data
             const data = {
                 title: name,
                 messages: messages,
                 timestamp: new Date().toISOString()
             };
             
-            const encoded = encodeURIComponent(JSON.stringify(data));
-            const url = `\( {window.location.origin} \){window.location.pathname}?data=${encoded}`;
+            const url = buildShareURL(data);
             
-            // Copy to clipboard
             navigator.clipboard.writeText(url).then(() => {
                 alert("✅ Chat log created!\n\nLink copied to clipboard.\n\nOpening preview...");
-                window.location.href = url;
+            }).catch(() => {
+                // Clipboard may be blocked; continue anyway
+            });
+
+            // Navigate to the generated URL
+            window.location.href = url;
+        }
+
+        function copyShareLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert("✅ Link copied to clipboard!");
             });
         }
 
@@ -274,28 +310,21 @@
             }
             
             try {
-                const data = JSON.parse(decodeURIComponent(dataStr));
+                const data = decodeData(dataStr);
                 
-                // Switch to viewer
                 document.getElementById('input-screen').classList.add('hidden');
-                const viewer = document.getElementById('viewer-screen');
-                viewer.classList.remove('hidden');
-                
-                // Set title
+                document.getElementById('viewer-screen').classList.remove('hidden');
                 document.getElementById('viewer-title').textContent = data.title || "Scammer Chat Log";
                 
-                // Render chat
                 const container = document.getElementById('chat-display');
                 container.innerHTML = '';
-                
                 data.messages.forEach(msg => {
-                    const el = createMessageElement(msg);
-                    container.appendChild(el);
+                    container.appendChild(createMessageElement(msg));
                 });
                 
             } catch(e) {
                 console.error(e);
-                alert("Invalid chat data");
+                alert("Invalid or corrupted chat data in URL.");
                 window.location.href = window.location.pathname;
             }
         }
@@ -310,20 +339,17 @@
 Scammer: Hello my friend! How are you doing today?
 Me: Good thanks. Can I see your portfolio?
 Scammer: Of course! Here you go
-Me: https://i.imgur.com/t0eXGct.jpeg
-Scammer: Beautiful right? Now just send $300 to start earning
-Me: Can you show live proof?
-Scammer: Sorry I can't right now, trust me`;
+Scammer: https://i.imgur.com/t0eXGct.jpeg
+Me: Beautiful. Can you show live proof?
+Scammer: Sorry I can't right now, trust me. Just send $300 to start earning`;
         }
 
-        // Initialize
-        window.onload = function() {
-            loadFromURL();
-        };
+        // Initialize on load
+        window.onload = loadFromURL;
 
-        // Keyboard shortcut
+        // Ctrl+Enter to create
         document.addEventListener('keydown', function(e) {
-            if (e.key === "Enter" && e.ctrlKey && !document.getElementById('viewer-screen').classList.contains('hidden') === false) {
+            if (e.key === 'Enter' && e.ctrlKey && !document.getElementById('input-screen').classList.contains('hidden')) {
                 createChatLog();
             }
         });
