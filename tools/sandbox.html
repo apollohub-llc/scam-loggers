@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apollo Hub - Proxy Sandbox Viewer</title>
+    <title>Apollo Hub - Proxy Sandbox</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
             background: radial-gradient(circle at center, #1a0f05 0%, #0a0500 100%);
-            color: #ffffff;
+            color: #fff;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -28,7 +23,7 @@
             align-items: center;
             padding-bottom: 10px;
             border-bottom: 2px solid #ff6600;
-            box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255,102,0,0.3);
             margin-bottom: 15px;
         }
 
@@ -37,104 +32,112 @@
             color: #ff6600;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 102, 0, 0.7);
+            text-shadow: 0 0 10px rgba(255,102,0,0.7);
         }
 
         .status-badge {
-            background: rgba(255, 102, 0, 0.1);
+            background: rgba(255,102,0,0.1);
             border: 1px solid #ff6600;
             color: #ffaa66;
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 0.8rem;
             text-transform: uppercase;
-            box-shadow: inset 0 0 5px rgba(255, 102, 0, 0.2);
         }
 
         .workspace {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             min-height: 0;
         }
 
         .iframe-container {
             flex: 1;
-            background: #ffffff;
             border: 2px solid #ff6600;
             border-radius: 6px;
-            box-shadow: 0 0 20px rgba(255, 102, 0, 0.15);
+            box-shadow: 0 0 20px rgba(255,102,0,0.15);
             position: relative;
             overflow: hidden;
-        }
-
-        /* Loading overlay */
-        .loading-overlay {
-            display: none;
-            position: absolute;
-            inset: 0;
-            background: rgba(10, 5, 0, 0.85);
-            z-index: 10;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 14px;
-            color: #ff6600;
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255, 102, 0, 0.2);
-            border-top-color: #ff6600;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Error message bar */
-        .error-bar {
-            display: none;
-            background: rgba(180, 30, 0, 0.2);
-            border: 1px solid #cc3300;
-            color: #ff6644;
-            border-radius: 4px;
-            padding: 8px 14px;
-            font-size: 0.82rem;
-            letter-spacing: 0.5px;
-        }
-
-        .error-bar.active {
-            display: block;
+            background: #fff;
         }
 
         iframe {
             width: 100%;
             height: 100%;
             border: none;
-            background: #ffffff;
         }
 
+        .overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(10,5,0,0.92);
+            z-index: 20;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: #ff6600;
+        }
+        .overlay.active { display: flex; }
+
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,102,0,0.2);
+            border-top-color: #ff6600;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .overlay-msg {
+            font-size: 0.88rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #ff8844;
+            max-width: 340px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .overlay-sub {
+            font-size: 0.75rem;
+            color: #aa5522;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .overlay.error .spinner { display: none; }
+        .overlay.error .overlay-msg { color: #ff4422; }
+        .overlay.error .overlay-sub { color: #882211; }
+
+        .retry-btn {
+            display: none;
+            background: transparent;
+            border: 1px solid #ff4422;
+            color: #ff4422;
+            padding: 6px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .overlay.error .retry-btn { display: inline-block; }
+        .retry-btn:hover { background: rgba(255,68,34,0.1); }
+
         .control-bar {
-            background: rgba(10, 5, 0, 0.8);
+            background: rgba(10,5,0,0.8);
             border: 1px solid #ff6600;
             border-radius: 6px;
             padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            box-shadow: 0 0 15px rgba(255, 102, 0, 0.1);
+            box-shadow: 0 0 15px rgba(255,102,0,0.1);
         }
 
         .control-row {
@@ -143,32 +146,28 @@
             align-items: center;
         }
 
-        .url-textarea {
+        .url-input {
             flex: 1;
             height: 42px;
             background: #140b02;
             border: 1px solid #ff6600;
             border-radius: 4px;
-            color: #ffffff;
-            padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            padding: 10px 12px;
+            font-family: 'Courier New', monospace;
             font-size: 0.95rem;
-            resize: none;
-            white-space: nowrap;
-            overflow: hidden;
             outline: none;
-            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            transition: box-shadow 0.3s, border-color 0.3s;
         }
-
-        .url-textarea:focus {
+        .url-input:focus {
             border-color: #ff8833;
-            box-shadow: 0 0 10px rgba(255, 136, 51, 0.5);
+            box-shadow: 0 0 10px rgba(255,136,51,0.5);
         }
 
         .launch-btn {
             background: #ff6600;
             border: none;
-            color: #000000;
+            color: #000;
             font-weight: bold;
             padding: 0 24px;
             height: 42px;
@@ -176,212 +175,212 @@
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: background 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 10px rgba(255,102,0,0.4);
             white-space: nowrap;
         }
+        .launch-btn:hover { background: #ff8833; box-shadow: 0 0 15px rgba(255,136,51,0.7); }
+        .launch-btn:active { transform: scale(0.98); }
+        .launch-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .launch-btn:hover {
-            background: #ff8833;
-            box-shadow: 0 0 15px rgba(255, 136, 51, 0.7);
-        }
-
-        .launch-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Proxy selector pills */
-        .proxy-row {
+        .info-row {
             display: flex;
-            gap: 6px;
+            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .proxy-label {
             font-size: 0.72rem;
             color: #aa6633;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-right: 4px;
-        }
-
-        .proxy-pill {
-            background: #140b02;
-            border: 1px solid #663300;
-            color: #cc7733;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            cursor: pointer;
-            transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .proxy-pill:hover {
-            border-color: #ff6600;
-            color: #ff8833;
-        }
-
-        .proxy-pill.active {
-            background: rgba(255, 102, 0, 0.15);
-            border-color: #ff6600;
-            color: #ff6600;
-            box-shadow: 0 0 6px rgba(255, 102, 0, 0.3);
-        }
+        #proxy-status { color: #ff8844; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Apollo Hub // Proxy Sandbox</h1>
-        <div class="status-badge">Bypass Enabled</div>
-    </header>
+<header>
+    <h1>Apollo Hub // Proxy Sandbox</h1>
+    <div class="status-badge">Bypass Enabled</div>
+</header>
 
-    <div class="workspace">
-        <div class="iframe-container">
-            <div class="loading-overlay" id="loading-overlay">
-                <div class="spinner"></div>
-                <span>Routing through proxy...</span>
-            </div>
-            <iframe
-                id="sandbox-frame"
-                sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals allow-downloads"
-                src="about:blank">
-            </iframe>
+<div class="workspace">
+    <div class="iframe-container">
+        <div class="overlay active" id="overlay">
+            <div class="spinner" id="overlay-spinner" style="display:none"></div>
+            <div class="overlay-msg" id="overlay-msg">Enter a URL and press Execute</div>
+            <div class="overlay-sub" id="overlay-sub">Auto-cycles through 5 proxies on failure</div>
+            <button class="retry-btn" id="retry-btn">Retry</button>
         </div>
-
-        <div id="error-bar" class="error-bar"></div>
-
-        <div class="control-bar">
-            <div class="control-row">
-                <textarea
-                    id="url-input"
-                    class="url-textarea"
-                    placeholder="Enter URL (e.g., example.com)..."
-                    rows="1"></textarea>
-                <button id="load-btn" class="launch-btn">Execute</button>
-            </div>
-            <div class="proxy-row">
-                <span class="proxy-label">Proxy:</span>
-                <div class="proxy-pill active" data-proxy="corsproxy">CORSProxy.io</div>
-                <div class="proxy-pill" data-proxy="allorigins">AllOrigins</div>
-                <div class="proxy-pill" data-proxy="htmlpreview">HTMLPreview</div>
-            </div>
-        </div>
+        <iframe id="sandbox-frame"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals allow-downloads"
+            src="about:blank">
+        </iframe>
     </div>
 
-    <script>
-        const urlInput = document.getElementById('url-input');
-        const loadBtn = document.getElementById('load-btn');
-        const sandboxFrame = document.getElementById('sandbox-frame');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const errorBar = document.getElementById('error-bar');
+    <div class="control-bar">
+        <div class="control-row">
+            <input
+                id="url-input"
+                class="url-input"
+                type="text"
+                placeholder="Enter URL (e.g., example.com)..." />
+            <button id="load-btn" class="launch-btn">Execute</button>
+        </div>
+        <div class="info-row">
+            <span>Auto-cycles proxies on failure</span>
+            <span id="proxy-status">Idle</span>
+        </div>
+    </div>
+</div>
 
-        // Available proxy gateways
-        const PROXIES = {
-            corsproxy:   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            allorigins:  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            htmlpreview: url => `https://htmlpreview.github.io/?${encodeURIComponent(url)}`
-        };
+<script>
+const PROXIES = [
+    {
+        name: 'CORSProxy.io',
+        build: url => `https://corsproxy.io/?${encodeURIComponent(url)}`
+    },
+    {
+        name: 'AllOrigins',
+        build: url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+    },
+    {
+        name: 'ThingProxy',
+        build: url => `https://thingproxy.freeboard.io/fetch/${url}`
+    },
+    {
+        name: 'CORS.sh',
+        build: url => `https://proxy.cors.sh/${url}`
+    },
+    {
+        name: 'CodeTabs',
+        build: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+    },
+];
 
-        let activeProxy = 'corsproxy';
+const urlInput     = document.getElementById('url-input');
+const loadBtn      = document.getElementById('load-btn');
+const frame        = document.getElementById('sandbox-frame');
+const overlay      = document.getElementById('overlay');
+const overlayMsg   = document.getElementById('overlay-msg');
+const overlaySub   = document.getElementById('overlay-sub');
+const overlaySpinner = document.getElementById('overlay-spinner');
+const retryBtn     = document.getElementById('retry-btn');
+const proxyStatus  = document.getElementById('proxy-status');
 
-        // Proxy pill selection
-        document.querySelectorAll('.proxy-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('.proxy-pill').forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                activeProxy = pill.dataset.proxy;
-            });
-        });
+let lastUrl = null;
+let currentBlobUrl = null;
 
-        function showError(msg) {
-            errorBar.textContent = msg;
-            errorBar.classList.add('active');
+function setLoading(msg, sub) {
+    overlay.className = 'overlay active';
+    overlaySpinner.style.display = '';
+    retryBtn.style.display = 'none';
+    overlayMsg.textContent = msg;
+    overlaySub.textContent = sub;
+}
+
+function setError(msg, sub) {
+    overlay.className = 'overlay active error';
+    overlayMsg.textContent = msg;
+    overlaySub.textContent = sub;
+}
+
+function hideOverlay() {
+    overlay.className = 'overlay';
+}
+
+function freePrevBlob() {
+    if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = null;
+    }
+}
+
+function injectBase(html, siteUrl) {
+    try {
+        const origin = new URL(siteUrl).origin + '/';
+        const tag = `<base href="${origin}">`;
+        if (/<head(\s[^>]*)?>/.test(html)) {
+            return html.replace(/<head(\s[^>]*)?>/, m => m + tag);
         }
+        return tag + html;
+    } catch {
+        return html;
+    }
+}
 
-        function clearError() {
-            errorBar.classList.remove('active');
-            errorBar.textContent = '';
+async function tryProxy(proxy, targetUrl) {
+    const proxyUrl = proxy.build(targetUrl);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 14000);
+
+    let res;
+    try {
+        res = await fetch(proxyUrl, { signal: controller.signal });
+    } finally {
+        clearTimeout(timeout);
+    }
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const html = await res.text();
+    if (!html || html.trim().length < 50) throw new Error('Empty response');
+
+    // Detect proxy-level error pages
+    const preview = html.slice(0, 600).toLowerCase();
+    if (html.length < 600 && (preview.includes('error') || preview.includes('denied') || preview.includes('blocked'))) {
+        throw new Error('Proxy error page returned');
+    }
+
+    return injectBase(html, targetUrl);
+}
+
+async function navigateFrame() {
+    let targetUrl = urlInput.value.trim();
+    if (!targetUrl) return;
+
+    if (!/^https?:\/\//i.test(targetUrl)) targetUrl = 'https://' + targetUrl;
+    urlInput.value = targetUrl;
+    lastUrl = targetUrl;
+
+    loadBtn.disabled = true;
+    freePrevBlob();
+    frame.src = 'about:blank';
+
+    let lastErr = null;
+
+    for (let i = 0; i < PROXIES.length; i++) {
+        const proxy = PROXIES[i];
+        setLoading(`Proxy ${i + 1}/${PROXIES.length} — ${proxy.name}`, 'Fetching…');
+        proxyStatus.textContent = `Trying ${proxy.name}…`;
+
+        try {
+            const html = await tryProxy(proxy, targetUrl);
+            const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+            currentBlobUrl = URL.createObjectURL(blob);
+            frame.src = currentBlobUrl;
+            proxyStatus.textContent = `✓ ${proxy.name}`;
+            hideOverlay();
+            loadBtn.disabled = false;
+            return;
+        } catch (err) {
+            lastErr = err;
+            proxyStatus.textContent = `✗ ${proxy.name}: ${err.message}`;
+            await new Promise(r => setTimeout(r, 300));
         }
+    }
 
-        // Rewrites relative URLs in fetched HTML to absolute so assets load correctly
-        function rewriteUrls(html, baseUrl) {
-            const base = new URL(baseUrl);
-            const origin = base.origin;
-            const basePath = base.href.substring(0, base.href.lastIndexOf('/') + 1);
+    setError('All proxies failed for this URL.', lastErr?.message || 'Unknown error');
+    proxyStatus.textContent = 'All failed';
+    loadBtn.disabled = false;
+}
 
-            // Inject a <base> tag so the browser resolves remaining relative URLs
-            const baseTag = `<base href="${origin}/">`;
-            if (/<head[\s>]/i.test(html)) {
-                html = html.replace(/(<head[\s>][^>]*>)/i, `$1${baseTag}`);
-            } else if (/<html[\s>]/i.test(html)) {
-                html = html.replace(/(<html[\s>][^>]*>)/i, `$1<head>${baseTag}</head>`);
-            } else {
-                html = baseTag + html;
-            }
-
-            return html;
-        }
-
-        async function navigateFrame() {
-            let targetUrl = urlInput.value.trim();
-            if (!targetUrl) return;
-
-            if (!/^https?:\/\//i.test(targetUrl)) {
-                targetUrl = 'https://' + targetUrl;
-            }
-            urlInput.value = targetUrl;
-            clearError();
-
-            // Revoke any previous blob URL to free memory
-            const prevSrc = sandboxFrame.src;
-            if (prevSrc && prevSrc.startsWith('blob:')) {
-                URL.revokeObjectURL(prevSrc);
-            }
-
-            loadingOverlay.classList.add('active');
-            sandboxFrame.src = 'about:blank';
-
-            try {
-                const proxyUrl = PROXIES[activeProxy](targetUrl);
-                const res = await fetch(proxyUrl);
-
-                if (!res.ok) {
-                    throw new Error(`Proxy returned HTTP ${res.status}`);
-                }
-
-                const html = await res.text();
-
-                if (!html || html.trim().length === 0) {
-                    throw new Error('Proxy returned empty response. Try a different proxy.');
-                }
-
-                // Rewrite relative URLs → absolute so assets load
-                const rewritten = rewriteUrls(html, targetUrl);
-
-                // Render via blob URL — avoids X-Frame-Options / CSP blocking
-                const blob = new Blob([rewritten], { type: 'text/html; charset=utf-8' });
-                const blobUrl = URL.createObjectURL(blob);
-                sandboxFrame.src = blobUrl;
-
-            } catch (err) {
-                sandboxFrame.src = 'about:blank';
-                showError(`⚠ Failed: ${err.message}`);
-            } finally {
-                loadingOverlay.classList.remove('active');
-            }
-        }
-
-        loadBtn.addEventListener('click', navigateFrame);
-        urlInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                navigateFrame();
-            }
-        });
-    </script>
+loadBtn.addEventListener('click', navigateFrame);
+urlInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); navigateFrame(); }
+});
+retryBtn.addEventListener('click', () => {
+    if (lastUrl) { urlInput.value = lastUrl; navigateFrame(); }
+});
+</script>
 </body>
 </html>
