@@ -299,8 +299,9 @@
                     <label class="checkbox-label"><input type="checkbox" name="flags" value="AI-generated images"><span class="custom-box"></span>AI-generated images</label>
                     <label class="checkbox-label"><input type="checkbox" name="flags" value="Mismatched name/location"><span class="custom-box"></span>Mismatched name/location</label>
                     
-                    <div style="margin-top: 15px;">
-                        <input type="text" id="otherFlag" placeholder="Other custom flag...">
+                    <div style="margin-top: 15px; display: flex; gap: 10px;" id="customFlagInputGroup">
+                        <input type="text" id="otherFlag" placeholder="Other custom flag..." style="flex-grow: 1;">
+                        <button type="button" class="btn btn-small" id="addFlagBtn">+</button>
                     </div>
                 </div>
             </div>
@@ -368,9 +369,29 @@
 <script>
     const socialsContainer = document.getElementById('socialsContainer');
     const addSocialBtn = document.getElementById('addSocialBtn');
+    const addFlagBtn = document.getElementById('addFlagBtn');
+    const otherFlagInput = document.getElementById('otherFlag');
+    const customFlagInputGroup = document.getElementById('customFlagInputGroup');
     const reportForm = document.getElementById('reportForm');
     const formView = document.getElementById('form-view');
     const reportView = document.getElementById('report-view');
+
+    // Handle adding dynamic custom checkboxes to checklist
+    addFlagBtn.addEventListener('click', () => {
+        const flagValue = otherFlagInput.value.trim();
+        if (flagValue !== "") {
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            label.innerHTML = `
+                <input type="checkbox" name="flags" value="${flagValue}" checked>
+                <span class="custom-box"></span>
+                ${flagValue}
+            `;
+            // Insert new checkbox directly above the input group
+            customFlagInputGroup.parentNode.insertBefore(label, customFlagInputGroup);
+            otherFlagInput.value = "";
+        }
+    });
 
     // Handle adding dynamic multiple social inputs
     addSocialBtn.addEventListener('click', () => {
@@ -387,7 +408,6 @@
     reportForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        // 1. Gather all values from the inputs
         const pfp = document.getElementById('pfp').value;
         const targetName = document.getElementById('targetName').value;
         const roleClaimed = document.getElementById('roleClaimed').value;
@@ -395,14 +415,17 @@
         const description = document.getElementById('description').value;
         const chatlogs = document.getElementById('chatlogs').value;
 
-        // Gather all system checked flags
+        // Gather all checked flags (includes custom checkboxes created via the button)
         let checkedFlags = [];
         document.querySelectorAll('input[name="flags"]:checked').forEach(cb => {
             checkedFlags.push(cb.value);
         });
-        // Append custom flag if input filled
-        const otherFlag = document.getElementById('otherFlag').value.trim();
-        if(otherFlag) checkedFlags.push(otherFlag);
+        
+        // Check if there is leftover text in the input box that hasn't been added yet
+        const remainingFlag = otherFlagInput.value.trim();
+        if(remainingFlag && !checkedFlags.includes(remainingFlag)) {
+            checkedFlags.push(remainingFlag);
+        }
 
         // Gather all socials
         let socialsData = [];
@@ -417,7 +440,6 @@
             }
         }
 
-        // 2. Package everything neatly into an object for serialization
         const payload = {
             pfp,
             targetName,
@@ -429,28 +451,22 @@
             socials: socialsData
         };
 
-        // 3. Stringify & convert to safe URL parameters base64 code string
         const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-        
-        // Reload current state with string data configuration in current parameters
         window.location.href = window.location.origin + window.location.pathname + '?report=' + encodedData;
     });
 
-    // Parse URL parameter configuration layout structure logic engine
+    // Parse URL parameters configuration structure
     function loadReportFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         const reportDataRaw = urlParams.get('report');
 
         if (reportDataRaw) {
             try {
-                // Decode the complex query data structure securely
                 const data = JSON.parse(decodeURIComponent(escape(atob(reportDataRaw))));
 
-                // Inject UI Form Values directly cleanly inside document elements
                 formView.style.display = 'none';
                 reportView.classList.remove('hidden');
 
-                // Profile Image Setup configuration parsing rules
                 const pfpImg = document.getElementById('outPfp');
                 if (data.pfp && data.pfp.trim() !== "") {
                     pfpImg.src = data.pfp;
@@ -458,13 +474,11 @@
                     pfpImg.style.display = 'none';
                 }
 
-                // Core elements variables assignment mappings
                 document.getElementById('outName').textContent = data.targetName || "UNKNOWN RECORD";
                 document.getElementById('outRole').textContent = data.roleClaimed || "None Documented";
                 document.getElementById('outOther').textContent = data.otherInfo || "N/A";
                 document.getElementById('outDesc').textContent = data.description || "No specific detailed description logged.";
 
-                // Process Active Red Flags Checked elements array items lists
                 const flagsList = document.getElementById('outFlags');
                 if (data.flags && data.flags.length > 0) {
                     data.flags.forEach(flag => {
@@ -477,14 +491,12 @@
                     document.getElementById('flagsSection').style.display = 'none';
                 }
 
-                // Process Clean Masked Buttons for Target Profiles Social Link lists
                 const socialsDiv = document.getElementById('outSocials');
                 if (data.socials && data.socials.length > 0) {
                     data.socials.forEach(soc => {
                         const a = document.createElement('a');
                         a.className = 'link-btn';
                         a.textContent = soc.platform;
-                        // Format handles safely if it doesn't contain standard schema structure link components
                         a.href = soc.url.startsWith('http') ? soc.url : 'https://' + soc.url;
                         a.target = '_blank';
                         socialsDiv.appendChild(a);
@@ -493,7 +505,6 @@
                     document.getElementById('socialsSection').style.display = 'none';
                 }
 
-                // Masked Chatlogs button configuration logic operations rule
                 const chatlogsBtn = document.getElementById('outChatlogs');
                 if (data.chatlogs && data.chatlogs.trim() !== "") {
                     chatlogsBtn.href = data.chatlogs.startsWith('http') ? data.chatlogs : 'https://' + data.chatlogs;
@@ -501,17 +512,15 @@
                     document.getElementById('chatlogsSection').style.display = 'none';
                 }
 
-                // Prevent users from clicking "Back" to form page inside browser application stack index state logic variables rules
                 window.history.replaceState(null, null, window.location.href);
 
             } catch (error) {
-                console.error("Failed handling processing payload decryption parsing configs: ", error);
+                console.error("Failed processing payload: ", error);
                 alert("Data error loading system configuration file parameters.");
             }
         }
     }
 
-    // Run core analyzer checks upon instantiation execution
     window.onload = loadReportFromURL;
 </script>
 </body>
