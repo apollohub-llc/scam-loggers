@@ -61,37 +61,61 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
             max-width: 800px;
             width: 100%;
             align-self: center;
         }
 
+        /* Message Wrapper to align group components */
+        .message-wrapper {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wrapper-me { justify-content: flex-end; }
+        .wrapper-scammer { justify-content: flex-start; }
+
         .message {
-            max-width: 80%;
+            max-width: 75%;
             padding: 10px 14px;
             border-radius: 15px;
             font-size: 14px;
             line-height: 1.4;
             word-wrap: break-word;
             white-space: pre-wrap;
-            position: relative;
         }
 
-        /* Messenger Sides */
         .msg-me {
-            align-self: flex-end;
             background: var(--primary-orange);
             color: black;
             border-bottom-right-radius: 2px;
         }
 
         .msg-scammer {
-            align-self: flex-start;
             background: var(--scammer-bg);
             color: white;
             border-bottom-left-radius: 2px;
             border-left: 3px solid var(--primary-orange);
+        }
+
+        /* Per-Message Delete Button */
+        .msg-del-btn {
+            background: transparent;
+            border: none;
+            color: #ff3333;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+
+        .msg-del-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
         }
 
         /* --- Input Area --- */
@@ -186,8 +210,8 @@
 
     <script>
         let activeSlot = localStorage.getItem('apollo_active_slot') || null;
-        let currentMessages = []; // Will store objects: { sender: 'Me'|'Scammer', text: '...' }
-        let currentMode = 'I'; // I = Me, O = Scammer
+        let currentMessages = []; 
+        let currentMode = 'I'; 
 
         const chatContainer = document.getElementById('chat-container');
         const chatInput = document.getElementById('chat-input');
@@ -215,12 +239,34 @@
 
         function renderMessages() {
             chatContainer.innerHTML = '';
-            currentMessages.forEach(msg => {
-                const div = document.createElement('div');
+            currentMessages.forEach((msg, index) => {
+                const wrapper = document.createElement('div');
                 const isMe = msg.sender === 'Me';
-                div.className = `message ${isMe ? 'msg-me' : 'msg-scammer'}`;
-                div.textContent = msg.text;
-                chatContainer.appendChild(div);
+                
+                wrapper.className = `message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-scammer'}`;
+
+                // Create the Delete Button
+                const delBtn = document.createElement('button');
+                delBtn.className = 'msg-del-btn';
+                delBtn.innerHTML = '✕';
+                delBtn.title = 'Delete message';
+                delBtn.onclick = () => deleteIndividualMessage(index);
+
+                // Create Message Bubble
+                const msgBubble = document.createElement('div');
+                msgBubble.className = `message ${isMe ? 'msg-me' : 'msg-scammer'}`;
+                msgBubble.textContent = msg.text;
+
+                // Structure layout based on sender (keep X easily accessible)
+                if (isMe) {
+                    wrapper.appendChild(delBtn);
+                    wrapper.appendChild(msgBubble);
+                } else {
+                    wrapper.appendChild(msgBubble);
+                    wrapper.appendChild(delBtn);
+                }
+
+                chatContainer.appendChild(wrapper);
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
@@ -244,6 +290,11 @@
                 chatInput.style.height = 'auto';
                 renderMessages();
             }
+        }
+
+        function deleteIndividualMessage(index) {
+            currentMessages.splice(index, 1);
+            renderMessages();
         }
 
         function clearThreadContent() {
