@@ -22,7 +22,6 @@
             padding: 15px;
         }
 
-        /* Header Area */
         header {
             display: flex;
             justify-content: space-between;
@@ -52,7 +51,6 @@
             box-shadow: inset 0 0 5px rgba(255, 102, 0, 0.2);
         }
 
-        /* Main Workspace Content Layout */
         .workspace {
             flex: 1;
             display: flex;
@@ -61,7 +59,6 @@
             min-height: 0;
         }
 
-        /* Iframe Frame container */
         .iframe-container {
             flex: 1;
             background: #ffffff;
@@ -72,7 +69,56 @@
             overflow: hidden;
         }
 
-        /* Sandbox Iframe Configuration */
+        /* Loading overlay */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 5, 0, 0.85);
+            z-index: 10;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 14px;
+            color: #ff6600;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255, 102, 0, 0.2);
+            border-top-color: #ff6600;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error message bar */
+        .error-bar {
+            display: none;
+            background: rgba(180, 30, 0, 0.2);
+            border: 1px solid #cc3300;
+            color: #ff6644;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+        }
+
+        .error-bar.active {
+            display: block;
+        }
+
         iframe {
             width: 100%;
             height: 100%;
@@ -80,19 +126,23 @@
             background: #ffffff;
         }
 
-        /* Control Bar Area underneath the frame */
         .control-bar {
             background: rgba(10, 5, 0, 0.8);
             border: 1px solid #ff6600;
             border-radius: 6px;
             padding: 12px;
             display: flex;
-            gap: 10px;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
             box-shadow: 0 0 15px rgba(255, 102, 0, 0.1);
         }
 
-        /* Custom URL textareabar styled to match theme */
+        .control-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .url-textarea {
             flex: 1;
             height: 42px;
@@ -115,7 +165,6 @@
             box-shadow: 0 0 10px rgba(255, 136, 51, 0.5);
         }
 
-        /* Action Launch Button */
         .launch-btn {
             background: #ff6600;
             border: none;
@@ -129,6 +178,7 @@
             letter-spacing: 1px;
             transition: background 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 0 10px rgba(255, 102, 0, 0.4);
+            white-space: nowrap;
         }
 
         .launch-btn:hover {
@@ -138,6 +188,47 @@
 
         .launch-btn:active {
             transform: scale(0.98);
+        }
+
+        /* Proxy selector pills */
+        .proxy-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .proxy-label {
+            font-size: 0.72rem;
+            color: #aa6633;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 4px;
+        }
+
+        .proxy-pill {
+            background: #140b02;
+            border: 1px solid #663300;
+            color: #cc7733;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .proxy-pill:hover {
+            border-color: #ff6600;
+            color: #ff8833;
+        }
+
+        .proxy-pill.active {
+            background: rgba(255, 102, 0, 0.15);
+            border-color: #ff6600;
+            color: #ff6600;
+            box-shadow: 0 0 6px rgba(255, 102, 0, 0.3);
         }
     </style>
 </head>
@@ -150,24 +241,34 @@
 
     <div class="workspace">
         <div class="iframe-container">
-            <!-- 
-              Omitting allow-top-navigation forces redirects to stay inside the frame.
-              Added allow-downloads and updated script options to support webapp mechanics.
-            -->
-            <iframe 
-                id="sandbox-frame" 
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
+                <span>Routing through proxy...</span>
+            </div>
+            <iframe
+                id="sandbox-frame"
                 sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals allow-downloads"
                 src="about:blank">
             </iframe>
         </div>
 
+        <div id="error-bar" class="error-bar"></div>
+
         <div class="control-bar">
-            <textarea 
-                id="url-input" 
-                class="url-textarea" 
-                placeholder="Enter URL (e.g., roblox.com)..." 
-                rows="1"></textarea>
-            <button id="load-btn" class="launch-btn">Execute</button>
+            <div class="control-row">
+                <textarea
+                    id="url-input"
+                    class="url-textarea"
+                    placeholder="Enter URL (e.g., example.com)..."
+                    rows="1"></textarea>
+                <button id="load-btn" class="launch-btn">Execute</button>
+            </div>
+            <div class="proxy-row">
+                <span class="proxy-label">Proxy:</span>
+                <div class="proxy-pill active" data-proxy="corsproxy">CORSProxy.io</div>
+                <div class="proxy-pill" data-proxy="allorigins">AllOrigins</div>
+                <div class="proxy-pill" data-proxy="htmlpreview">HTMLPreview</div>
+            </div>
         </div>
     </div>
 
@@ -175,29 +276,107 @@
         const urlInput = document.getElementById('url-input');
         const loadBtn = document.getElementById('load-btn');
         const sandboxFrame = document.getElementById('sandbox-frame');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const errorBar = document.getElementById('error-bar');
 
-        // Using a reliable node-based reverse proxy gateway to clean strict headers
-        const PROXY_GATEWAY = 'https://api.allorigins.win/raw?url=';
+        // Available proxy gateways
+        const PROXIES = {
+            corsproxy:   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            allorigins:  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            htmlpreview: url => `https://htmlpreview.github.io/?${encodeURIComponent(url)}`
+        };
 
-        function navigateFrame() {
+        let activeProxy = 'corsproxy';
+
+        // Proxy pill selection
+        document.querySelectorAll('.proxy-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.proxy-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                activeProxy = pill.dataset.proxy;
+            });
+        });
+
+        function showError(msg) {
+            errorBar.textContent = msg;
+            errorBar.classList.add('active');
+        }
+
+        function clearError() {
+            errorBar.classList.remove('active');
+            errorBar.textContent = '';
+        }
+
+        // Rewrites relative URLs in fetched HTML to absolute so assets load correctly
+        function rewriteUrls(html, baseUrl) {
+            const base = new URL(baseUrl);
+            const origin = base.origin;
+            const basePath = base.href.substring(0, base.href.lastIndexOf('/') + 1);
+
+            // Inject a <base> tag so the browser resolves remaining relative URLs
+            const baseTag = `<base href="${origin}/">`;
+            if (/<head[\s>]/i.test(html)) {
+                html = html.replace(/(<head[\s>][^>]*>)/i, `$1${baseTag}`);
+            } else if (/<html[\s>]/i.test(html)) {
+                html = html.replace(/(<html[\s>][^>]*>)/i, `$1<head>${baseTag}</head>`);
+            } else {
+                html = baseTag + html;
+            }
+
+            return html;
+        }
+
+        async function navigateFrame() {
             let targetUrl = urlInput.value.trim();
-            
             if (!targetUrl) return;
 
-            // Enforce protocol prefix formatting
             if (!/^https?:\/\//i.test(targetUrl)) {
                 targetUrl = 'https://' + targetUrl;
             }
-
             urlInput.value = targetUrl;
+            clearError();
 
-            // Route via gateway to strip anti-framing headers (X-Frame-Options/CSP)
-            sandboxFrame.src = PROXY_GATEWAY + encodeURIComponent(targetUrl);
+            // Revoke any previous blob URL to free memory
+            const prevSrc = sandboxFrame.src;
+            if (prevSrc && prevSrc.startsWith('blob:')) {
+                URL.revokeObjectURL(prevSrc);
+            }
+
+            loadingOverlay.classList.add('active');
+            sandboxFrame.src = 'about:blank';
+
+            try {
+                const proxyUrl = PROXIES[activeProxy](targetUrl);
+                const res = await fetch(proxyUrl);
+
+                if (!res.ok) {
+                    throw new Error(`Proxy returned HTTP ${res.status}`);
+                }
+
+                const html = await res.text();
+
+                if (!html || html.trim().length === 0) {
+                    throw new Error('Proxy returned empty response. Try a different proxy.');
+                }
+
+                // Rewrite relative URLs → absolute so assets load
+                const rewritten = rewriteUrls(html, targetUrl);
+
+                // Render via blob URL — avoids X-Frame-Options / CSP blocking
+                const blob = new Blob([rewritten], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                sandboxFrame.src = blobUrl;
+
+            } catch (err) {
+                sandboxFrame.src = 'about:blank';
+                showError(`⚠ Failed: ${err.message}`);
+            } finally {
+                loadingOverlay.classList.remove('active');
+            }
         }
 
         loadBtn.addEventListener('click', navigateFrame);
-
-        urlInput.addEventListener('keydown', (e) => {
+        urlInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 navigateFrame();
