@@ -36,7 +36,7 @@
         const content = inputArea.value;
         const doc = frame.contentDocument || frame.contentWindow.document;
         
-        // Force settings into the preview frame to manage layout and custom comment displays
+        // Force settings into the preview frame with ultra-small micro comment badge styling
         const forceStyles = `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
@@ -44,14 +44,18 @@
                 .apollo-comment-badge {
                     background: #ff6600 !important;
                     color: #000 !important;
-                    font-size: 11px !important;
-                    font-family: sans-serif !important;
+                    font-size: 9px !important;
+                    line-height: 10px !important;
+                    font-family: monospace !important;
                     font-weight: bold !important;
-                    padding: 2px 6px !important;
-                    border-radius: 3px !important;
+                    padding: 1px 3px !important;
+                    border-radius: 2px !important;
                     display: inline-block !important;
-                    margin: 4px !important;
+                    margin: 2px !important;
                     vertical-align: middle !important;
+                    max-height: 12px !important;
+                    text-transform: none !important;
+                    letter-spacing: 0 !important;
                     outline: none !important;
                 }
             </style>
@@ -71,7 +75,6 @@
         // Double-tap handler to add comment
         let lastTap = 0;
         doc.body.addEventListener('touchend', (e) => {
-            // Prevent triggering comments on already made comment badges
             if (e.target.classList.contains('apollo-comment-badge')) return;
 
             const now = Date.now();
@@ -81,25 +84,21 @@
                 const commentText = prompt("Enter your comment to save:");
                 if (commentText && commentText.trim() !== "") {
                     
-                    // 1. Visually display the comment inside the preview right away
+                    // 1. Visually display the micro-sized comment inside the preview right away
                     const badge = doc.createElement('span');
                     badge.className = 'apollo-comment-badge';
-                    badge.innerText = `[Note: ${commentText}]`;
+                    badge.innerText = `[# ${commentText}]`;
                     e.target.parentNode.insertBefore(badge, e.target);
-                    e.target.style.outline = "2px solid #ff6600";
+                    e.target.style.outline = "1px solid #ff6600";
 
                     // 2. Permanently target and save the comment directly into your main Input source
                     const targetOuterHTML = e.target.outerHTML;
                     const currentSource = inputArea.value;
-
-                    // Create the proper standard HTML comment string
                     const htmlComment = `<!-- Comment: ${commentText} -->\n`;
 
-                    // If we can pinpoint the exact element inside the source code, prepend the comment to it
                     if (currentSource.includes(targetOuterHTML)) {
                         inputArea.value = currentSource.replace(targetOuterHTML, htmlComment + targetOuterHTML);
                     } else {
-                        // Fallback fallback mechanism: search via innerText context if matching outerHTML fails due to browser normalizations
                         const sampleIdentifier = e.target.innerText ? e.target.innerText.trim().substring(0, 20) : '';
                         if (sampleIdentifier && currentSource.includes(sampleIdentifier)) {
                             const position = currentSource.indexOf(sampleIdentifier);
@@ -108,7 +107,6 @@
                                 inputArea.value = currentSource.slice(0, tagStart) + htmlComment + currentSource.slice(tagStart);
                             }
                         } else {
-                            // Absolute fallback: Append comment to the very end of the source input if element signature isn't unique
                             inputArea.value = currentSource + `\n${htmlComment}`;
                         }
                     }
@@ -123,7 +121,6 @@
     }
 
     function exportCode() {
-        // Source input is already updated instantly on double-tap, so we copy it directly!
         const sourceCode = inputArea.value;
         if (!sourceCode.trim()) {
             alert("No source code available to copy.");
