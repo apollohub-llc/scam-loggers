@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates Hub - Admin Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #0f0f12; color: #e5e7eb; padding: 2rem; }
+        .container { max-width: 600px; margin: 0 auto; background: #16161a; padding: 2rem; border-radius: 12px; border: 1px solid #26262b; }
+        h1 { color: #ff6600; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: #9ca3af; }
+        input, textarea {
+            width: 100%; padding: 0.75rem; background: #1c1c21; border: 1px solid #26262b; border-radius: 8px; color: white; font-family: inherit;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #ff6600; }
+        textarea { height: 150px; resize: vertical; }
+        
+        .btn-container { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        button {
+            width: 100%; padding: 0.75rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.1s;
+            background: #ff6600; color: white;
+        }
+        button:hover { background: #e05900; }
+        .cancel-btn { background: #26262b; color: #e5e7eb; border: 1px solid #36363b; display: none; }
+        .cancel-btn:hover { background: #323239; }
+        
+        .manage-section { margin-top: 3rem; border-top: 1px solid #26262b; padding-top: 2rem; }
+        .search-bar { margin-bottom: 1.5rem; border-color: #36363b; }
+        .search-bar:focus { border-color: #ff6600; }
+        
+        .template-list-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #1c1c21; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid #26262b;
+        }
+        .item-details { display: flex; flex-direction: column; gap: 0.25rem; }
+        .item-title { font-weight: 600; color: #fff; }
+        .item-actions { display: flex; gap: 0.5rem; }
+        .edit-btn { background: #2563eb; width: auto; padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .edit-btn:hover { background: #1d4ed8; }
+        .delete-btn { background: #dc2626; width: auto; padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .delete-btn:hover { background: #b91c1c; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="form-title">Add New Template</h1>
+        <form id="template-form">
+            <div class="form-group">
+                <label>Template Name</label>
+                <input type="text" id="tpl-title" placeholder="e.g., Portfolio Neon v1" required>
+            </div>
+            <div class="form-group">
+                <label>Thumbnail Image URL</label>
+                <input type="url" id="tpl-image" placeholder="https://example.com/preview.png" required>
+            </div>
+            <div class="form-group">
+                <label>Live Preview Link</label>
+                <input type="url" id="tpl-view" placeholder="https://template-link-here" required>
+            </div>
+            <div class="form-group">
+                <label>Source Code</label>
+                <textarea id="tpl-source" placeholder="Paste template source code here..." required></textarea>
+            </div>
+            <div class="btn-container">
+                <button type="button" id="btn-cancel" class="cancel-btn">Cancel Edit</button>
+                <button type="submit" id="btn-submit">Upload Template</button>
+            </div>
+        </form>
+
+        <div class="manage-section">
+            <h1>Existing Templates</h1>
+            <input type="text" id="search-input" class="search-bar" placeholder="Search templates by name...">
+            <div id="templates-list">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration and Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7k_qgqZ_HzDtfHmQcbakWm2EkCVlDXxM",
+            authDomain: "website-templates-60c6d.firebaseapp.com",
+            projectId: "website-templates-60c6d",
+            storageBucket: "website-templates-60c6d.firebasestorage.app",
+            messagingSenderId: "799034936266",
+            appId: "1:799034936266:web:d0954b442aafd895a5dd33",
+            measurementId: "G-BKK5Y8F4HT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allTemplates = []; // Memory cache to make fast local searching work
+        let currentEditId = null; // Tracks if we are editing or creating a new item
+
+        const formTitle = document.getElementById('form-title');
+        const submitBtn = document.getElementById('btn-submit');
+        const cancelBtn = document.getElementById('btn-cancel');
+        const templateForm = document.getElementById('template-form');
+        const searchInput = document.getElementById('search-input');
+        const listContainer = document.getElementById('templates-list');
+
+        // Fetch items from Firestore
+        async function loadAdminList() {
+            listContainer.innerHTML = "Loading...";
+            try {
+                const querySnapshot = await getDocs(collection(db, "templates"));
+                allTemplates = [];
+                querySnapshot.forEach((documentSnapshot) => {
+                    allTemplates.push({
+                        id: documentSnapshot.id,
+                        ...documentSnapshot.data()
+                    });
+                });
+                renderList(allTemplates);
+            } catch (err) {
+                listContainer.innerText = "Error loading list from database.";
+            }
+        }
+
+        // Render filtered elements to view
+        function renderList(templates) {
+            listContainer.innerHTML = "";
+            if (templates.length === 0) {
+                listContainer.innerHTML = "<p style='color: #666;'>No templates match your layout search.</p>";
+                return;
+            }
+            templates.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = 'template-list-item';
+                row.innerHTML = `
+                    <div class="item-details">
+                        <span class="item-title">${item.title || 'Untitled'}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button class="edit-btn" data-id="${item.id}">Edit</button>
+                        <button class="delete-btn" data-id="${item.id}">Delete</button>
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
+
+        // Live Client-side Local Searching
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const filtered = allTemplates.filter(item => 
+                (item.title || '').toLowerCase().includes(query)
+            );
+            renderList(filtered);
+        });
+
+        // Form Submit Actions (Handles both ADD and UPDATE)
+        templateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('tpl-title').value;
+            const image = document.getElementById('tpl-image').value;
+            const viewLink = document.getElementById('tpl-view').value;
+            const sourceCode = document.getElementById('tpl-source').value;
+
+            try {
+                if (currentEditId) {
+                    // Update Operation
+                    await updateDoc(doc(db, "templates", currentEditId), {
+                        title, image, viewLink, sourceCode
+                    });
+                    alert("Template updated successfully!");
+                    resetFormState();
+                } else {
+                    // Insert Add Operation
+                    await addDoc(collection(db, "templates"), {
+                        title, image, viewLink, sourceCode, createdAt: new Date()
+                    });
+                    alert("Template uploaded successfully!");
+                    templateForm.reset();
+                }
+                loadAdminList();
+            } catch (err) {
+                alert("Operation failed database insertion.");
+            }
+        });
+
+        // Handle Item Button Event Routing
+        listContainer.addEventListener('click', async (e) => {
+            const id = e.target.getAttribute('data-id');
+            if (!id) return;
+
+            if (e.target.classList.contains('edit-btn')) {
+                // Find matching cache data item
+                const item = allTemplates.find(t => t.id === id);
+                if (item) {
+                    currentEditId = id;
+                    formTitle.innerText = "Edit Template Mode";
+                    submitBtn.innerText = "Save Changes";
+                    cancelBtn.style.display = "block";
+
+                    // Load fields back up to modification inputs
+                    document.getElementById('tpl-title').value = item.title || "";
+                    document.getElementById('tpl-image').value = item.image || "";
+                    document.getElementById('tpl-view').value = item.viewLink || "";
+                    document.getElementById('tpl-source').value = item.sourceCode || "";
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } else if (e.target.classList.contains('delete-btn')) {
+                if (confirm("Delete this template permanently?")) {
+                    try {
+                        await deleteDoc(doc(db, "templates", id));
+                        if (currentEditId === id) resetFormState();
+                        loadAdminList();
+                    } catch (err) {
+                        alert("Delete execution failure.");
+                    }
+                }
+            }
+        });
+
+        // Cancel editing configuration function
+        function resetFormState() {
+            currentEditId = null;
+            formTitle.innerText = "Add New Template";
+            submitBtn.innerText = "Upload Template";
+            cancelBtn.style.display = "none";
+            templateForm.reset();
+        }
+
+        cancelBtn.addEventListener('click', resetFormState);
+
+        // Run Initial Loader Task Setup
+        loadAdminList();
+    </script>
+</body>
+</html>
