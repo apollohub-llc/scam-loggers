@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Compressor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">HTML Compressor</h1>
+        <p class="text-center text-gray-600 mb-8">Remove unnecessary spaces, comments, and compress your HTML code</p>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2">Paste Your HTML Code</label>
+            <textarea id="inputCode" class="w-full h-64 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your HTML code here..."></textarea>
+        </div>
+
+        <div class="flex justify-center gap-4 mb-6">
+            <button onclick="compressHTML()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Compress Code</button>
+            <button onclick="clearAll()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Clear All</button>
+            <button onclick="copyOutput()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">Copy Result</button>
+        </div>
+
+        <div>
+            <label class="block text-gray-700 font-semibold mb-2">Compressed Output</label>
+            <textarea id="outputCode" class="w-full h-64 p-4 border border-gray-300 rounded-lg bg-gray-50" readonly placeholder="Compressed code will appear here..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        function compressHTML() {
+            let code = document.getElementById('inputCode').value;
+
+            // Remove HTML comments
+            code = code.replace(/<!--[\s\S]*?-->/g, '');
+
+            // Remove multiple spaces, tabs, newlines
+            code = code.replace(/\s+/g, ' ');
+
+            // Remove spaces between tags
+            code = code.replace(/>\s+</g, '><');
+
+            // Trim leading/trailing spaces
+            code = code.trim();
+
+            document.getElementById('outputCode').value = code;
+        }
+
+        function clearAll() {
+            document.getElementById('inputCode').value = '';
+            document.getElementById('outputCode').value = '';
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputCode');
+            output.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
