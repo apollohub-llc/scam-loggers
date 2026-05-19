@@ -25,7 +25,10 @@
     </div>
 </div>
 
-<div id="preview-wrapper"><iframe id="renderFrame"></iframe></div>
+<!-- Added native sandbox restriction to block external scripts and redirects -->
+<div id="preview-wrapper">
+    <iframe id="renderFrame" sandbox="allow-same-origin"></iframe>
+</div>
 
 <script>
     const frame = document.getElementById('renderFrame');
@@ -36,11 +39,15 @@
         const content = inputArea.value;
         const doc = frame.contentDocument || frame.contentWindow.document;
         
-        // Force settings into the preview frame with ultra-small micro comment badge styling
+        // Injected rules force a strict viewport, downsize badges, and disable button actions natively via CSS
         const forceStyles = `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
                 html, body { touch-action: manipulation !important; -webkit-user-select: none !important; user-select: none !important; overscroll-behavior: none !important; }
+                
+                /* Disable links, button animations, and standard clicks so they act like plain text containers */
+                a, button, input, select, textarea { pointer-events: none !important; cursor: default !important; }
+                
                 .apollo-comment-badge {
                     background: #ff6600 !important;
                     color: #000 !important;
@@ -57,6 +64,7 @@
                     text-transform: none !important;
                     letter-spacing: 0 !important;
                     outline: none !important;
+                    pointer-events: none !important; /* Prevents badge from breaking selection triggers */
                 }
             </style>
         `;
@@ -72,7 +80,13 @@
         doc.write(fullContent);
         doc.close();
 
-        // Double-tap handler to add comment
+        // Strict event interception layer to freeze form submittal and click redirects
+        const win = frame.contentWindow;
+        const killEvent = (e) => { e.preventDefault(); e.stopPropagation(); };
+        win.addEventListener('click', killEvent, true);
+        win.addEventListener('submit', killEvent, true);
+
+        // Double-tap handler to target and add comment safely
         let lastTap = 0;
         doc.body.addEventListener('touchend', (e) => {
             if (e.target.classList.contains('apollo-comment-badge')) return;
@@ -84,14 +98,14 @@
                 const commentText = prompt("Enter your comment to save:");
                 if (commentText && commentText.trim() !== "") {
                     
-                    // 1. Visually display the micro-sized comment inside the preview right away
+                    // 1. Visually display micro comment badge inside the frozen preview element
                     const badge = doc.createElement('span');
                     badge.className = 'apollo-comment-badge';
                     badge.innerText = `[# ${commentText}]`;
                     e.target.parentNode.insertBefore(badge, e.target);
                     e.target.style.outline = "1px solid #ff6600";
 
-                    // 2. Permanently target and save the comment directly into your main Input source
+                    // 2. Permanently update the comment in the source textarea code block
                     const targetOuterHTML = e.target.outerHTML;
                     const currentSource = inputArea.value;
                     const htmlComment = `<!-- Comment: ${commentText} -->\n`;
