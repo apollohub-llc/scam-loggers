@@ -42,9 +42,14 @@
                 html, body { touch-action: manipulation !important; -webkit-user-select: none !important; user-select: none !important; overscroll-behavior: none !important; position: relative; }
                 a, button, input, select, textarea { pointer-events: none !important; cursor: default !important; }
                 
-                /* Badges float strictly above elements without pushing layout content around */
+                /* Ensure target containers can anchor the absolute badge correctly */
+                * { position: relative; }
+
+                /* Badges float strictly inside and at the top-left of the target element */
                 .apollo-comment-badge {
                     position: absolute !important;
+                    top: 2px !important;
+                    left: 2px !important;
                     background: #ff6600 !important;
                     color: #000 !important;
                     font-size: 9px !important;
@@ -54,10 +59,8 @@
                     padding: 1px 3px !important;
                     border-radius: 2px !important;
                     z-index: 2147483647 !important;
-                    transform: translateY(-100%) !important;
-                    margin-top: -2px !important;
                     white-space: nowrap !important;
-                    pointer-events: auto !important; /* Allows clicking/holding to delete badge */
+                    pointer-events: auto !important;
                     cursor: pointer !important;
                 }
             </style>
@@ -78,7 +81,7 @@
         const killEvent = (e) => { e.preventDefault(); e.stopPropagation(); };
         win.addEventListener('submit', killEvent, true);
 
-        // Double-tap handler to add comment badges strictly above an element
+        // Double-tap handler to add comment badges INSIDE the chosen element
         let lastTap = 0;
         doc.body.addEventListener('touchend', (e) => {
             if (e.target.classList.contains('apollo-comment-badge') || e.target === doc.body || e.target === doc.documentElement) return;
@@ -91,30 +94,24 @@
                 if (commentText && commentText.trim() !== "") {
                     const commentId = "c" + Date.now();
                     
-                    // 1. Position calculation to hover strictly above the target element
-                    const rect = e.target.getBoundingClientRect();
-                    const scrollTop = win.pageYOffset || doc.documentElement.scrollTop;
-                    const scrollLeft = win.pageXOffset || doc.documentElement.scrollLeft;
-
                     const badge = doc.createElement('span');
                     badge.className = 'apollo-comment-badge';
                     badge.id = commentId;
                     badge.innerText = `[# ${commentText}]`;
                     
-                    // Assign absolute coordinate positioning markers
-                    badge.style.top = `${rect.top + scrollTop}px`;
-                    badge.style.left = `${rect.left + scrollLeft}px`;
-                    
-                    doc.body.appendChild(badge);
+                    // 1. Visually append inside the actual element container
+                    e.target.appendChild(badge);
                     e.target.style.outline = "1px solid #ff6600";
 
-                    // 2. Insert comment with unique tracking ID directly into the source textarea
+                    // 2. Parse out the opening tag and place comment inside it in the textarea source
                     const targetOuterHTML = e.target.outerHTML;
                     const currentSource = inputArea.value;
-                    const htmlComment = `<!-- ID: ${commentId} | Comment: ${commentText} -->\n`;
+                    const htmlComment = `<!-- ID: ${commentId} | Comment: ${commentText} -->`;
 
                     if (currentSource.includes(targetOuterHTML)) {
-                        inputArea.value = currentSource.replace(targetOuterHTML, htmlComment + targetOuterHTML);
+                        // Regex looks for the closing bracket '>' of the opening tag block to append code inside
+                        const modifiedHTML = targetOuterHTML.replace(/(^<[a-zA-Z0-9-]+[^>]*>)/, `$1\n${htmlComment}`);
+                        inputArea.value = currentSource.replace(targetOuterHTML, modifiedHTML);
                     } else {
                         inputArea.value = currentSource + `\n${htmlComment}`;
                     }
@@ -123,7 +120,7 @@
             lastTap = now;
         }, { passive: false });
 
-        // Deletion Handler: Listens for contextmenu (right-click or long-press on mobile devices)
+        // Deletion Handler
         doc.body.addEventListener('contextmenu', (e) => {
             if (e.target.classList.contains('apollo-comment-badge')) {
                 e.preventDefault();
@@ -131,10 +128,10 @@
                 if (confirm("Delete this comment tag?")) {
                     const targetId = e.target.id;
                     
-                    // 1. Remove the visual tag element from canvas layout view
+                    // Remove visual element node
                     e.target.remove();
                     
-                    // 2. Instantly look up code block matching ID and scrub it out of the textarea
+                    // Clean code line directly from source
                     const currentSource = inputArea.value;
                     const commentRegex = new RegExp(`<!-- ID: ${targetId} \\| Comment: .*? -->\\n?`, 'g');
                     inputArea.value = currentSource.replace(commentRegex, '');
@@ -154,7 +151,6 @@
             return;
         }
         
-        // Clean up tracking IDs before exporting clean production comments
         sourceCode = sourceCode.replace(/<!-- ID: c\d+ \| Comment: (.*?) -->/g, '<!-- Comment: $1 -->');
         
         navigator.clipboard.writeText(sourceCode).then(() => {
