@@ -7,9 +7,9 @@
     <style>
         body { margin:0; background: #000; color: #ff6600; font-family: sans-serif; overflow: hidden; }
         #toolbar { padding: 10px; background: #111; border-bottom: 2px solid #ff6600; display: flex; flex-direction: column; gap: 5px; }
-        #preview-wrapper { width: 100%; height: calc(100vh - 120px); border: none; overflow: hidden; }
+        #preview-wrapper { width: 100%; height: calc(100vh - 120px); border: none; overflow: hidden; transition: width 0.3s ease; }
         iframe { width: 100%; height: 100%; border: none; background: #fff; }
-        textarea { width: 100%; height: 60px; background: #000; color: #ff6600; border: 1px solid #ff6600; }
+        textarea { width: 100%; height: 60px; background: #000; color: #ff6600; border: 1px solid #ff6600; font-family: monospace; box-sizing: border-box; }
         .btn-group { display: flex; gap: 5px; }
         .btn { cursor: pointer; background: #ff6600; color: #000; border: none; padding: 10px; font-weight: bold; flex: 1; }
     </style>
@@ -30,35 +30,88 @@
 <script>
     const frame = document.getElementById('renderFrame');
     const wrapper = document.getElementById('preview-wrapper');
+    const inputArea = document.getElementById('htmlInput');
 
     function inject() {
-        const content = document.getElementById('htmlInput').value;
+        const content = inputArea.value;
         const doc = frame.contentDocument || frame.contentWindow.document;
         
-        // Force these settings into the injected HTML to stop mobile zooming
+        // Force settings into the preview frame to manage layout and custom comment displays
         const forceStyles = `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
                 html, body { touch-action: manipulation !important; -webkit-user-select: none !important; user-select: none !important; overscroll-behavior: none !important; }
+                .apollo-comment-badge {
+                    background: #ff6600 !important;
+                    color: #000 !important;
+                    font-size: 11px !important;
+                    font-family: sans-serif !important;
+                    font-weight: bold !important;
+                    padding: 2px 6px !important;
+                    border-radius: 3px !important;
+                    display: inline-block !important;
+                    margin: 4px !important;
+                    vertical-align: middle !important;
+                    outline: none !important;
+                }
             </style>
         `;
         
-        const fullContent = content.replace(/<head>/i, '<head>' + forceStyles);
+        let fullContent = content;
+        if (/<head>/i.test(fullContent)) {
+            fullContent = fullContent.replace(/<head>/i, '<head>' + forceStyles);
+        } else {
+            fullContent = forceStyles + fullContent;
+        }
         
         doc.open();
         doc.write(fullContent);
         doc.close();
 
-        // Handle double-tap
+        // Double-tap handler to add comment
         let lastTap = 0;
         doc.body.addEventListener('touchend', (e) => {
+            // Prevent triggering comments on already made comment badges
+            if (e.target.classList.contains('apollo-comment-badge')) return;
+
             const now = Date.now();
             if (now - lastTap < 300) {
                 e.preventDefault();
-                const comment = prompt("Enter a comment:");
-                if (comment) {
-                    e.target.setAttribute('data-comment', comment);
+                
+                const commentText = prompt("Enter your comment to save:");
+                if (commentText && commentText.trim() !== "") {
+                    
+                    // 1. Visually display the comment inside the preview right away
+                    const badge = doc.createElement('span');
+                    badge.className = 'apollo-comment-badge';
+                    badge.innerText = `[Note: ${commentText}]`;
+                    e.target.parentNode.insertBefore(badge, e.target);
                     e.target.style.outline = "2px solid #ff6600";
+
+                    // 2. Permanently target and save the comment directly into your main Input source
+                    const targetOuterHTML = e.target.outerHTML;
+                    const currentSource = inputArea.value;
+
+                    // Create the proper standard HTML comment string
+                    const htmlComment = `<!-- Comment: ${commentText} -->\n`;
+
+                    // If we can pinpoint the exact element inside the source code, prepend the comment to it
+                    if (currentSource.includes(targetOuterHTML)) {
+                        inputArea.value = currentSource.replace(targetOuterHTML, htmlComment + targetOuterHTML);
+                    } else {
+                        // Fallback fallback mechanism: search via innerText context if matching outerHTML fails due to browser normalizations
+                        const sampleIdentifier = e.target.innerText ? e.target.innerText.trim().substring(0, 20) : '';
+                        if (sampleIdentifier && currentSource.includes(sampleIdentifier)) {
+                            const position = currentSource.indexOf(sampleIdentifier);
+                            const tagStart = currentSource.lastIndexOf('<', position);
+                            if (tagStart !== -1) {
+                                inputArea.value = currentSource.slice(0, tagStart) + htmlComment + currentSource.slice(tagStart);
+                            }
+                        } else {
+                            // Absolute fallback: Append comment to the very end of the source input if element signature isn't unique
+                            inputArea.value = currentSource + `\n${htmlComment}`;
+                        }
+                    }
                 }
             }
             lastTap = now;
@@ -66,27 +119,22 @@
     }
 
     function toggleView() {
-        wrapper.style.width = (wrapper.style.width === '600px') ? '100%' : '600px';
+        wrapper.style.width = (wrapper.style.width === '375px') ? '100%' : '375px';
     }
 
     function exportCode() {
-        const doc = frame.contentDocument;
-        const elements = doc.querySelectorAll('[data-comment]');
-        elements.forEach(el => {
-            const comment = el.getAttribute('data-comment');
-            // Create comment node
-            const cNode = doc.createComment(` Comment: ${comment} `);
-            el.prepend(cNode);
-            el.removeAttribute('data-comment');
-            el.style.outline = "";
+        // Source input is already updated instantly on double-tap, so we copy it directly!
+        const sourceCode = inputArea.value;
+        if (!sourceCode.trim()) {
+            alert("No source code available to copy.");
+            return;
+        }
+        
+        navigator.clipboard.writeText(sourceCode).then(() => {
+            alert("Updated code with saved comments copied directly from input!");
+        }).catch(err => {
+            alert("Error copying code to clipboard: " + err);
         });
-        
-        // Remove our injected styles before copying
-        const styles = doc.querySelectorAll('style');
-        styles.forEach(s => s.remove());
-        
-        const code = doc.documentElement.outerHTML;
-        navigator.clipboard.writeText(code).then(() => alert("Code with comments copied!"));
     }
 </script>
 </body>
