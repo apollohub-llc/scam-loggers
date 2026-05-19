@@ -18,7 +18,7 @@
             --radius: 12px;
         }
 
-        /* Automatic Dark Mode Override based on system settings */
+        /* Automatic Dark Mode Override */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-main: #0b0f19;
@@ -53,19 +53,54 @@
         }
 
         header {
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        h1 { 
+        @media (min-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+        }
+
+        .header-text h1 { 
             font-size: 2.25rem; 
             font-weight: 700; 
             letter-spacing: -0.025em;
         }
         
-        .subtitle {
+        .header-text .subtitle {
             font-size: 1rem;
             color: var(--text-muted);
             margin-top: 0.5rem;
+        }
+
+        /* Real-time Search Input Component */
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: var(--text-muted);
+            box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.15);
         }
         
         /* Clean Responsive Grid */
@@ -84,7 +119,11 @@
             display: flex;
             flex-direction: column;
             gap: 1.25rem;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .template-card.hidden {
+            display: none !important;
         }
 
         .template-card:hover {
@@ -149,11 +188,16 @@
             background: var(--secondary-hover); 
         }
         
-        #loading { 
+        #loading, #no-results { 
             font-size: 1.1rem; 
             color: var(--text-muted); 
             text-align: center; 
             margin-top: 4rem; 
+            grid-column: 1 / -1;
+        }
+
+        #no-results {
+            display: none;
         }
     </style>
 </head>
@@ -161,12 +205,19 @@
 
     <div class="container">
         <header>
-            <h1>Templates Hub</h1>
-            <p class="subtitle">Browse and deploy standard layout structures.</p>
+            <div class="header-text">
+                <h1>Templates Hub</h1>
+                <p class="subtitle">Browse and deploy standard layout structures.</p>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search templates..." autocomplete="off">
+            </div>
         </header>
 
-        <div id="loading">Loading configurations...</div>
-        <div class="grid" id="templates-grid"></div>
+        <div class="grid" id="templates-grid">
+            <div id="loading">Loading configurations...</div>
+            <div id="no-results">No templates match your search.</div>
+        </div>
     </div>
 
     <!-- Firebase SDK Modules -->
@@ -174,7 +225,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Keep this clean, replace string value dynamically when deploying
         const firebaseConfig = {
             apiKey: "YOUR_SECURE_API_KEY",
             authDomain: "website-templates-60c6d.firebaseapp.com",
@@ -187,6 +237,9 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        // Store active templates globally for local quick-filtering
+        let templateElements = [];
 
         async function fetchTemplates() {
             const grid = document.getElementById('templates-grid');
@@ -203,13 +256,14 @@
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
+                    const titleText = data.title || 'Untitled Document';
                     
                     const card = document.createElement('div');
                     card.className = 'template-card';
                     
                     card.innerHTML = `
-                        <img src="${data.image || 'https://via.placeholder.com/300x200'}" alt="${data.title || 'Layout Template'}" class="template-img">
-                        <div class="template-title">${data.title || 'Untitled Document'}</div>
+                        <img src="${data.image || 'https://via.placeholder.com/300x200'}" alt="${titleText}" class="template-img">
+                        <div class="template-title">${titleText}</div>
                         <div class="btn-group">
                             <a href="${data.viewLink || '#'}" target="_blank" class="btn btn-primary">View Template</a>
                             <button class="btn btn-secondary" id="copy-${doc.id}">Copy Source</button>
@@ -217,16 +271,51 @@
                     `;
                     grid.appendChild(card);
 
-                    // Added distinct dynamic click attachment loop cleanly 
+                    // Track the DOM element along with its filter key (lowercased title)
+                    templateElements.push({
+                        element: card,
+                        title: titleText.toLowerCase()
+                    });
+
                     document.getElementById(`copy-${doc.id}`).addEventListener('click', () => {
                         navigator.clipboard.writeText(data.sourceCode || '');
                         alert('Source code copied to clipboard!');
                     });
                 });
+
+                // Initialize local input query system monitoring
+                initSearchFilter();
+
             } catch (error) {
                 console.error("Fetch process terminated:", error);
                 loading.innerText = "Failed to load database elements.";
             }
+        }
+
+        function initSearchFilter() {
+            const searchInput = document.getElementById('searchInput');
+            const noResults = document.getElementById('no-results');
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                let matchingCount = 0;
+
+                templateElements.forEach(item => {
+                    if (item.title.includes(query)) {
+                        item.element.classList.remove('hidden');
+                        matchingCount++;
+                    } else {
+                        item.element.classList.add('hidden');
+                    }
+                });
+
+                // Display fallback notification if no templates pass structural match conditions
+                if (matchingCount === 0 && query !== '') {
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                }
+            });
         }
 
         fetchTemplates();
