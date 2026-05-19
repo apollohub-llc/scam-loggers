@@ -2,23 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Apollo Injector - Mobile Optimized</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apollo Mobile Injector</title>
     <style>
-        body { margin:0; background: #000; color: #ff6600; font-family: sans-serif; }
-        #toolbar { padding: 10px; background: #111; border-bottom: 2px solid #ff6600; display: flex; gap: 5px; flex-wrap: wrap; }
-        #preview-wrapper { width: 100%; height: calc(100vh - 100px); border: none; overflow: hidden; }
+        body { margin:0; background: #000; color: #ff6600; font-family: sans-serif; overflow: hidden; }
+        #toolbar { padding: 10px; background: #111; border-bottom: 2px solid #ff6600; display: flex; flex-direction: column; gap: 5px; }
+        #preview-wrapper { width: 100%; height: calc(100vh - 120px); border: none; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; background: #fff; }
         textarea { width: 100%; height: 60px; background: #000; color: #ff6600; border: 1px solid #ff6600; }
-        .btn { cursor: pointer; background: #ff6600; color: #000; border: none; padding: 8px; font-weight: bold; }
+        .btn-group { display: flex; gap: 5px; }
+        .btn { cursor: pointer; background: #ff6600; color: #000; border: none; padding: 10px; font-weight: bold; flex: 1; }
     </style>
 </head>
 <body>
 
 <div id="toolbar">
-    <textarea id="htmlInput" placeholder="Paste full HTML here..."></textarea>
-    <button class="btn" onclick="inject()">Inject</button>
-    <button class="btn" onclick="toggleView()">Toggle Desktop/Mobile</button>
-    <button class="btn" onclick="exportCode()">Export</button>
+    <textarea id="htmlInput" placeholder="Paste your HTML here..."></textarea>
+    <div class="btn-group">
+        <button class="btn" onclick="inject()">Inject</button>
+        <button class="btn" onclick="toggleView()">Toggle View</button>
+        <button class="btn" onclick="exportCode()">Export</button>
+    </div>
 </div>
 
 <div id="preview-wrapper"><iframe id="renderFrame"></iframe></div>
@@ -31,21 +35,31 @@
         const content = document.getElementById('htmlInput').value;
         const doc = frame.contentDocument || frame.contentWindow.document;
         
-        // Injecting the meta tag to prevent zoom
-        const metaTag = '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">';
-        const fullContent = content.replace(/<head>/i, '<head>' + metaTag);
+        // Force these settings into the injected HTML to stop mobile zooming
+        const forceStyles = `
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+                html, body { touch-action: manipulation !important; -webkit-user-select: none !important; user-select: none !important; overscroll-behavior: none !important; }
+            </style>
+        `;
+        
+        const fullContent = content.replace(/<head>/i, '<head>' + forceStyles);
         
         doc.open();
         doc.write(fullContent);
         doc.close();
 
+        // Handle double-tap
         let lastTap = 0;
-        doc.body.addEventListener('pointerdown', (e) => {
+        doc.body.addEventListener('touchend', (e) => {
             const now = Date.now();
             if (now - lastTap < 300) {
                 e.preventDefault();
                 const comment = prompt("Enter a comment:");
-                if (comment) e.target.setAttribute('data-comment', comment);
+                if (comment) {
+                    e.target.setAttribute('data-comment', comment);
+                    e.target.style.outline = "2px solid #ff6600";
+                }
             }
             lastTap = now;
         }, { passive: false });
@@ -60,11 +74,19 @@
         const elements = doc.querySelectorAll('[data-comment]');
         elements.forEach(el => {
             const comment = el.getAttribute('data-comment');
-            el.prepend(document.createComment(` Comment: ${comment} `));
+            // Create comment node
+            const cNode = doc.createComment(` Comment: ${comment} `);
+            el.prepend(cNode);
             el.removeAttribute('data-comment');
+            el.style.outline = "";
         });
-        navigator.clipboard.writeText(doc.documentElement.outerHTML);
-        alert("Copied to clipboard!");
+        
+        // Remove our injected styles before copying
+        const styles = doc.querySelectorAll('style');
+        styles.forEach(s => s.remove());
+        
+        const code = doc.documentElement.outerHTML;
+        navigator.clipboard.writeText(code).then(() => alert("Code with comments copied!"));
     }
 </script>
 </body>
