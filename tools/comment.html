@@ -2,90 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Interactive HTML Injector</title>
+    <title>Apollo Injector Tool</title>
     <style>
-        body, html { margin:0; padding:0; width:100%; height:100%; font-family: sans-serif; }
-        #controls { padding: 10px; background: #222; color: #ff6600; display: flex; gap: 10px; }
-        #editor-container { width: 100%; height: calc(100vh - 50px); border: 2px dashed #ff6600; overflow: auto; position: relative; }
-        .editable { outline: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .editable:hover { outline: 2px solid #ff6600; }
-        .comment-badge { font-size: 10px; background: #ff6600; color: #000; padding: 2px 5px; border-radius: 4px; display: inline-block; margin-left: 5px; }
+        body { margin:0; background: #000; color: #ff6600; font-family: sans-serif; }
+        #toolbar { padding: 15px; background: #111; border-bottom: 2px solid #ff6600; display: flex; gap: 10px; }
+        #preview-wrapper { width: 100%; height: calc(100vh - 80px); transition: width 0.3s; margin: 0 auto; border: none; }
+        iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        textarea { flex-grow: 1; height: 60px; background: #000; color: #ff6600; border: 1px solid #ff6600; }
+        .btn { cursor: pointer; background: #ff6600; color: #000; border: none; padding: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="controls">
-    <textarea id="htmlInput" placeholder="Paste your HTML here..." style="width: 70%;"></textarea>
-    <button onclick="injectHTML()">Inject HTML</button>
-    <button onclick="exportHTML()">Export Code</button>
+<div id="toolbar">
+    <textarea id="htmlInput" placeholder="Paste full HTML here..."></textarea>
+    <button class="btn" onclick="inject()">Inject</button>
+    <button class="btn" onclick="toggleView()">Toggle Desktop/Mobile</button>
+    <button class="btn" onclick="exportCode()">Export</button>
 </div>
 
-<div id="editor-container"></div>
+<div id="preview-wrapper"><iframe id="renderFrame"></iframe></div>
 
 <script>
-    const container = document.getElementById('editor-container');
+    const frame = document.getElementById('renderFrame');
+    const wrapper = document.getElementById('preview-wrapper');
 
-    function injectHTML() {
-        const input = document.getElementById('htmlInput').value;
-        container.innerHTML = input;
-        makeEditable(container);
-    }
-
-    function makeEditable(root) {
-        const elements = root.querySelectorAll('*');
-        elements.forEach(el => {
-            if (el.id === 'controls' || el.id === 'htmlInput') return;
-            
-            // Handle double click/tap
-            el.addEventListener('dblclick', handleEdit);
-            el.addEventListener('touchstart', (e) => {
-                let lastTap = el.dataset.lastTap || 0;
-                let now = Date.now();
-                if (now - lastTap < 300) handleEdit.call(el, e);
-                el.dataset.lastTap = now;
-            });
+    function inject() {
+        const content = document.getElementById('htmlInput').value;
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open();
+        doc.write(content);
+        doc.close();
+        
+        // Add double-click listener inside the iframe
+        doc.body.addEventListener('dblclick', (e) => {
+            const comment = prompt("Enter a comment:");
+            if (comment) e.target.setAttribute('data-comment', comment);
         });
     }
 
-    function handleEdit(e) {
-        e.stopPropagation();
-        const currentComment = this.getAttribute('data-comment') || '';
-        const newComment = prompt("Enter a comment for this element:", currentComment);
-        
-        if (newComment !== null) {
-            this.setAttribute('data-comment', newComment);
-            updateCommentDisplay(this, newComment);
-        }
+    function toggleView() {
+        wrapper.style.width = (wrapper.style.width === '600px') ? '100%' : '600px';
     }
 
-    function updateCommentDisplay(el, comment) {
-        let badge = el.querySelector('.comment-badge');
-        if (!badge) {
-            badge = document.createElement('span');
-            badge.className = 'comment-badge';
-            el.appendChild(badge);
-        }
-        badge.innerText = comment;
-    }
-
-    function exportHTML() {
-        // Clone the content to modify the exported string
-        const clone = container.cloneNode(true);
-        const elements = clone.querySelectorAll('[data-comment]');
-        
+    function exportCode() {
+        const doc = frame.contentDocument;
+        const elements = doc.querySelectorAll('[data-comment]');
         elements.forEach(el => {
             const comment = el.getAttribute('data-comment');
-            const commentNode = document.createComment(` Comment: ${comment} `);
-            el.prepend(commentNode);
+            el.prepend(document.createComment(` Comment: ${comment} `));
             el.removeAttribute('data-comment');
-            el.classList.remove('editable');
-            el.querySelector('.comment-badge')?.remove();
         });
-
-        const finalHTML = clone.innerHTML;
-        navigator.clipboard.writeText(finalHTML).then(() => {
-            alert("Full HTML with comments copied to clipboard!");
-        });
+        navigator.clipboard.writeText(doc.documentElement.outerHTML);
+        alert("Code copied to clipboard!");
     }
 </script>
 </body>
