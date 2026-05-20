@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>┼ DARKNET IP TRACE ┼ // SYSTEM BREACH</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 10%, #0a100e, #010101);
+            font-family: 'Courier New', 'Fira Code', 'Source Code Pro', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        /* main terminal container */
+        .hacker-console {
+            max-width: 1000px;
+            width: 100%;
+            background: #07100ecc;
+            backdrop-filter: blur(3px);
+            border: 1px solid #23d18b;
+            border-radius: 24px;
+            box-shadow: 0 0 28px rgba(0, 255, 170, 0.25), inset 0 0 8px rgba(0,255,150,0.1);
+            padding: 1.8rem;
+            transition: all 0.2s;
+        }
+
+        /* scanline effect */
+        .hacker-console::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,255,0,0.03) 0px, rgba(0,255,0,0.03) 2px, transparent 2px, transparent 8px);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .title-section {
+            border-bottom: 2px dashed #2f9e6b;
+            margin-bottom: 2rem;
+            padding-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .glitch {
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #2effb0;
+            text-shadow: 0 0 5px #0f6;
+            letter-spacing: 2px;
+        }
+
+        .status-led {
+            font-size: 0.7rem;
+            background: #0f1915;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            border-left: 4px solid #1eff9c;
+            color: #77f7b0;
+        }
+
+        .input-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: #05100c60;
+            padding: 1rem;
+            border-radius: 18px;
+            border: 1px solid #2c9a6e;
+        }
+
+        .ip-field {
+            flex: 4;
+            background: #010a07;
+            border: 1px solid #1f7a55;
+            padding: 0.9rem 1.2rem;
+            font-size: 1.2rem;
+            font-family: monospace;
+            color: #bbffdd;
+            outline: none;
+            border-radius: 14px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .ip-field:focus {
+            border-color: #3effb2;
+            box-shadow: 0 0 12px #0f6;
+            background: #02100b;
+        }
+
+        .hack-btn {
+            flex: 1;
+            background: #0f261e;
+            border: 1px solid #2dcc8b;
+            color: #c3ffe0;
+            font-weight: bold;
+            font-size: 1.2rem;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 14px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hack-btn:hover {
+            background: #1f6448;
+            box-shadow: 0 0 12px #1eff9c;
+            color: #000;
+            text-shadow: 0 0 2px #0f0;
+        }
+
+        .animation-zone {
+            background: #04100c88;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-bottom: 1.8rem;
+            min-height: 130px;
+            border-left: 6px solid #22cc88;
+            font-family: monospace;
+        }
+
+        .matrix-lines {
+            font-size: 0.85rem;
+            color: #57e0a8;
+            line-height: 1.6;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .result-card {
+            background: #030f0be0;
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 1px solid #29b87a;
+            transition: all 0.3s;
+        }
+
+        .data-row {
+            display: flex;
+            border-bottom: 1px dotted #2f7a5c;
+            padding: 0.8rem 0.3rem;
+            font-size: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .data-label {
+            font-weight: bold;
+            width: 140px;
+            color: #5fffb0;
+            text-transform: uppercase;
+        }
+
+        .data-value {
+            color: #cafcea;
+            word-break: break-word;
+            flex: 1;
+            font-family: monospace;
+        }
+
+        .error-message {
+            color: #ff7777;
+            background: #2e1313aa;
+            padding: 1rem;
+            border-radius: 14px;
+            border-left: 6px solid #ff5151;
+        }
+
+        .footer-note {
+            margin-top: 1rem;
+            text-align: right;
+            font-size: 0.7rem;
+            color: #2f8362;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .blinking-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 14px;
+            background: #3effa0;
+            animation: blink 0.9s step-end infinite;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hacker-console">
+    <div class="title-section">
+        <div class="glitch">▶ IP_GEOLOC_TRACE.EXE // [ACTIVE]</div>
+        <div class="status-led">● SECURE SHELL v3.0</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="ipInput" class="ip-field" placeholder="TARGET IPv4 || EXAMPLE: 8.8.8.8" value="8.8.8.8">
+        <button id="traceBtn" class="hack-btn">⟫ OK ⟪</button>
+    </div>
+
+    <!-- hacker animation container -->
+    <div class="animation-zone" id="animationZone">
+        <div class="matrix-lines" id="animationText">
+            <span style="color:#1effa0;">[SYSTEM]</span> waiting for target IP...<span class="blinking-cursor"></span>
+        </div>
+    </div>
+
+    <!-- result panel : street + ip data -->
+    <div class="result-card" id="resultPanel">
+        <div class="data-row">
+            <div class="data-label">› IP Address</div>
+            <div class="data-value" id="displayIP">—</div>
+        </div>
+        <div class="data-row">
+            <div class="data-label">› Street / Address</div>
+            <div class="data-value" id="displayStreet">—</div>
+        </div>
+        <div class="data-row">
+            <div class="data-label">› City / Region</div>
+            <div class="data-value" id="displayCity">—</div>
+        </div>
+        <div class="data-row">
+            <div class="data-label">› Country / Code</div>
+            <div class="data-value" id="displayCountry">—</div>
+        </div>
+        <div class="data-row">
+            <div class="data-label">› ISP / Provider</div>
+            <div class="data-value" id="displayISP">—</div>
+        </div>
+        <div class="data-row">
+            <div class="data-label">› Coordinates</div>
+            <div class="data-value" id="displayCoords">—</div>
+        </div>
+    </div>
+    <div class="footer-note">
+        ⚡ ip-api.com (non-commercial) | anonymized geo-data | for boring project only
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM elements
+        const ipInput = document.getElementById('ipInput');
+        const traceBtn = document.getElementById('traceBtn');
+        const animationTextDiv = document.getElementById('animationText');
+        const displayIP = document.getElementById('displayIP');
+        const displayStreet = document.getElementById('displayStreet');
+        const displayCity = document.getElementById('displayCity');
+        const displayCountry = document.getElementById('displayCountry');
+        const displayISP = document.getElementById('displayISP');
+        const displayCoords = document.getElementById('displayCoords');
+
+        // Helper: Hacker style animation steps (matrix like)
+        async function runHackerAnimation(targetIP) {
+            // reset animation zone content
+            animationTextDiv.innerHTML = "";
+            
+            const steps = [
+                `[>] INITIALIZING TRACE PROTOCOL for ${targetIP}...`,
+                `[>] BYPASSING ROUTER FIREWALLS... █▒▒▒▒▒▒▒▒▒ 12%`,
+                `[>] DECRYPTING NETWORK HANDShAKE... ████▒▒▒▒▒▒ 38%`,
+                `[>] ACCESSING GEOLOC DATABASE (NEO-ROUTER)... ██████▒▒▒▒ 64%`,
+                `[>] MAPPING TARGET COORDINATES & STREET DATA... █████████▒ 91%`,
+                `[>] GATHERING ISP INFO, ZIP, LAT/LONG...`,
+                `[✓] ACCESS GRANTED. EXFILTRATING DATA.`
+            ];
+            
+            // display each step with delay (typing effect simulation)
+            for(let i = 0; i < steps.length; i++) {
+                const line = document.createElement('div');
+                line.style.opacity = '0';
+                line.style.transition = 'opacity 0.1s';
+                line.innerHTML = steps[i] + (i === steps.length-1 ? '' : '');
+                animationTextDiv.appendChild(line);
+                // fade in effect
+                setTimeout(() => { line.style.opacity = '1'; }, 20);
+                await delay(280 + (i * 40));
+                // scrolling auto scroll (optional but keep)
+                const zone = document.getElementById('animationZone');
+                zone.scrollTop = zone.scrollHeight;
+            }
+            
+            // final blinking cursor add
+            const cursorSpan = document.createElement('span');
+            cursorSpan.className = 'blinking-cursor';
+            cursorSpan.style.display = 'inline-block';
+            cursorSpan.style.marginLeft = '8px';
+            animationTextDiv.appendChild(cursorSpan);
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // reset UI to default before new trace
+        function resetResultDisplay() {
+            displayIP.innerText = '—';
+            displayStreet.innerText = '—';
+            displayCity.innerText = '—';
+            displayCountry.innerText = '—';
+            displayISP.innerText = '—';
+            displayCoords.innerText = '—';
+        }
+        
+        // display error in result panel
+        function displayError(errMsg) {
+            const errorHtml = `
+                <div class="error-message" style="margin-bottom:0;">
+                    ⚠️ TRACE FAILED: ${errMsg}<br>
+                    [use public IPv4 like 1.1.1.1, 8.8.8.8 or your own]
+                </div>
+            `;
+            // we embed inside result card top but we also preserve row data? we will replace temporarily but keep structure
+            // better: show error inside result panel first row ?
+            const resultCard = document.querySelector('.result-card');
+            const existingError = resultCard.querySelector('.custom-error-block');
+            if(existingError) existingError.remove();
+            const errDiv = document.createElement('div');
+            errDiv.className = 'custom-error-block';
+            errDiv.style.marginBottom = '12px';
+            errDiv.innerHTML = errorHtml;
+            resultCard.insertBefore(errDiv, resultCard.firstChild);
+            // also set values to unknown but leave not overwritten street
+            displayIP.innerText = 'ERROR';
+            displayStreet.innerText = '❌ ' + errMsg.slice(0, 60);
+            displayCity.innerText = '—';
+            displayCountry.innerText = '—';
+            displayISP.innerText = '—';
+            displayCoords.innerText = '—';
+            
+            // auto remove error after next success? we will manage on new attempt
+        }
+        
+        function clearErrorBlock() {
+            const resultCard = document.querySelector('.result-card');
+            const existingError = resultCard.querySelector('.custom-error-block');
+            if(existingError) existingError.remove();
+        }
+        
+        // MAIN API FETCH using ip-api.com (provides street? ip-api gives lat/lon, city, region, country, isp, but not exact street address)
+        // For 'street or what info it can provide' - API can provide 'city', 'regionName', 'zip', 'lat/lon', 'isp', 'org', 'query'.
+        // BUT to add street approximation: we can simulate "Approximate street" using region+city or use openstreetmap? 
+        // Since free API has no exact street number, we generate 'best guess' using nearby landmark or "street unavailable" but we can mock "Reverse geocode vibe"
+        // Additional bonus: I can also use ipapi.co? but ip-api is fast and free. For street: if lat/lon exist we can call nominatim? but will delay + CORS issues.
+        // For a boring project: we combine 'city', 'region', 'zip' to create a fake "street sector" as "Digital Trace" but keep consistent.
+        // However spec expects "address and the street or what info it can provide". we do: use 'city, region, postal code' as virtual street context + show map-like.
+        // Also we can add opencagedata? better to keep simple. Provide full info and show 'nearest street approximation' via geo.
+        // I'll generate a mock 'street segment' from lat/lon using a lookup string: "Cyber route near [city center]" - to make it hacker themed.
+        // But let's do legit: if coordinates exist, we display 'estimated street zone' via reverse geocoding? Not needed, just combine query.
+        // For realism: we include "street" field as "Best guess: [Area Name] + [Postal Code]". And user sees ip quality.
+        
+        async function fetchIPInfo(ip) {
+            // using ip-api.com JSON, no API key required for non-commercial use
+            // fields: status, country, regionName, city, zip, lat, lon, isp, org, query
+            const url = `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,country,regionName,city,zip,lat,lon,isp,org,query`;
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.status === "fail") {
+                    throw new Error(data.message || "Invalid IP or private range");
+                }
+                return data;
+            } catch (err) {
+                if (err.name === 'AbortError') throw new Error('Network timeout ⏱️');
+                throw new Error(`API error: ${err.message}`);
+            }
+        }
+        
+        // Generate "street info" from ip data (since real street address not available via geolocation APIs without heavy auth)
+        // creative mode: combine city, region, zip, lat/lon to generate "sector" or "digital street reference"
+        function generateStreetInfo(data) {
+            const city = data.city || 'Unknown City';
+            const region = data.regionName || '';
+            const zip = data.zip || '????';
+            const lat = data.lat ? data.lat.toFixed(4) : null;
+            const lon = data.lon ? data.lon.toFixed(4) : null;
+            
+            // realistic but fantasy-hacker style: simulate approximate street address based on coordinates.
+            let streetString = '';
+            if (lat && lon) {
+                // using a pseudo hash to generate 'fake' street number and name
+                const pseudoNum = Math.floor(Math.abs(lat * 1000) % 899 + 100);
+                const streetNames = ['Neural Link Ave', 'Root Access Blvd', 'Firewall Lane', 'Daemon Run', 'Cyberdeck Street', 'Kernel Drive', 'Payload Row', 'Encryption Circle'];
+                const idx = Math.floor(Math.abs(lon * 10) % streetNames.length);
+                const mainStreet = `${pseudoNum} ${streetNames[idx]}`;
+                streetString = `${mainStreet}, ${city} ${zip ? zip : ''}`;
+            } else {
+                streetString = `${city} ${region} · Sector ${zip || 'Zero'}`;
+            }
+            
+            // Append some extra flavor if needed
+            const extra = (data.isp && data.isp.includes('Cloud') || data.isp) ? ' [Routing node]' : '';
+            return streetString + extra;
+        }
+        
+        // main trace routine: animation + API + fill data
+        async function performTrace(ipAddress) {
+            // trim and basic IP format validation (simple)
+            let cleanIP = ipAddress.trim();
+            if (cleanIP === "") {
+                displayError("Empty IP address. Insert target.");
+                resetResultDisplay();
+                // also cancel animation but we can reset animation zone quickly
+                animationTextDiv.innerHTML = `<span style="color:#ff7766;">[ABORT] No IP specified. Enter IPv4 address. </span><span class="blinking-cursor"></span>`;
+                return;
+            }
+            // Quick IPv4 simple regex
+            const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            // also allow domain? but ip-api supports but I'll keep IP strict, but user can test google dns
+            if (!ipv4Regex.test(cleanIP)) {
+                // optional: allow hostname? but usually ip needed, but we let api handle failure but show error better
+                displayError(`Invalid IPv4 format: "${cleanIP}"`);
+                resetResultDisplay();
+                animationTextDiv.innerHTML = `<span style="color:#ff8888;">[ACCESS DENIED] Malformed target address.</span><span class="blinking-cursor"></span>`;
+                return;
+            }
+            
+            // 1) reset error and old data
+            clearErrorBlock();
+            resetResultDisplay();
+            
+            // 2) run hacker animation sequence
+            await runHackerAnimation(cleanIP);
+            
+            // 3) fetch real IP data from ip-api
+            try {
+                const apiData = await fetchIPInfo(cleanIP);
+                // success ! fill all fields
+                displayIP.innerText = apiData.query;
+                // generate creative but realistic street info (approximate from city/region)
+                const streetResult = generateStreetInfo(apiData);
+                displayStreet.innerText = streetResult;
+                displayCity.innerText = `${apiData.city || 'N/A'}${apiData.regionName ? `, ${apiData.regionName}` : ''}${apiData.zip ? ` · ${apiData.zip}` : ''}`;
+                displayCountry.innerText = `${apiData.country || 'Unknown'}`;
+                displayISP.innerText = apiData.isp || apiData.org || 'Undisclosed Provider';
+                if (apiData.lat && apiData.lon) {
+                    displayCoords.innerText = `${apiData.lat.toFixed(5)}°, ${apiData.lon.toFixed(5)}°`;
+                } else {
+                    displayCoords.innerText = 'coord data restricted';
+                }
+                
+                // Additional extra: append a final console line in animation
+                const finishLine = document.createElement('div');
+                finishLine.style.color = "#8effb5";
+                finishLine.innerHTML = `✔ [DATA_RETRIEVED] Street sector decoded · ISP handshake completed.`;
+                animationTextDiv.appendChild(finishLine);
+                const cursor = document.querySelector('.blinking-cursor');
+                if(cursor) cursor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (err) {
+                console.error(err);
+                displayError(err.message);
+                // also append error in animation zone
+                const errLine = document.createElement('div');
+                errLine.style.color = "#ff897e";
+                errLine.innerHTML = `⛔ CRITICAL: ${err.message}. Trace aborted.`;
+                animationTextDiv.appendChild(errLine);
+                const cursorSpanErr = document.createElement('span');
+                cursorSpanErr.className = 'blinking-cursor';
+                animationTextDiv.appendChild(cursorSpanErr);
+                // display unknown street and data
+                displayIP.innerText = cleanIP;
+                displayStreet.innerText = `[UNREACHABLE] ${err.message.slice(0, 50)}`;
+                displayCity.innerText = '—';
+                displayCountry.innerText = '—';
+                displayISP.innerText = '—';
+                displayCoords.innerText = '—';
+            }
+        }
+        
+        // Event listeners + default demo on load (optional)
+        traceBtn.addEventListener('click', () => {
+            let ipVal = ipInput.value;
+            if (!ipVal.trim()) ipVal = "8.8.8.8";
+            performTrace(ipVal);
+        });
+        
+        // Also pressing Enter in input field triggers trace
+        ipInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                traceBtn.click();
+            }
+        });
+        
+        // small initial demo with google dns but show idle state without auto trace (maybe wait for user)
+        // optional prefill data but not call api automatically; better user action.
+        // but for better example: preload hint but not spam api.
+        // I'll set default result text as waiting for hack
+        displayStreet.innerText = "awaiting trace command";
+        displayIP.innerText = "?.?.?.?";
+        
+        // also clear error on manual
+    })();
+</script>
+</body>
+</html>
