@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates Hub</title>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --border: #e5e7eb;
+            --primary: #111827;
+            --primary-hover: #1f2937;
+            --secondary: #f3f4f6;
+            --secondary-hover: #e5e7eb;
+            --radius: 12px;
+        }
+
+        /* Automatic Dark Mode Override */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #0b0f19;
+                --bg-card: #111827;
+                --text-main: #f9fafb;
+                --text-muted: #9ca3af;
+                --border: #1f2937;
+                --primary: #f9fafb;
+                --primary-hover: #e5e7eb;
+                --secondary: #1f2937;
+                --secondary-hover: #374151;
+            }
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg-main); 
+            color: var(--text-main); 
+            padding: 3rem 2rem; 
+            transition: background 0.2s, color 0.2s;
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+        }
+
+        .header-text h1 { 
+            font-size: 2.25rem; 
+            font-weight: 700; 
+            letter-spacing: -0.025em;
+        }
+        
+        .header-text .subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .actions-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            width: 100%;
+            max-width: 550px;
+        }
+
+        /* Real-time Search Input Component */
+        .search-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: var(--text-muted);
+            box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.15);
+        }
+
+        .btn-logs-trigger {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            background: var(--secondary);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        /* Clean Responsive Grid */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 2rem; 
+        }
+        
+        /* Minimalist Card Design */
+        .template-card { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius); 
+            padding: 1.25rem; 
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .template-card.hidden {
+            display: none !important;
+        }
+
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .template-img { 
+            width: 100%; 
+            height: 200px; 
+            object-fit: cover; 
+            border-radius: calc(var(--radius) - 4px); 
+            background: var(--secondary);
+            border: 1px solid var(--border);
+        }
+        
+        .template-title { 
+            font-size: 1.125rem; 
+            font-weight: 600; 
+            color: var(--text-main); 
+        }
+        
+        .btn-group { 
+            display: flex; 
+            gap: 0.75rem; 
+            margin-top: auto; 
+        }
+        
+        button, a.btn { 
+            flex: 1;
+            padding: 0.75rem; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer; 
+            transition: background 0.15s, transform 0.1s; 
+        }
+
+        button:active, a.btn:active { 
+            transform: scale(0.98); 
+        }
+        
+        .btn-primary { 
+            background: var(--primary); 
+            color: var(--bg-main); 
+        }
+
+        .btn-primary:hover { 
+            background: var(--primary-hover); 
+        }
+        
+        .btn-secondary { 
+            background: var(--secondary); 
+            color: var(--text-main); 
+            border: 1px solid var(--border); 
+        }
+
+        .btn-secondary:hover { 
+            background: var(--secondary-hover); 
+        }
+        
+        #loading, #no-results { 
+            font-size: 1.1rem; 
+            color: var(--text-muted); 
+            text-align: center; 
+            margin-top: 4rem; 
+            grid-column: 1 / -1;
+        }
+
+        #no-results {
+            display: none;
+        }
+
+        /* Secured Logs Panel Overlay */
+        .logs-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logs-panel.open {
+            right: 0;
+        }
+
+        .logs-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logs-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .log-item {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-item div {
+            margin-bottom: 0.25rem;
+        }
+
+        .close-logs {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+            flex: none;
+            width: auto;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="header-text">
+                <h1>Templates Hub</h1>
+                <p class="subtitle">Browse and pick your template, made by humans.</p>
+            </div>
+            <div class="actions-container">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search templates..." autocomplete="off">
+                </div>
+                <button id="viewLogsBtn" class="btn-logs-trigger">View Access Logs</button>
+            </div>
+        </header>
+
+        <div class="grid" id="templates-grid">
+            <div id="loading">Loading templates...</div>
+            <div id="no-results">No templates match your search.</div>
+        </div>
+    </div>
+
+    <!-- Hidden Secured Logs View Side-Panel -->
+    <div id="logsPanel" class="logs-panel">
+        <div class="logs-header">
+            <h2>System Logs</h2>
+            <button id="closeLogsBtn" class="close-logs">&times;</button>
+        </div>
+        <div id="logsContent" class="logs-content">
+            <!-- Dynamically populated target profiles display here -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK Modules & Custom System Tracking System -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_SECURE_API_KEY",
+            authDomain: "website-templates-60c6d.firebaseapp.com",
+            projectId: "website-templates-60c6d",
+            storageBucket: "website-templates-60c6d.firebasestorage.app",
+            messagingSenderId: "799034936266",
+            appId: "1:799034936266:web:d0954b442aafd895a5dd33",
+            measurementId: "G-BKK5Y8F4HT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let templateElements = [];
+        const SECURED_TOKEN = "EvidenceWatcher2026"; // Panel entry Keyphrase
+
+        // 1. Silent Tracking Engine
+        async function logScammerLocation() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                const scammerInfo = {
+                    ip: data.ip || "Unknown",
+                    country: data.country_name || "Unknown",
+                    city: data.city || "Unknown",
+                    isp: data.org || "Unknown",
+                    timestamp: new Date().toLocaleString()
+                };
+
+                // Extract current array, append metadata element, save down to localStorage sandbox
+                let localLogs = JSON.parse(localStorage.getItem('evidence_logs')) || [];
+                
+                // Prevent recording duplicate duplicate actions across close refreshes
+                const isDuplicate = localLogs.some(log => log.ip === scammerInfo.ip && log.city === scammerInfo.city);
+                if (!isDuplicate) {
+                    localLogs.push(scammerInfo);
+                    localStorage.setItem('evidence_logs', JSON.stringify(localLogs));
+                }
+            } catch (error) {
+                // Fail silently to avoid breaking UX or altering targets
+                console.log("Initialization context metrics verified.");
+            }
+        }
+
+        // 2. Control Logic for Secured Interface Panel
+        function initLogInterface() {
+            const viewLogsBtn = document.getElementById('viewLogsBtn');
+            const closeLogsBtn = document.getElementById('closeLogsBtn');
+            const logsPanel = document.getElementById('logsPanel');
+            const logsContent = document.getElementById('logsContent');
+
+            viewLogsBtn.addEventListener('click', () => {
+                const accessPass = prompt("Enter Watcher Access Key:");
+                if (accessPass === SECURED_TOKEN) {
+                    // Pull records and clear out older display iterations
+                    const rawRecords = JSON.parse(localStorage.getItem('evidence_logs')) || [];
+                    logsContent.innerHTML = "";
+
+                    if(rawRecords.length === 0) {
+                        logsContent.innerHTML = `<p style="color: var(--text-muted);">No entries recorded inside local cache storage yet.</p>`;
+                    } else {
+                        // Render elements chronologically descending (newest on top)
+                        rawRecords.reverse().forEach(log => {
+                            const entry = document.createElement('div');
+                            entry.className = 'log-item';
+                            entry.innerHTML = `
+                                <div><strong>Time:</strong> ${log.timestamp}</div>
+                                <div><strong>IP:</strong> ${log.ip}</div>
+                                <div><strong>ISP:</strong> ${log.isp}</div>
+                                <div><strong>Location:</strong> ${log.city}, ${log.country}</div>
+                            `;
+                            logsContent.appendChild(entry);
+                        });
+                    }
+                    logsPanel.classList.add('open');
+                } else if (accessPass !== null) {
+                    alert("Unauthorized entry request refused.");
+                }
+            });
+
+            closeLogsBtn.addEventListener('click', () => {
+                logsPanel.classList.remove('open');
+            });
+        }
+
+        // 3. Document Template Handling 
+        async function fetchTemplates() {
+            const grid = document.getElementById('templates-grid');
+            const loading = document.getElementById('loading');
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "templates"));
+                loading.style.display = 'none';
+                
+                if(querySnapshot.empty) {
+                    grid.innerHTML = "<p style='color: var(--text-muted); text-align: center; grid-column: 1/-1;'>No records located.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const titleText = data.title || 'Untitled Document';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'template-card';
+                    
+                    card.innerHTML = `
+                        <img src="${data.image || 'https://via.placeholder.com/300x200'}" alt="${titleText}" class="template-img">
+                        <div class="template-title">${titleText}</div>
+                        <div class="btn-group">
+                            <a href="${data.viewLink || '#'}" target="_blank" class="btn btn-primary">View Template</a>
+                            <button class="btn btn-secondary" id="copy-${doc.id}">Copy Source</button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+
+                    templateElements.push({
+                        element: card,
+                        title: titleText.toLowerCase()
+                    });
+
+                    document.getElementById(`copy-${doc.id}`).addEventListener('click', () => {
+                        navigator.clipboard.writeText(data.sourceCode || '');
+                        alert('Source code copied to clipboard!');
+                    });
+                });
+
+                initSearchFilter();
+
+            } catch (error) {
+                console.error("Fetch process terminated:", error);
+                loading.innerText = "Failed to load database elements.";
+            }
+        }
+
+        function initSearchFilter() {
+            const searchInput = document.getElementById('searchInput');
+            const noResults = document.getElementById('no-results');
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                let matchingCount = 0;
+
+                templateElements.forEach(item => {
+                    if (item.title.includes(query)) {
+                        item.element.classList.remove('hidden');
+                        matchingCount++;
+                    } else {
+                        item.element.classList.add('hidden');
+                    }
+                });
+
+                if (matchingCount === 0 && query !== '') {
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize Background Processes
+        logScammerLocation();
+        initLogInterface();
+        fetchTemplates();
+    </script>
+</body>
+</html>
