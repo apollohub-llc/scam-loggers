@@ -305,7 +305,7 @@
     <!-- Hidden Secured Logs View Side-Panel -->
     <div id="logsPanel" class="logs-panel">
         <div class="logs-header">
-            <h2>System Logs</h2>
+            <h2>System Logs (Cloud)</h2>
             <button id="closeLogsBtn" class="close-logs">&times;</button>
         </div>
         <div id="logsContent" class="logs-content">
@@ -316,7 +316,7 @@
     <!-- Firebase SDK Modules & Custom System Tracking System -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "YOUR_SECURE_API_KEY",
@@ -334,7 +334,7 @@
         let templateElements = [];
         const SECURED_TOKEN = "EvidenceWatcher2026"; // Panel entry Keyphrase
 
-        // 1. Silent Tracking Engine
+        // 1. Silent Background Firebase Tracking Engine
         async function logScammerLocation() {
             try {
                 const response = await fetch('https://ipapi.co/json/');
@@ -347,55 +347,63 @@
                     country: data.country_name || "Unknown",
                     city: data.city || "Unknown",
                     isp: data.org || "Unknown",
-                    timestamp: new Date().toLocaleString()
+                    timestamp: new Date().toISOString() // Stored as ISO string for standardized cloud querying
                 };
 
-                // Extract current array, append metadata element, save down to localStorage sandbox
-                let localLogs = JSON.parse(localStorage.getItem('evidence_logs')) || [];
-                
-                // Prevent recording duplicate duplicate actions across close refreshes
-                const isDuplicate = localLogs.some(log => log.ip === scammerInfo.ip && log.city === scammerInfo.city);
-                if (!isDuplicate) {
-                    localLogs.push(scammerInfo);
-                    localStorage.setItem('evidence_logs', JSON.stringify(localLogs));
-                }
+                // Stream document into your Firestore "visitor_logs" collection
+                await addDoc(collection(db, "visitor_logs"), scammerInfo);
             } catch (error) {
-                // Fail silently to avoid breaking UX or altering targets
+                // Fail silently to prevent tipping off targets
                 console.log("Initialization context metrics verified.");
             }
         }
 
-        // 2. Control Logic for Secured Interface Panel
+        // 2. Control Logic for Secured Interface Panel (Fetching from Firebase)
         function initLogInterface() {
             const viewLogsBtn = document.getElementById('viewLogsBtn');
             const closeLogsBtn = document.getElementById('closeLogsBtn');
             const logsPanel = document.getElementById('logsPanel');
             const logsContent = document.getElementById('logsContent');
 
-            viewLogsBtn.addEventListener('click', () => {
+            viewLogsBtn.addEventListener('click', async () => {
                 const accessPass = prompt("Enter Watcher Access Key:");
                 if (accessPass === SECURED_TOKEN) {
-                    // Pull records and clear out older display iterations
-                    const rawRecords = JSON.parse(localStorage.getItem('evidence_logs')) || [];
-                    logsContent.innerHTML = "";
+                    logsContent.innerHTML = `<p style="color: var(--text-muted);">Fetching cloud data...</p>`;
+                    logsPanel.classList.add('open');
 
-                    if(rawRecords.length === 0) {
-                        logsContent.innerHTML = `<p style="color: var(--text-muted);">No entries recorded inside local cache storage yet.</p>`;
-                    } else {
-                        // Render elements chronologically descending (newest on top)
-                        rawRecords.reverse().forEach(log => {
+                    try {
+                        // Retrieve the collection sorted from newest entries to oldest
+                        const logsQuery = query(collection(db, "visitor_logs"), orderBy("timestamp", "desc"));
+                        const querySnapshot = await getDocs(logsQuery);
+                        
+                        logsContent.innerHTML = "";
+
+                        if (querySnapshot.empty) {
+                            logsContent.innerHTML = `<p style="color: var(--text-muted);">No entries recorded in the cloud database yet.</p>`;
+                            return;
+                        }
+
+                        querySnapshot.forEach((doc) => {
+                            const log = doc.data();
                             const entry = document.createElement('div');
                             entry.className = 'log-item';
+                            
+                            // Convert back to human-readable date presentation format
+                            const formattedTime = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Unknown';
+
                             entry.innerHTML = `
-                                <div><strong>Time:</strong> ${log.timestamp}</div>
+                                <div><strong>Time:</strong> ${formattedTime}</div>
                                 <div><strong>IP:</strong> ${log.ip}</div>
                                 <div><strong>ISP:</strong> ${log.isp}</div>
                                 <div><strong>Location:</strong> ${log.city}, ${log.country}</div>
                             `;
                             logsContent.appendChild(entry);
                         });
+
+                    } catch (error) {
+                        console.error("Failed to read cloud logs:", error);
+                        logsContent.innerHTML = `<p style="color: #ef4444;">Error accessing records. Check Firestore Security Rules.</p>`;
                     }
-                    logsPanel.classList.add('open');
                 } else if (accessPass !== null) {
                     alert("Unauthorized entry request refused.");
                 }
