@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Admin Panel | Firebase Logs Manager</title>
+    <title>Live Admin Panel | Auto-Refreshing Logs</title>
     <style>
         * {
             margin: 0;
@@ -41,6 +41,15 @@
             padding: 0.3rem 0.8rem;
             border-radius: 2rem;
             font-size: 0.8rem;
+        }
+        .live-badge {
+            background: #14532d;
+            color: #86efac;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
         .stats {
             display: flex;
@@ -90,8 +99,8 @@
         .btn-success {
             background: #14532d;
         }
-        .btn-success:hover {
-            background: #166534;
+        .btn-warning {
+            background: #92400e;
         }
         .filters {
             background: #11141f;
@@ -104,7 +113,7 @@
             flex-wrap: wrap;
             align-items: center;
         }
-        .filters input, .filters select {
+        .filters select, .filters input {
             background: #0c0f18;
             border: 1px solid #2a2f42;
             border-radius: 0.8rem;
@@ -117,6 +126,8 @@
             border-radius: 1.5rem;
             border: 1px solid #2a2f42;
             overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
         }
         table {
             width: 100%;
@@ -134,6 +145,7 @@
             font-weight: 600;
             position: sticky;
             top: 0;
+            z-index: 10;
         }
         td {
             color: #e2e8f0;
@@ -146,15 +158,17 @@
             padding: 3rem;
             color: #8b9ab0;
         }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 1.5rem;
+        .checkbox-col {
+            width: 40px;
         }
-        .pagination button {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.75rem;
+        .batch-controls {
+            padding: 0.8rem 1rem;
+            background: #0f172a;
+            border-radius: 0.8rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
         .modal {
             display: none;
@@ -189,33 +203,23 @@
             gap: 1rem;
             justify-content: center;
         }
-        .checkbox-col {
-            width: 40px;
-        }
-        .select-all {
-            margin: 0 1rem 0 0;
-        }
-        .batch-controls {
-            padding: 0.8rem 1rem;
-            background: #0f172a;
-            border-radius: 0.8rem;
-            margin-bottom: 1rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        .location-filter {
-            display: inline-block;
-            background: #1e2a4a;
-            padding: 0.2rem 0.6rem;
-            border-radius: 1rem;
-            font-size: 0.7rem;
-        }
         code {
             background: #0c0f18;
             padding: 0.2rem 0.4rem;
             border-radius: 0.3rem;
             font-size: 0.7rem;
+        }
+        .new-row {
+            animation: highlight 1s ease-out;
+        }
+        @keyframes highlight {
+            0% { background-color: #2d4a6e; }
+            100% { background-color: transparent; }
+        }
+        .auto-refresh-status {
+            font-size: 0.7rem;
+            color: #86efac;
+            margin-left: 0.5rem;
         }
     </style>
 </head>
@@ -223,8 +227,8 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>📊 Admin Panel</h1>
-            <div class="badge">Firebase Logs Manager • visitor_analytics</div>
+            <h1>📊 Live Admin Panel</h1>
+            <div class="badge live-badge">🔴 LIVE AUTO-REFRESH</div>
         </div>
         <div class="stats">
             <div class="stat-card">
@@ -232,23 +236,28 @@
                 <div class="stat-label">Total Logs</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="uniqueLocations">0</div>
-                <div class="stat-label">Unique Locations</div>
+                <div class="stat-number" id="newCount">0</div>
+                <div class="stat-label">New (last refresh)</div>
             </div>
         </div>
     </div>
 
     <div class="filters">
-        <input type="text" id="searchInput" placeholder="🔍 Search IP / Location / City..." style="min-width: 200px;">
-        <select id="locationFilter">
-            <option value="">All Locations</option>
+        <select id="collectionSelect">
+            <option value="visitor_analytics">📊 visitor_analytics (Analytics Injector)</option>
+            <option value="visitor_logs">📝 visitor_logs (Link Logger)</option>
+            <option value="global_link_mappings">🔗 global_link_mappings (Global Links)</option>
         </select>
-        <button id="refreshBtn" class="btn-success">🔄 Refresh</button>
-        <button id="clearAllBtn" class="btn-danger">🗑️ Clear All Logs</button>
+        <input type="text" id="searchInput" placeholder="🔍 Search IP / Location / City...">
+        <div class="controls">
+            <button id="refreshBtn" class="btn-success">🔄 Refresh Now</button>
+            <button id="toggleAutoBtn" class="btn-warning">⏸️ Pause Auto-Refresh</button>
+            <button id="clearAllBtn" class="btn-danger">🗑️ Clear ALL from this collection</button>
+        </div>
     </div>
 
     <div class="batch-controls" id="batchControls" style="display: none;">
-        <input type="checkbox" id="selectAllCheckbox"> <label for="selectAllCheckbox" style="color:#e2e8f0;">Select All</label>
+        <input type="checkbox" id="selectAllCheckbox"> <label style="color:#e2e8f0;">Select All on Page</label>
         <button id="deleteSelectedBtn" class="btn-danger">🗑️ Delete Selected (<span id="selectedCount">0</span>)</button>
     </div>
 
@@ -256,29 +265,26 @@
         <table>
             <thead>
                 <tr>
-                    <th class="checkbox-col"><input type="checkbox" id="headerSelectCheckbox" style="display: none;"></th>
+                    <th class="checkbox-col"><input type="checkbox" id="headerSelectCheckbox" style="display:none;"></th>
                     <th>Timestamp</th>
-                    <th>Location</th>
+                    <th>Location/Alias</th>
                     <th>IP Address</th>
-                    <th>City / Country</th>
+                    <th>City/Country</th>
                     <th>Device</th>
-                    <th>GPS</th>
-                    <th>Page URL</th>
+                    <th>Destination/URL</th>
                 </tr>
             </thead>
             <tbody id="logsTableBody">
-                <tr><td colspan="8" class="loading">Loading logs...</td></tr>
+                <tr><td colspan="7" class="loading">Loading logs...<td></tr>
             </tbody>
         </table>
     </div>
-
-    <div class="pagination" id="pagination"></div>
 </div>
 
 <div id="confirmModal" class="modal">
     <div class="modal-content">
         <h3>⚠️ Confirm Delete</h3>
-        <p id="modalMessage">Are you sure you want to delete all logs? This action cannot be undone.</p>
+        <p id="modalMessage"></p>
         <div class="modal-buttons">
             <button id="confirmYes" class="btn-danger">Yes, Delete</button>
             <button id="confirmNo">Cancel</button>
@@ -288,7 +294,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, deleteDoc, doc, query, orderBy, limit, startAfter, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDp8UzNz8BqjDfbVd_xUdXL_4KqXWi3VrI",
@@ -296,101 +302,119 @@
         projectId: "website-templates-60c6d",
         storageBucket: "website-templates-60c6d.firebasestorage.app",
         messagingSenderId: "799034936266",
-        appId: "1:799034936266:web:d0954b442aafd895a5dd33",
-        measurementId: "G-BKK5Y8F4HT"
+        appId: "1:799034936266:web:d0954b442aafd895a5dd33"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const COLLECTION_NAME = "visitor_analytics";
-
+    
+    let currentCollection = "visitor_analytics";
     let allLogs = [];
     let filteredLogs = [];
-    let currentPage = 1;
-    const ITEMS_PER_PAGE = 25;
     let selectedLogs = new Set();
-    let currentModalAction = null;
+    let currentLogIds = new Set();
+    let autoRefreshInterval = null;
+    let isAutoRefreshing = true;
+    let lastLogCount = 0;
+    let newLogCount = 0;
+    
+    const collectionSelect = document.getElementById('collectionSelect');
+    const searchInput = document.getElementById('searchInput');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const toggleAutoBtn = document.getElementById('toggleAutoBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const logsTableBody = document.getElementById('logsTableBody');
+    const totalCountSpan = document.getElementById('totalCount');
+    const newCountSpan = document.getElementById('newCount');
 
-    // Load logs from Firestore
-    async function loadLogs() {
-        document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="8" class="loading">Loading logs...</td></tr>';
-        
+    async function loadLogs(isAutoRefresh = false) {
         try {
-            const q = query(collection(db, COLLECTION_NAME), orderBy("timestamp", "desc"));
+            const q = query(collection(db, currentCollection), orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(q);
             
-            allLogs = [];
+            const newLogs = [];
             querySnapshot.forEach((doc) => {
-                allLogs.push({ id: doc.id, ...doc.data() });
+                newLogs.push({ id: doc.id, ...doc.data() });
             });
             
-            applyFilters();
-            updateStats();
-            updateLocationFilter();
+            const oldLogIds = new Set(allLogs.map(l => l.id));
+            const actuallyNewLogs = newLogs.filter(l => !oldLogIds.has(l.id));
+            newLogCount = actuallyNewLogs.length;
+            
+            if (isAutoRefresh && newLogCount > 0) {
+                newCountSpan.innerText = `+${newLogCount}`;
+                setTimeout(() => {
+                    if (newCountSpan.innerText === `+${newLogCount}`) {
+                        newCountSpan.innerText = "0";
+                    }
+                }, 3000);
+            } else if (!isAutoRefresh) {
+                newCountSpan.innerText = "0";
+            }
+            
+            allLogs = newLogs;
+            lastLogCount = allLogs.length;
+            totalCountSpan.innerText = allLogs.length;
+            
+            applyFilters(isAutoRefresh);
             
         } catch (error) {
             console.error("Error loading logs:", error);
-            document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="8" class="loading">❌ Error loading logs. Make sure collection "' + COLLECTION_NAME + '" exists.</td></tr>';
+            if (!isAutoRefresh) {
+                logsTableBody.innerHTML = '<tr><td colspan="7" class="loading">❌ Error loading collection. Make sure it exists.</td></tr>';
+            }
         }
     }
 
-    function applyFilters() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const locationFilter = document.getElementById('locationFilter').value;
-        
+    function applyFilters(isAutoRefresh = false) {
+        const searchTerm = searchInput.value.toLowerCase();
         filteredLogs = allLogs.filter(log => {
-            const matchesSearch = !searchTerm || 
+            return !searchTerm || 
                 (log.ip && log.ip.toLowerCase().includes(searchTerm)) ||
                 (log.city && log.city.toLowerCase().includes(searchTerm)) ||
                 (log.country && log.country.toLowerCase().includes(searchTerm)) ||
-                (log.location && log.location.toLowerCase().includes(searchTerm));
-            
-            const matchesLocation = !locationFilter || log.location === locationFilter;
-            
-            return matchesSearch && matchesLocation;
+                (log.location && log.location.toLowerCase().includes(searchTerm)) ||
+                (log.alias && log.alias.toLowerCase().includes(searchTerm));
         });
         
-        currentPage = 1;
-        selectedLogs.clear();
-        renderTable();
-        renderPagination();
-        updateBatchControls();
+        renderTable(isAutoRefresh);
     }
 
-    function renderTable() {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const pageLogs = filteredLogs.slice(start, end);
-        const tbody = document.getElementById('logsTableBody');
-        
-        if (pageLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">No logs found</td></tr>';
+    function renderTable(isAutoRefresh = false) {
+        if (filteredLogs.length === 0) {
+            logsTableBody.innerHTML = '<tr><td colspan="7" class="loading">No logs found</td></tr>';
             return;
         }
         
-        tbody.innerHTML = pageLogs.map(log => {
+        const oldSelectedIds = new Set(selectedLogs);
+        selectedLogs.clear();
+        
+        const rows = filteredLogs.map(log => {
             const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A';
-            const gps = (log.gpsLatitude && log.gpsLongitude) ? `${log.gpsLatitude.toFixed(3)}, ${log.gpsLongitude.toFixed(3)}` : (log.latitude ? `${log.latitude}, ${log.longitude}` : '—');
-            const location = log.location || '—';
+            const location = log.location || log.alias || '—';
             const cityCountry = `${log.city || '—'}, ${log.country || '—'}`;
+            const destination = log.destination || log.pageUrl || '—';
             const device = log.deviceType || (log.userAgent?.includes('Mobile') ? 'Mobile' : 'Desktop');
-            const pageUrl = log.pageUrl ? (log.pageUrl.length > 50 ? log.pageUrl.substring(0, 50) + '...' : log.pageUrl) : '—';
+            const wasSelected = oldSelectedIds.has(log.id);
+            if (wasSelected) selectedLogs.add(log.id);
             
             return `
-                <tr>
-                    <td class="checkbox-col"><input type="checkbox" class="log-checkbox" data-id="${log.id}" ${selectedLogs.has(log.id) ? 'checked' : ''}></td>
-                    <td style="font-size:0.7rem;">${timestamp}</td>
-                    <td><span class="location-filter">${escapeHtml(location)}</span></td>
+                <tr class="${isAutoRefresh ? 'new-row' : ''}">
+                    <td class="checkbox-col"><input type="checkbox" class="log-checkbox" data-id="${log.id}" ${wasSelected ? 'checked' : ''}></td>
+                    <td style="font-size:0.7rem;">${escapeHtml(timestamp)}</td>
+                    <td><span style="background:#1e2a4a; padding:0.2rem 0.5rem; border-radius:1rem; font-size:0.7rem;">${escapeHtml(location)}</span></td>
                     <td><code>${log.ip || '—'}</code></td>
                     <td>${escapeHtml(cityCountry)}</td>
                     <td>${device}</td>
-                    <td style="font-size:0.7rem;">${gps}</td>
-                    <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(pageUrl)}</td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; font-size:0.75rem;">${escapeHtml(destination)}</td>
                 </tr>
             `;
         }).join('');
         
-        // Attach checkbox events
+        logsTableBody.innerHTML = rows;
+        
         document.querySelectorAll('.log-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
                 const id = e.target.getAttribute('data-id');
@@ -400,17 +424,15 @@
                     selectedLogs.delete(id);
                 }
                 updateBatchControls();
-                updateSelectAllCheckbox();
             });
         });
         
-        updateHeaderCheckbox();
+        updateBatchControls();
     }
 
     function updateBatchControls() {
         const batchControls = document.getElementById('batchControls');
         const selectedCountSpan = document.getElementById('selectedCount');
-        
         if (selectedLogs.size > 0) {
             batchControls.style.display = 'flex';
             selectedCountSpan.innerText = selectedLogs.size;
@@ -419,138 +441,90 @@
         }
     }
 
-    function updateSelectAllCheckbox() {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const pageLogs = filteredLogs.slice(start, end);
-        const allSelected = pageLogs.length > 0 && pageLogs.every(log => selectedLogs.has(log.id));
-        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-        if (selectAllCheckbox) selectAllCheckbox.checked = allSelected;
-    }
-
-    function updateHeaderCheckbox() {
-        const headerCheckbox = document.getElementById('headerSelectCheckbox');
-        if (headerCheckbox) {
-            headerCheckbox.style.display = selectedLogs.size > 0 ? 'inline-block' : 'none';
-        }
-    }
-
-    function renderPagination() {
-        const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
-        const paginationDiv = document.getElementById('pagination');
-        
-        if (totalPages <= 1) {
-            paginationDiv.innerHTML = '';
-            return;
-        }
-        
-        let buttons = '';
-        for (let i = 1; i <= Math.min(totalPages, 10); i++) {
-            buttons += `<button onclick="goToPage(${i})" style="background: ${i === currentPage ? '#3b82f6' : '#1e2a4a'}">${i}</button>`;
-        }
-        
-        paginationDiv.innerHTML = `
-            <button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>◀ Prev</button>
-            ${buttons}
-            <button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next ▶</button>
-        `;
-    }
-
-    window.goToPage = (page) => {
-        const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
-        if (page < 1 || page > totalPages) return;
-        currentPage = page;
-        renderTable();
-        renderPagination();
-    };
-
-    function updateStats() {
-        document.getElementById('totalCount').innerText = allLogs.length;
-        const uniqueLocs = new Set(allLogs.map(l => l.location).filter(Boolean));
-        document.getElementById('uniqueLocations').innerText = uniqueLocs.size;
-    }
-
-    function updateLocationFilter() {
-        const locations = [...new Set(allLogs.map(l => l.location).filter(Boolean))];
-        const select = document.getElementById('locationFilter');
-        select.innerHTML = '<option value="">All Locations</option>' + 
-            locations.map(loc => `<option value="${escapeHtml(loc)}">${escapeHtml(loc)}</option>`).join('');
-    }
-
     async function deleteLogs(logIds, message) {
         return new Promise((resolve) => {
-            document.getElementById('modalMessage').innerText = message;
-            currentModalAction = async () => {
-                const modal = document.getElementById('confirmModal');
-                modal.style.display = 'none';
-                
+            document.getElementById('modalMessage').innerHTML = message;
+            window.currentModalAction = async () => {
+                document.getElementById('confirmModal').style.display = 'none';
                 let deleted = 0;
                 for (const id of logIds) {
                     try {
-                        await deleteDoc(doc(db, COLLECTION_NAME, id));
+                        await deleteDoc(doc(db, currentCollection, id));
                         deleted++;
-                    } catch(e) {
-                        console.error("Delete failed:", id, e);
-                    }
+                    } catch(e) { console.error(e); }
                 }
-                
-                alert(`✅ Deleted ${deleted} log(s)`);
-                await loadLogs();
+                alert(`✅ Deleted ${deleted} log(s) from "${currentCollection}"`);
+                await loadLogs(false);
                 resolve();
             };
             document.getElementById('confirmModal').style.display = 'flex';
         });
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', () => loadLogs());
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if (isAutoRefreshing) {
+                loadLogs(true);
+            }
+        }, 3000);
+    }
+
+    refreshBtn.addEventListener('click', () => loadLogs(false));
     
-    document.getElementById('clearAllBtn').addEventListener('click', () => {
-        if (allLogs.length === 0) {
-            alert("No logs to delete");
-            return;
-        }
-        deleteLogs(allLogs.map(l => l.id), `⚠️ Delete ALL ${allLogs.length} logs? This action cannot be undone.`);
-    });
-    
-    document.getElementById('deleteSelectedBtn')?.addEventListener('click', () => {
-        if (selectedLogs.size === 0) return;
-        deleteLogs(Array.from(selectedLogs), `⚠️ Delete ${selectedLogs.size} selected log(s)?`);
-    });
-    
-    document.getElementById('selectAllCheckbox')?.addEventListener('change', (e) => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const pageLogs = filteredLogs.slice(start, end);
-        
-        if (e.target.checked) {
-            pageLogs.forEach(log => selectedLogs.add(log.id));
+    toggleAutoBtn.addEventListener('click', () => {
+        isAutoRefreshing = !isAutoRefreshing;
+        if (isAutoRefreshing) {
+            toggleAutoBtn.textContent = '⏸️ Pause Auto-Refresh';
+            toggleAutoBtn.classList.remove('btn-success');
+            toggleAutoBtn.classList.add('btn-warning');
+            loadLogs(false);
         } else {
-            pageLogs.forEach(log => selectedLogs.delete(log.id));
+            toggleAutoBtn.textContent = '▶️ Start Auto-Refresh';
+            toggleAutoBtn.classList.remove('btn-warning');
+            toggleAutoBtn.classList.add('btn-success');
         }
-        
-        renderTable();
+    });
+    
+    clearAllBtn.addEventListener('click', () => {
+        if (allLogs.length === 0) return alert("No logs to delete");
+        deleteLogs(allLogs.map(l => l.id), `⚠️ Delete ALL ${allLogs.length} logs from <strong>${currentCollection}</strong>?<br>Other collections are NOT affected.`);
+    });
+    
+    deleteSelectedBtn.addEventListener('click', () => {
+        if (selectedLogs.size === 0) return;
+        deleteLogs(Array.from(selectedLogs), `⚠️ Delete ${selectedLogs.size} selected log(s) from <strong>${currentCollection}</strong>?`);
+    });
+    
+    selectAllCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            filteredLogs.forEach(log => selectedLogs.add(log.id));
+        } else {
+            filteredLogs.forEach(log => selectedLogs.delete(log.id));
+        }
+        renderTable(false);
         updateBatchControls();
     });
     
-    document.getElementById('searchInput').addEventListener('input', () => applyFilters());
-    document.getElementById('locationFilter').addEventListener('change', () => applyFilters());
-    
-    document.getElementById('confirmYes').addEventListener('click', () => {
-        if (currentModalAction) {
-            currentModalAction();
-            currentModalAction = null;
-        }
-        document.getElementById('confirmModal').style.display = 'none';
+    collectionSelect.addEventListener('change', async (e) => {
+        currentCollection = e.target.value;
+        selectedLogs.clear();
+        await loadLogs(false);
     });
     
+    searchInput.addEventListener('input', () => applyFilters(false));
+    
+    document.getElementById('confirmYes').addEventListener('click', () => {
+        if (window.currentModalAction) window.currentModalAction();
+        document.getElementById('confirmModal').style.display = 'none';
+    });
     document.getElementById('confirmNo').addEventListener('click', () => {
         document.getElementById('confirmModal').style.display = 'none';
-        currentModalAction = null;
     });
     
     function escapeHtml(str) {
         if (!str) return '—';
-        return str.replace(/[&<>]/g, function(m) {
+        return String(str).replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
@@ -558,8 +532,9 @@
         });
     }
     
-    // Initial load
-    loadLogs();
+    // Start auto-refresh on load
+    startAutoRefresh();
+    loadLogs(false);
 </script>
 </body>
 </html>
