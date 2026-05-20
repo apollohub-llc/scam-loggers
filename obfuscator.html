@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Obfuscation Lab · Reversal + Split + Junk</title>
+    <style>
+        /* absolutely no CSS – pure functionality */
+    </style>
+</head>
+<body>
+    <h1>⚡ Advanced Obfuscation Toolkit</h1>
+    <p><strong>No CSS – only logic.</strong> Paste your <strong>full obfuscated HTML script</strong> (the one with <code>document.write(atob("PCFET0NUWVB..."))</code>) into the field below.<br>
+    The engine will extract the base64 payload, split it, reverse it, and inject junk code – producing a much stronger, yet fully working script.</p>
+
+    <textarea id="inputScript" rows="12" cols="90" placeholder="Paste your whole <script> block here ..."></textarea>
+    <br><br>
+    <button id="obfuscateBtn">⟳  OBFUSCATE (split + reversal + junk)</button>
+    <br><br>
+    <textarea id="outputScript" rows="18" cols="90" placeholder="New obfuscated script will appear here ..."></textarea>
+    <br>
+    <button id="copyBtn" style="margin-top: 8px;">📋 Copy to clipboard</button>
+
+    <script>
+        (function() {
+            // helper: generate random junk variable name
+            function randomVar(prefix = '_0x') {
+                return prefix + Math.random().toString(36).substring(2, 8);
+            }
+
+            // helper: generate a random junk line of code
+            function junkLine() {
+                const types = [
+                    () => `let ${randomVar('_')} = ${Math.floor(Math.random() * 9999)};`,
+                    () => `const ${randomVar('__')} = "${Math.random().toString(36).substring(2, 10)}";`,
+                    () => `if (${Math.random() > 0.5 ? 'true' : 'false'}) { let _ = 1; }`,
+                    () => `function ${randomVar('_fn')}() { return ${Math.floor(Math.random() * 100)}; }`,
+                    () => `/* ${Math.random().toString(36).substring(2, 12)} */`,
+                    () => `// nothing to see here ${Math.random()}`,
+                    () => `typeof ${randomVar('_unused')} !== 'undefined' ? 0 : 1;`
+                ];
+                return types[Math.floor(Math.random() * types.length)]();
+            }
+
+            // FIXED: extract base64 payload properly including padding characters like '='
+            function extractBase64Payload(scriptText) {
+                // Match content inside atob("...") or atob('...') safely including A-Z, a-z, 0-9, +, /, and =
+                const match = scriptText.match(/atob\(\s*["']([A-Za-z0-9+/=]+)["']\s*\)/);
+                if (match && match[1]) {
+                    return match[1];
+                }
+                
+                // fallback: find any large contiguous block of base64 looking text inside quotes
+                const fallbackMatch = scriptText.match(/["']([A-Za-z0-9+/=]{16,})["']/);
+                return fallbackMatch ? fallbackMatch[1] : null;
+            }
+
+            // Main obfuscation engine: split + reverse + junk
+            function obfuscateScript(originalScript) {
+                const payload = extractBase64Payload(originalScript);
+                if (!payload) {
+                    return "// ERROR: could not find base64 payload. Make sure script contains atob(\"PCFET0NU...\")";
+                }
+
+                // 1. reverse the base64 string
+                const reversedPayload = payload.split('').reverse().join('');
+
+                // 2. split into random chunks (between 8 and 28 parts)
+                const chunkCount = Math.floor(Math.random() * 20) + 8; 
+                const chunkSize = Math.ceil(reversedPayload.length / chunkCount);
+                let chunks = [];
+                for (let i = 0; i < chunkCount; i++) {
+                    let start = i * chunkSize;
+                    if (start < reversedPayload.length) {
+                        chunks.push(reversedPayload.substring(start, start + chunkSize));
+                    }
+                }
+
+                // 3. generate variable names for each chunk
+                const chunkVars = chunks.map(() => randomVar('_c'));
+
+                // 4. build the reassembly code with junk interleaved
+                let reassemblyCode = '';
+                
+                // declare chunk variables and assign them (with random junk in between)
+                for (let i = 0; i < chunkVars.length; i++) {
+                    reassemblyCode += `    let ${chunkVars[i]} = "${chunks[i]}";\n`;
+                    if (Math.random() > 0.6) reassemblyCode += `    ${junkLine()}\n`;
+                }
+                
+                // add more junk before combination
+                for (let i = 0; i < 3; i++) reassemblyCode += `    ${junkLine()}\n`;
+                
+                // combine chunks back into reversed string
+                let combineStr = chunkVars.join(' + ');
+                reassemblyCode += `\n    let _revString = ${combineStr};\n`;
+                reassemblyCode += `    ${junkLine()}\n`;
+                
+                // reverse again to get original base64
+                reassemblyCode += `    let _originalB64 = _revString.split('').reverse().join('');\n`;
+                reassemblyCode += `    ${junkLine()}\n`;
+                
+                // final decode and write
+                reassemblyCode += `    document.write(atob(_originalB64));\n`;
+                reassemblyCode += `    document.close();\n`;
+
+                // wrap everything in an IIFE with more junk
+                let finalScript = `(function(){\n    ${junkLine()}\n    ${junkLine()}\n`;
+                finalScript += reassemblyCode;
+                finalScript += `    ${junkLine()}\n})();`;
+                
+                // wrap inside a complete script tag (as HTML)
+                return `<script>\n    /* ADVANCED OBFUSCATION: split + reversed payload + junk */\n    document.open();\n    ${finalScript}\n<\/script>`;
+            }
+
+            // UI elements
+            const inputArea = document.getElementById('inputScript');
+            const outputArea = document.getElementById('outputScript');
+            const obfBtn = document.getElementById('obfuscateBtn');
+            const copyBtn = document.getElementById('copyBtn');
+
+            obfBtn.addEventListener('click', () => {
+                const userScript = inputArea.value;
+                if (!userScript.trim()) {
+                    outputArea.value = "// Please paste your original obfuscated script first (the one with document.write(atob(...)))";
+                    return;
+                }
+                const result = obfuscateScript(userScript);
+                outputArea.value = result;
+            });
+
+            // FIXED: Modernized clipboard copy API
+            copyBtn.addEventListener('click', () => {
+                if (outputArea.value) {
+                    navigator.clipboard.writeText(outputArea.value)
+                        .then(() => alert('✓ Obfuscated script copied to clipboard.'))
+                        .catch(() => alert('Failed to copy text. Please copy manually.'));
+                } else {
+                    alert('Nothing to copy yet.');
+                }
+            });
+
+            // Pre-fill with a demo example
+            inputArea.value = `<script>\n    document.open();\n    document.write(atob("PCFET0NUWVBFIGh0bWw+PGh0bWw+PGhlYWQ+PHRpdGxlPlRlc3Q8L3RpdGxlPjwvaGVhZD48Ym9keT48aDE+SGVsbG8gV29ybGQ8L2gxPjwvYm9keT48L2h0bWw+"));\n    document.close();\n<\/script>`;
+        })();
+    </script>
+</body>
+</html>
