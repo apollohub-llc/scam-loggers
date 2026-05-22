@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Obfuscation Suite</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            background: #1e1e24; 
+            color: #f5f5f5;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: auto; 
+            background: #2a2a35; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); 
+        }
+        textarea { 
+            width: 100%; 
+            height: 220px; 
+            margin-bottom: 15px; 
+            background: #111116;
+            color: #00ff66;
+            border: 1px solid #444; 
+            border-radius: 6px; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 12px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 14px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 16px; 
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            transition: background 0.2s ease;
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        .secondary-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+        .secondary-btn:hover {
+            background: #218838;
+        }
+        h2 { 
+            color: #fff; 
+            border-bottom: 2px solid #3a3a4a;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        h3 {
+            color: #bbb;
+            margin-top: 25px;
+        }
+        p {
+            color: #aaa;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⚡ Advanced Obfuscation Suite (Split + Reversal + Junk)</h2>
+    <p>Paste your full raw HTML (including any inline CSS, JS, and emojis 🚀🔥) below. The engine will automatically convert, split, reverse, and interleave junk variables into a single protected output file.</p>
+    
+    <textarea id="inputCode" placeholder="<html>&#10;  <body>&#10;    <h1>Hello World 👋🔥</h1>&#10;  </body>&#10;</html>"></textarea>
+    <button onclick="runObfuscationSuite()">⚡ Generate Protected Code</button>
+
+    <h3>Result Payload</h3>
+    <textarea id="outputCode" readonly placeholder="Your advanced obfuscated script output will appear here..."></textarea>
+    <button class="secondary-btn" onclick="copyToClipboard()">📋 Copy Protected Code to Clipboard</button>
+</div>
+
+<script>
+    // helper: generate random junk variable name
+    function randomVar(prefix = '_0x') {
+        return prefix + Math.random().toString(36).substring(2, 8);
+    }
+
+    // helper: generate a random junk line of code
+    function junkLine() {
+        const types = [
+            () => `let ${randomVar('_')} = ${Math.floor(Math.random() * 9999)};`,
+            () => `const ${randomVar('__')} = "${Math.random().toString(36).substring(2, 10)}";`,
+            () => `if (${Math.random() > 0.5 ? 'true' : 'false'}) { let _ = 1; }`,
+            () => `function ${randomVar('_fn')}() { return ${Math.floor(Math.random() * 100)}; }`,
+            () => `/* ${Math.random().toString(36).substring(2, 12)} */`,
+            () => `// tracking system check: ${Math.random()}`,
+            () => `typeof ${randomVar('_unused')} !== 'undefined' ? 0 : 1;`
+        ];
+        return types[Math.floor(Math.random() * types.length)]();
+    }
+
+    function runObfuscationSuite() {
+        const input = document.getElementById('inputCode').value;
+        if (!input.trim()) return alert("Please paste your source code first!");
+
+        // --- STAGE 1: SAFE EMOJI TO BASE64 CONVERSATION ---
+        // encodeURIComponent + unescape ensures emojis/UTF-8 characters aren't mangled by btoa
+        const payload = btoa(encodeURIComponent(input).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+
+        // --- STAGE 2: SPLIT, REVERSAL & JUNK ENGINE ---
+        // 1. Reverse the base64 string
+        const reversedPayload = payload.split('').reverse().join('');
+
+        // 2. Split into random chunks (between 8 and 28 parts)
+        const chunkCount = Math.floor(Math.random() * 20) + 8; 
+        const chunkSize = Math.ceil(reversedPayload.length / chunkCount);
+        let chunks = [];
+        for (let i = 0; i < chunkCount; i++) {
+            let start = i * chunkSize;
+            if (start < reversedPayload.length) {
+                chunks.push(reversedPayload.substring(start, start + chunkSize));
+            }
+        }
+
+        // 3. Generate variable names for each chunk
+        const chunkVars = chunks.map(() => randomVar('_c'));
+
+        // 4. Build the reassembly layer
+        let reassemblyCode = '';
+        
+        // Interleave chunk allocations with noise variables
+        for (let i = 0; i < chunkVars.length; i++) {
+            reassemblyCode += `    let ${chunkVars[i]} = "${chunks[i]}";\n`;
+            if (Math.random() > 0.6) reassemblyCode += `    ${junkLine()}\n`;
+        }
+        
+        // Add random filler junk rows
+        for (let i = 0; i < 3; i++) reassemblyCode += `    ${junkLine()}\n`;
+        
+        // Stitch chunk arrays together back into reversed string
+        let combineStr = chunkVars.join(' + ');
+        reassemblyCode += `\n    let _revString = ${combineStr};\n`;
+        reassemblyCode += `    ${junkLine()}\n`;
+        
+        // Flip the reversed string back to normal base64 format 
+        reassemblyCode += `    let _originalB64 = _revString.split('').reverse().join('');\n`;
+        reassemblyCode += `    ${junkLine()}\n`;
+        
+        // Failsafe execution layer matching the safe emoji conversion logic
+        reassemblyCode += `    document.write(decodeURIComponent(atob(_originalB64).split('').map(function(c) {\n`;
+        reassemblyCode += `        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);\n`;
+        reassemblyCode += `    }).join('')));\n`;
+        reassemblyCode += `    document.close();\n`;
+
+        // Wrap everything inside an Immediately Invoked Function Expression (IIFE)
+        let finalScript = `(function(){\n    ${junkLine()}\n    ${junkLine()}\n`;
+        finalScript += reassemblyCode;
+        finalScript += `    ${junkLine()}\n})();`;
+        
+        // Output as a standalone working document
+        const completeHTMLOutput = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Protected Content</title>
+</head>
+<body>
+<script>
+    /* ADVANCED OBFUSCATION: 1-Click Multi-Stage Split + Reversed UTF-8 Payload */
+    document.open();
+    ${finalScript}
+<\/script>
+</body>
+</html>`;
+
+        document.getElementById('outputCode').value = completeHTMLOutput;
+    }
+
+    function copyToClipboard() {
+        const outputArea = document.getElementById('outputCode');
+        if (outputArea.value) {
+            navigator.clipboard.writeText(outputArea.value)
+                .then(() => alert('✓ Obfuscated script copied to clipboard.'))
+                .catch(() => alert('Failed to copy text automatically. Please select all and copy manually.'));
+        } else {
+            alert('Nothing to copy yet. Generate the code first!');
+        }
+    }
+</script>
+
+</body>
+</html>
