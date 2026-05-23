@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL // DATA_MATRIX</title>
+    <style>
+        :root {
+            --bg-color: #050811;
+            --panel-bg: rgba(10, 16, 32, 0.75);
+            --neon-cyan: #00f0ff;
+            --neon-green: #39ff14;
+            --text-color: #cbd5e1;
+            --border-glow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(18, 24, 41, 0.6) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 24, 41, 0.6) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--neon-cyan);
+            padding-bottom: 10px;
+            text-shadow: 0 0 8px var(--neon-cyan);
+            color: var(--neon-cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-tag {
+            font-size: 14px;
+            padding: 4px 8px;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            text-shadow: 0 0 5px var(--neon-green);
+            box-shadow: inset 0 0 5px rgba(57, 255, 20, 0.2);
+            animation: blink 2s infinite;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-cyan);
+            box-shadow: var(--border-glow);
+            padding: 15px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--neon-green);
+            padding: 10px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+        }
+
+        /* Locked Dashboard Styles */
+        body.locked {
+            --neon-cyan: #00f0ff;
+            --neon-green: #39ff14;
+            --border-glow: 0 0 15px rgba(57, 255, 20, 0.4), 0 0 5px rgba(0, 240, 255, 0.4);
+        }
+
+        body.locked textarea {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            pointer-events: none; /* Makes un-editable and un-selectable if desired */
+            font-size: 16px;
+            text-shadow: 0 0 5px var(--neon-green);
+            padding: 0;
+            height: auto;
+            min-height: 50px;
+        }
+
+        body.locked .panel {
+            border-color: var(--neon-green);
+            border-left: 4px solid var(--neon-cyan);
+        }
+
+        body.locked .panel-title {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+
+        /* Controls Panel */
+        .controls {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+        }
+
+        button {
+            background: transparent;
+            color: var(--neon-cyan);
+            border: 2px solid var(--neon-cyan);
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: var(--border-glow);
+            text-shadow: 0 0 5px var(--neon-cyan);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        /* Decorative Matrix Rain effect simulation */
+        .deco-sub {
+            font-size: 10px;
+            color: rgba(57, 255, 20, 0.5);
+            margin-top: 5px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1 id="main-title">TARGET_INITIALIZATION_MODE</h1>
+            <div id="sub-title" style="font-size: 12px; color: var(--neon-green);">Fill database modules before extraction...</div>
+        </div>
+        <div class="status-tag" id="status-mode">SETUP // RECON</div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- IP Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[01] TARGET_IP</span><span>SYS_NET</span></div>
+            <textarea id="ip" placeholder="e.g., 192.168.1.254 // 10.0.4.81"></textarea>
+            <div class="deco-sub">// PROTOCOL: IPv4/IPv6 SECURE_TUNNEL</div>
+        </div>
+
+        <!-- Name Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[02] IDENTITY_ALIAS</span><span>ID_FILE</span></div>
+            <textarea id="name" placeholder="e.g., John 'ZeroCool' Doe"></textarea>
+            <div class="deco-sub">// ACCESS_LEVEL: RESTRICTED</div>
+        </div>
+
+        <!-- Address Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[03] MAC_ADDRESS</span><span>HARDWARE</span></div>
+            <textarea id="address" placeholder="e.g., 00:1A:2B:3C:4D:5E"></textarea>
+            <div class="deco-sub">// NIC_VENDOR:未知_NODE</div>
+        </div>
+
+        <!-- Street Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[04] STREET_NODE</span><span>GEO_LOC</span></div>
+            <textarea id="street" placeholder="e.g., 404 Cipher Lane, Sector 7"></textarea>
+            <div class="deco-sub">// GPS_X: 45.1092 // Y: -122.6801</div>
+        </div>
+
+        <!-- City Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[05] METROPOLIS_GRID</span><span>GEO_LOC</span></div>
+            <textarea id="city" placeholder="e.g., Neo-Tokyo / New York Grid"></textarea>
+            <div class="deco-sub">// DISTRICT: CORE_NET_CENTRAL</div>
+        </div>
+
+        <!-- Country Box -->
+        <div class="panel">
+            <div class="panel-title"><span>[06] NATION_ZONE</span><span>GEO_LOC</span></div>
+            <textarea id="country" placeholder="e.g., United Federation / Sector 01"></textarea>
+            <div class="deco-sub">// REGION_DIAL: +01_SYS</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="action-btn" onclick="exportDashboard()">Export & Lock Dashboard</button>
+    </div>
+
+    <script>
+        // List of fields to parse
+        const fields = ['ip', 'name', 'address', 'street', 'city', 'country'];
+
+        // On Load: Check if URL parameters exist
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let hasParams = false;
+
+            fields.forEach(field => {
+                if (urlParams.has(field)) {
+                    document.getElementById(field).value = urlParams.get(field);
+                    hasParams = true;
+                }
+            });
+
+            // If it contains parameters, automatically switch to Locked Cyberpunk view
+            if (hasParams) {
+                lockDashboard();
+            }
+        };
+
+        function exportDashboard() {
+            const url = new URL(window.location.href);
+            
+            // Append data fields to URL parameters
+            fields.forEach(field => {
+                const val = document.getElementById(field).value;
+                if (val) {
+                    url.searchParams.set(field, val);
+                } else {
+                    url.searchParams.delete(field);
+                }
+            });
+
+            // Push the new URL to the browser history bar
+            window.history.pushState({}, '', url);
+
+            // Transform into the Neon Dashboard
+            lockDashboard();
+            
+            // Optional: Copy link to clipboard automatically
+            navigator.clipboard.writeText(window.location.href);
+            alert("Dashboard Locked! Neon URL generated and copied to clipboard.");
+        }
+
+        function lockDashboard() {
+            // Add locked class to body to change stylesheet behaviors
+            document.body.classList.add('locked');
+
+            // Set textareas to readonly
+            fields.forEach(field => {
+                document.getElementById(field).readOnly = true;
+            });
+
+            // Update UI styling texts
+            document.getElementById('main-title').innerText = "SYSTEM_OVERRIDE_ACTIVE // EXTR_DATA";
+            document.getElementById('sub-title').innerText = "Mainframe successfully breached. Displaying live vector nodes.";
+            document.getElementById('status-mode').innerText = "LIVE_MIRROR // DECRYPTED";
+            document.getElementById('status-mode').style.borderColor = "var(--neon-cyan)";
+            document.getElementById('status-mode').style.color = "var(--neon-cyan)";
+            document.getElementById('status-mode').style.textShadow = "0 0 5px var(--neon-cyan)";
+
+            // Change button behavior to a reset/unlock button
+            const btn = document.getElementById('action-btn');
+            btn.innerText = "Initialize New Breach (Reset)";
+            btn.style.borderColor = "var(--neon-green)";
+            btn.style.color = "var(--neon-green)";
+            btn.style.textShadow = "0 0 5px var(--neon-green)";
+            btn.setAttribute('onclick', 'resetDashboard()');
+        }
+
+        function resetDashboard() {
+            // Clear URL params
+            const url = new URL(window.location.href);
+            fields.forEach(field => url.searchParams.delete(field));
+            window.history.pushState({}, '', url.pathname);
+
+            // Reload page fresh
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
