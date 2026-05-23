@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>OSINT Collector · FindThisPerson Toolkit</title>
+  <title>OSINT Vault · Persistent Storage · FindThisPerson Toolkit</title>
   <style>
     * {
       margin: 0;
@@ -57,6 +57,19 @@
       color: #a5f3fc;
       margin-top: 0.75rem;
       border: 1px solid #334155;
+    }
+
+    .save-status {
+      background: #0f172a;
+      border-radius: 30px;
+      padding: 0.3rem 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      margin-left: 12px;
+      font-weight: normal;
+      color: #86efac;
     }
 
     /* two-column layout */
@@ -289,15 +302,34 @@
         padding: 1rem;
       }
     }
+
+    .toast-notif {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4f46e5;
+      color: white;
+      padding: 0.6rem 1.3rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      z-index: 9999;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      border: 1px solid #818cf8;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>🕵️ OSINT Data Vault</h1>
-    <p>Collect structured intelligence — names, emails, phones, usernames, aliases & more.<br>
-    Seamless export for <strong style="color:#c084fc">findthisperson.com</strong> investigations.</p>
-    <div class="badge">🎯 Compatible with OSINT levels · Up to 30+ data points</div>
+    <h1>🕵️ OSINT Data Vault <span class="save-status" id="saveStatusBadge">💾 Auto-saving enabled</span></h1>
+    <p>Persistent OSINT collector — names, emails, phones, usernames, custom fields.<br>
+    All data saved automatically in your browser. Close the tab, restart PC — resume exactly where you left.</p>
+    <div class="badge">🎯 Target: findthisperson.com · Up to 30 fields · LocalStorage recovery</div>
   </div>
 
   <div class="dashboard">
@@ -308,20 +340,22 @@
         <span style="font-size:0.7rem; background:#1e293b; padding:0.2rem 0.8rem; border-radius:30px;" id="fieldCounter">0 / 30</span>
       </div>
       <div id="dynamicFieldsContainer" class="fields-grid">
-        <!-- JavaScript will inject default rows -->
+        <!-- JavaScript will inject rows -->
       </div>
       
       <div class="action-buttons">
         <button id="addFieldBtn" style="background:#2d3a5e;">➕ Add field</button>
         <button id="resetToDefaultBtn" class="warning">⟳ Reset defaults</button>
         <button id="clearAllBtn" class="warning">🗑 Clear all</button>
+        <button id="manualSaveBtn" style="background:#334155;">💾 Force save</button>
       </div>
       <div class="stats">
-        <span>📌 Tip: Use 'Custom' type to store arbitrary info (social, address, job)</span>
+        <span>📌 Data survives crashes, tab closes, or system reboots.</span>
+        <span>🔄 <span id="lastSavedHint">never saved</span></span>
       </div>
     </div>
 
-    <!-- RIGHT: OSINT EXPORT & COPY for findthisperson.com -->
+    <!-- RIGHT: OSINT EXPORT & COPY -->
     <div class="output-panel">
       <div class="section-title">
         <span>🎯 OSINT Report</span>
@@ -353,31 +387,38 @@
       </div>
 
       <div style="font-size:0.7rem; background:#0f172a; border-radius:1rem; padding:0.5rem 1rem;">
-        💡 <strong>Workflow:</strong> Fill names, emails, phone numbers, usernames. Copy JSON/text and paste into notes / OSINT tool while solving levels on findthisperson.com
+        💡 <strong>Persistent workflow:</strong> Every edit auto-saves to localStorage. Even after browser crash, refresh the page — your OSINT form is restored automatically.
       </div>
     </div>
   </div>
   <div class="footer-note">
-    🧠 OSINT ready — Supports up to 30 fields (names, emails, phones, custom). All data stays in your browser. 
+    🧠 OSINT ready — Up to 30 fields (names, emails, phones, custom). Full local persistence, no cloud.
   </div>
 </div>
 
 <script>
-  // ------------------------------------------------------------
-  // OSINT Form Manager: allows up to 30 fields with flexible types
-  // Field types: "Full Name", "Email", "Phone Number", "Username", "Custom"
-  // Default entries: 8 useful OSINT starter fields
-  // ------------------------------------------------------------
+  // ------------------------------------------------------------------
+  // OSINT Form with LOCALSTORAGE auto-save & recovery
+  // Max fields: 30. Supports Full Name, Email, Phone Number, Username, Custom
+  // Every change (add, remove, edit type, edit value) triggers auto-save.
+  // On page load, attempts to restore previously saved state.
+  // ------------------------------------------------------------------
   
+  const STORAGE_KEY = 'osint_vault_data';
   const MAX_FIELDS = 30;
-  let fields = [];        // array of objects { type, value, id }
-
-  // Helper: generate random short id
+  
+  // Global fields array: each field = { id, type, value }
+  let fields = [];
+  
+  // Helper: generate short unique id
   function generateId() {
-    return Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+    return Date.now() + '-' + Math.random().toString(36).substring(2, 8);
   }
-
-  // Default OSINT field set (names, emails, phone etc)
+  
+  // Available types for dropdown
+  const FIELD_TYPES = ["Full Name", "Email", "Phone Number", "Username", "Custom"];
+  
+  // Default starter set (rich OSINT base)
   const DEFAULT_FIELDS = [
     { type: "Full Name", value: "", id: generateId() },
     { type: "Email", value: "", id: generateId() },
@@ -388,25 +429,87 @@
     { type: "Phone (alt)", value: "", id: generateId() },
     { type: "Custom", value: "", id: generateId() }
   ];
-
-  // available types for dropdown
-  const FIELD_TYPES = ["Full Name", "Email", "Phone Number", "Username", "Custom"];
-
-  // --- render all fields into DOM ---
+  
+  // -------- SAVE & LOAD from localStorage ----------
+  function saveToLocalStorage() {
+    try {
+      // store fields array (full state)
+      const dataToStore = {
+        fields: fields,
+        version: '1.0',
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));
+      updateLastSavedIndicator();
+      // optional badge flash
+      const badge = document.getElementById('saveStatusBadge');
+      if (badge) {
+        badge.style.opacity = '0.7';
+        setTimeout(() => { if(badge) badge.style.opacity = '1'; }, 200);
+      }
+    } catch(e) {
+      console.warn("localStorage save error", e);
+      showToast("⚠️ Auto-save failed (storage limit?)", 1800);
+    }
+  }
+  
+  function loadFromLocalStorage() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.fields)) {
+        // validate each field has needed properties
+        const loadedFields = parsed.fields.filter(f => f && typeof f === 'object' && f.type && f.id && typeof f.value !== 'undefined');
+        if (loadedFields.length > 0) {
+          // additional sanity: ensure no field exceeds max fields, but we'll keep as is but trim if > MAX?
+          let trimmedFields = loadedFields;
+          if (trimmedFields.length > MAX_FIELDS) {
+            trimmedFields = trimmedFields.slice(0, MAX_FIELDS);
+            showToast(`⚠️ Loaded fields exceeded limit, trimmed to ${MAX_FIELDS}`, 2000);
+          }
+          return trimmedFields;
+        }
+      }
+    } catch(e) { console.warn("failed to parse stored OSINT", e); }
+    return null;
+  }
+  
+  function updateLastSavedIndicator() {
+    const el = document.getElementById('lastSavedHint');
+    if (el) {
+      const now = new Date();
+      el.innerText = `last saved: ${now.toLocaleTimeString()}`;
+      setTimeout(() => {
+        if (el.innerText.includes('last saved')) {
+          // keep as is, no extra fade
+        }
+      }, 100);
+    }
+  }
+  
+  // Auto-save wrapper (called after any mutation)
+  function autoSaveAndRender() {
+    renderFields();      // updates DOM & outputs
+    saveToLocalStorage(); // persist latest state
+  }
+  
+  // ---------- UI RENDER & EVENT BINDINGS ----------
   function renderFields() {
     const container = document.getElementById('dynamicFieldsContainer');
     if (!container) return;
-
+    
     if (fields.length === 0) {
       container.innerHTML = `<div style="text-align:center; padding:2rem; color:#7e8ba3;">✨ No fields added. Click "Add field" or reset defaults.</div>`;
       document.getElementById('fieldCounter').innerText = `0 / ${MAX_FIELDS}`;
-      updateOutputs();  // update empty outputs
+      updateOutputs();
       return;
     }
-
+    
     let html = '';
     fields.forEach((field, idx) => {
       const options = FIELD_TYPES.map(ft => `<option value="${ft}" ${field.type === ft ? 'selected' : ''}>${ft}</option>`).join('');
+      const safeValue = escapeHtmlForAttribute(field.value);
       html += `
         <div class="input-row" data-field-id="${field.id}">
           <div class="field-label">
@@ -414,7 +517,7 @@
               ${options}
             </select>
           </div>
-          <input type="text" class="field-value-input" data-idx="${idx}" placeholder="Enter ${field.type.toLowerCase()} ..." value="${escapeHtml(field.value)}" autocomplete="off">
+          <input type="text" class="field-value-input" data-idx="${idx}" placeholder="Enter ${field.type.toLowerCase()} ..." value="${safeValue}" autocomplete="off">
           <button class="remove-btn" data-id="${field.id}" title="Remove field">✖</button>
         </div>
       `;
@@ -422,7 +525,7 @@
     container.innerHTML = html;
     document.getElementById('fieldCounter').innerText = `${fields.length} / ${MAX_FIELDS}`;
     
-    // attach dynamic events
+    // attach fresh events
     document.querySelectorAll('.field-type-select').forEach(select => {
       select.removeEventListener('change', handleTypeChange);
       select.addEventListener('change', handleTypeChange);
@@ -438,101 +541,79 @@
     
     updateOutputs();
   }
-
+  
+  function escapeHtmlForAttribute(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  }
+  
   function handleTypeChange(e) {
     const idx = e.target.getAttribute('data-idx');
     if (idx !== null && fields[parseInt(idx)]) {
       fields[parseInt(idx)].type = e.target.value;
-      // re-render to keep placeholder consistent (also keep value)
-      renderFields();
+      autoSaveAndRender();   // auto-save after type change
     }
   }
-
+  
   function handleValueChange(e) {
     const idx = e.target.getAttribute('data-idx');
     if (idx !== null && fields[parseInt(idx)]) {
       fields[parseInt(idx)].value = e.target.value;
-      updateOutputs();
+      updateOutputs();       // live update outputs without full re-render for speed
+      saveToLocalStorage();  // but persist value as well
+      // we don't call renderFields() to avoid losing focus, but we need to update counter? counter unchanged, but outputs are updated.
+      // also we want to show saving feedback
+      updateLastSavedIndicator();
     }
   }
-
+  
   function handleRemove(e) {
     const id = e.target.getAttribute('data-id');
     if (id) {
       fields = fields.filter(f => f.id !== id);
-      renderFields();
+      autoSaveAndRender();   // save after removal
+      showToast("Field removed · auto-saved", 1200);
     }
   }
-
-  // helper escape
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      return m;
-    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-      return c;
-    });
+  
+  function updateOutputs() {
+    const dataObj = buildDataObject();
+    const jsonPretty = JSON.stringify(dataObj, null, 2);
+    const textReport = getFormattedTextReport();
+    const compact = getCompactSnippet();
+    document.getElementById('jsonOutput').innerText = jsonPretty || "{ }";
+    document.getElementById('textOutput').innerText = textReport;
+    document.getElementById('compactOutput').innerText = compact;
   }
-
-  // --- generate OSINT data structures ---
+  
+  // Build OSINT object for JSON
   function buildDataObject() {
     const obj = {};
-    // separate emails, phones, names, usernames, custom
-    const emails = [];
-    const phones = [];
-    const names = [];
-    const usernames = [];
-    const customEntries = [];
-
-    fields.forEach(field => {
-      const val = field.value.trim();
+    const emails = [], phones = [], names = [], usernames = [], custom = [];
+    fields.forEach(f => {
+      const val = f.value.trim();
       if (!val) return;
-      const type = field.type;
-      if (type === "Email") {
-        emails.push(val);
-      } else if (type === "Phone Number") {
-        phones.push(val);
-      } else if (type === "Full Name") {
-        names.push(val);
-      } else if (type === "Username") {
-        usernames.push(val);
-      } else if (type === "Custom") {
-        customEntries.push(val);
-      }
+      if (f.type === "Email") emails.push(val);
+      else if (f.type === "Phone Number") phones.push(val);
+      else if (f.type === "Full Name") names.push(val);
+      else if (f.type === "Username") usernames.push(val);
+      else if (f.type === "Custom") custom.push(val);
     });
-
     if (emails.length) obj.emails = emails;
     if (phones.length) obj.phone_numbers = phones;
     if (names.length) obj.full_names = names;
     if (usernames.length) obj.usernames = usernames;
-    if (customEntries.length) obj.custom_metadata = customEntries;
-    
-    // also preserve raw fields list for full overview
-    obj.all_entries = fields.filter(f => f.value.trim() !== "").map(f => ({
-      type: f.type,
-      value: f.value.trim()
-    }));
-    
+    if (custom.length) obj.custom_metadata = custom;
+    obj.all_entries = fields.filter(f => f.value.trim() !== "").map(f => ({ type: f.type, value: f.value.trim() }));
     obj.total_osint_points = fields.filter(f => f.value.trim() !== "").length;
     return obj;
   }
-
+  
   function getFormattedTextReport() {
     let report = "========== OSINT COLLECTION ==========\n";
-    let groups = {
-      "Full Name": [],
-      "Email": [],
-      "Phone Number": [],
-      "Username": [],
-      "Custom": []
-    };
+    let groups = { "Full Name": [], "Email": [], "Phone Number": [], "Username": [], "Custom": [] };
     fields.forEach(f => {
-      if (f.value.trim()) {
-        groups[f.type].push(f.value.trim());
-      }
+      if (f.value.trim()) groups[f.type].push(f.value.trim());
     });
     for (const [type, values] of Object.entries(groups)) {
       if (values.length) {
@@ -544,9 +625,8 @@
     report += `=======================================\n`;
     return report;
   }
-
+  
   function getCompactSnippet() {
-    // compact: name, email, phone combos
     const emails = fields.filter(f => f.type === "Email" && f.value.trim()).map(f => f.value.trim());
     const phones = fields.filter(f => f.type === "Phone Number" && f.value.trim()).map(f => f.value.trim());
     const names = fields.filter(f => f.type === "Full Name" && f.value.trim()).map(f => f.value.trim());
@@ -559,130 +639,106 @@
     if (parts.length === 0) return "⚠️ No OSINT data entered yet";
     return parts.join(" | ");
   }
-
-  function updateOutputs() {
-    const dataObj = buildDataObject();
-    const jsonPretty = JSON.stringify(dataObj, null, 2);
-    const textReport = getFormattedTextReport();
-    const compact = getCompactSnippet();
-    document.getElementById('jsonOutput').innerText = jsonPretty || "{ }";
-    document.getElementById('textOutput').innerText = textReport;
-    document.getElementById('compactOutput').innerText = compact;
+  
+  // --- Field management with auto-save integration ---
+  function addNewField() {
+    if (fields.length >= MAX_FIELDS) {
+      showToast(`⚠️ Maximum ${MAX_FIELDS} fields reached. Remove some first.`, 1800);
+      return;
+    }
+    fields.push({ type: "Custom", value: "", id: generateId() });
+    autoSaveAndRender();
+    showToast(`➕ Added field (${fields.length}/${MAX_FIELDS}) · saved`, 1200);
   }
-
-  // -------- copy utilities ----------
-  async function copyToClipboard(text, successMsg = "Copied!") {
-    try {
-      await navigator.clipboard.writeText(text);
-      showTemporaryToast(successMsg);
-    } catch (err) {
-      alert("⚠️ Copy failed: " + err);
+  
+  function resetToDefault() {
+    if (fields.length > 0 && !confirm("Reset to default OSINT fields? Current data will be replaced.")) return;
+    fields = DEFAULT_FIELDS.map(def => ({ ...def, id: generateId() }));
+    autoSaveAndRender();
+    showToast("⟳ Reset to default fields & auto-saved", 1500);
+  }
+  
+  function clearAllFields() {
+    if (fields.length === 0) return;
+    if (confirm("⚠️ Clear ALL fields? All unsaved progress will be lost (but you can reload from last save if you cancel).")) {
+      fields = [];
+      autoSaveAndRender();
+      showToast("🗑 All fields cleared & saved", 1300);
     }
   }
-
-  function showTemporaryToast(msg) {
-    let toast = document.getElementById('osintToast');
+  
+  function forceManualSave() {
+    saveToLocalStorage();
+    showToast("💾 Manual save completed ✅", 1200);
+  }
+  
+  // ---- Toast helper ----
+  let toastTimeout = null;
+  function showToast(msg, duration = 1800) {
+    let toast = document.querySelector('.toast-notif');
     if (!toast) {
       toast = document.createElement('div');
-      toast.id = 'osintToast';
-      toast.style.position = 'fixed';
-      toast.style.bottom = '20px';
-      toast.style.left = '50%';
-      toast.style.transform = 'translateX(-50%)';
-      toast.style.backgroundColor = '#4f46e5';
-      toast.style.color = 'white';
-      toast.style.padding = '0.6rem 1.3rem';
-      toast.style.borderRadius = '40px';
-      toast.style.fontSize = '0.8rem';
-      toast.style.fontWeight = '500';
-      toast.style.zIndex = '9999';
-      toast.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
-      toast.style.backdropFilter = 'blur(8px)';
-      toast.style.border = '1px solid #818cf8';
+      toast.className = 'toast-notif';
       document.body.appendChild(toast);
     }
     toast.innerText = msg;
     toast.style.opacity = '1';
-    setTimeout(() => {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
       toast.style.opacity = '0';
-      setTimeout(() => { if(toast) toast.style.display = 'none'; }, 500);
-    }, 1800);
-    toast.style.display = 'block';
+    }, duration);
   }
-
-  // -------- field management ----------
-  function addNewField() {
-    if (fields.length >= MAX_FIELDS) {
-      showTemporaryToast(`⚠️ Maximum ${MAX_FIELDS} fields reached. Remove some to add more.`);
-      return;
-    }
-    fields.push({ type: "Custom", value: "", id: generateId() });
-    renderFields();
-    showTemporaryToast(`➕ Added field (${fields.length}/${MAX_FIELDS})`);
-  }
-
-  function resetToDefault() {
-    fields = DEFAULT_FIELDS.map(def => ({ ...def, id: generateId() }));
-    renderFields();
-    showTemporaryToast("⟳ Reset to default OSINT fields (names, emails, phone, etc)");
-  }
-
-  function clearAllFields() {
-    if (fields.length === 0) return;
-    if (confirm("⚠️ Clear ALL fields? All unsaved data will be lost.")) {
-      fields = [];
-      renderFields();
-      showTemporaryToast("🗑 All fields cleared");
+  
+  // ---- Copy to clipboard functions ----
+  async function copyToClipboard(text, successMsg = "Copied!") {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(successMsg, 1200);
+    } catch(err) {
+      alert("Copy failed: " + err);
     }
   }
-
-  // event binding for copy buttons
+  
   function bindCopyEvents() {
-    const copyJson = document.getElementById('copyJsonBtn');
-    const copyText = document.getElementById('copyTextBtn');
-    const copyCompact = document.getElementById('copyCompactBtn');
-    
-    if (copyJson) {
-      copyJson.addEventListener('click', () => {
-        const jsonStr = document.getElementById('jsonOutput').innerText;
-        if (jsonStr && jsonStr !== "{ }") copyToClipboard(jsonStr, "JSON copied");
-        else copyToClipboard("{}", "Empty JSON copied");
-      });
-    }
-    if (copyText) {
-      copyText.addEventListener('click', () => {
-        const text = document.getElementById('textOutput').innerText;
-        if (text) copyToClipboard(text, "Text report copied");
-        else copyToClipboard("No data", "Copied");
-      });
-    }
-    if (copyCompact) {
-      copyCompact.addEventListener('click', () => {
-        const compact = document.getElementById('compactOutput').innerText;
-        if (compact) copyToClipboard(compact, "Compact snippet copied");
-        else copyToClipboard("", "Copied");
-      });
-    }
+    document.getElementById('copyJsonBtn')?.addEventListener('click', () => {
+      const jsonStr = document.getElementById('jsonOutput').innerText;
+      copyToClipboard(jsonStr, "JSON copied");
+    });
+    document.getElementById('copyTextBtn')?.addEventListener('click', () => {
+      const text = document.getElementById('textOutput').innerText;
+      copyToClipboard(text, "Text report copied");
+    });
+    document.getElementById('copyCompactBtn')?.addEventListener('click', () => {
+      const compact = document.getElementById('compactOutput').innerText;
+      copyToClipboard(compact, "Compact snippet copied");
+    });
   }
-
+  
+  // ---- Initialization with persistence recovery ----
   function init() {
-    // load default fields
-    fields = DEFAULT_FIELDS.map(def => ({ ...def, id: generateId() }));
+    // try to load from localStorage first
+    const savedFields = loadFromLocalStorage();
+    if (savedFields && savedFields.length > 0) {
+      fields = savedFields;
+      showToast("🔄 Restored previous OSINT session from storage", 2500);
+    } else {
+      // fallback to default fields
+      fields = DEFAULT_FIELDS.map(def => ({ ...def, id: generateId() }));
+      showToast("✨ New OSINT session · data will auto-save", 1800);
+    }
+    // ensure no duplicate IDs? but fine.
     renderFields();
     bindCopyEvents();
     
-    // attach global buttons
-    const addBtn = document.getElementById('addFieldBtn');
-    const resetBtn = document.getElementById('resetToDefaultBtn');
-    const clearBtn = document.getElementById('clearAllBtn');
-    if (addBtn) addBtn.addEventListener('click', addNewField);
-    if (resetBtn) resetBtn.addEventListener('click', resetToDefault);
-    if (clearBtn) clearBtn.addEventListener('click', clearAllFields);
+    // attach control buttons
+    document.getElementById('addFieldBtn')?.addEventListener('click', addNewField);
+    document.getElementById('resetToDefaultBtn')?.addEventListener('click', resetToDefault);
+    document.getElementById('clearAllBtn')?.addEventListener('click', clearAllFields);
+    document.getElementById('manualSaveBtn')?.addEventListener('click', forceManualSave);
     
-    // live update on any remaining triggers
-    window.addEventListener('load', () => {
-      updateOutputs();
-    });
+    // initial save to persist newly loaded state (if restored or fresh)
+    saveToLocalStorage();
+    updateLastSavedIndicator();
   }
   
   init();
