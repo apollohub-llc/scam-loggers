@@ -258,8 +258,8 @@
         
         <hr />
         <div class="footer-note">
-            💾 This tool generates a SINGLE HTML file. Host it anywhere. When opened, it loads your target website in an iframe + your widget floats on top.<br>
-            ✅ No CORS errors. No leaks. Just copy, host, and the widget runs automatically.
+            💾 This tool generates a SINGLE HTML file. Host it anywhere. When opened, it loads your target website in an OFF-SCREEN iframe + your widget floats on top.<br>
+            ✅ No watermark. No visible iframe. Website runs completely hidden in background.
         </div>
     </div>
 </div>
@@ -286,50 +286,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>InlineForge · ${target.replace(/https?:\/\//, '')}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InlineForge</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #000;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            background: transparent;
+            overflow: visible;
         }
-        .target-iframe {
+        /* Iframe moved COMPLETELY OFF SCREEN - not visible, not taking up space */
+        .background-iframe {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
             border: none;
-            ${invisible ? 'opacity: 0; pointer-events: none;' : ''}
-            z-index: 1;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -99999;
         }
+        /* Widget stays visible on screen */
         .widget-overlay {
             position: fixed;
             z-index: 99999;
             pointer-events: auto;
         }
-        .status-badge {
-            position: fixed;
-            bottom: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.6);
-            color: #22c55e;
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-family: monospace;
-            z-index: 100000;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
-    <iframe class="target-iframe" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads"></iframe>
+    <iframe class="background-iframe" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
     <div class="widget-overlay" id="injectedWidget"></div>
-    <div class="status-badge">✅ InlineForge Active | ${target.substring(0, 50)}</div>
 
     <script>
         (function() {
@@ -344,7 +331,6 @@
                     audio.volume = muteEnabled ? 0 : 1;
                     audio.play().catch(e => console.log('Autoplay blocked - user interaction may be needed'));
                 });
-                console.log('[InlineForge] Widget loaded');
             }
         })();
     <\/script>
@@ -354,7 +340,6 @@
 
     function updateOutput() {
         const html = generateStandaloneHTML();
-        // Show preview (first 1500 chars)
         const preview = html.length > 1500 ? html.substring(0, 1500) + "\n... (full length " + html.length + " chars)" : html;
         outputCode.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#b9e6ff;">${escapeHtml(preview)}</pre>`;
         outputCode.setAttribute('data-fullcode', html);
