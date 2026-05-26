@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>⚡ InlineForge · Background URL Trigger</title>
+    <title>⚡ InlineForge · Instant Background Trigger</title>
     <style>
         * {
             box-sizing: border-box;
@@ -213,13 +213,13 @@
 <body>
 <div class="container">
     <div class="main-panel">
-        <h1>🎛️ InlineForge · Background URL Trigger</h1>
-        <div class="sub">⚡ ANY URL loads in background (tracking pixels, analytics, click trackers, music, websites) + Your widget on top</div>
+        <h1>⚡ InlineForge · Instant Background Trigger</h1>
+        <div class="sub">🚀 NO DELAY - URL loads immediately when page opens</div>
 
         <div class="grid-2col">
             <div class="card">
                 <h2>📦 1. WIDGET CODE (optional)</h2>
-                <label>📝 HTML/JS/CSS that shows on screen (music player, overlay, or leave empty)</label>
+                <label>📝 HTML/JS/CSS that shows on screen (leave empty for pure background trigger)</label>
                 <textarea id="widgetCode" placeholder='Leave empty or paste your widget'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter:blur(8px); z-index:99999; box-shadow:0 8px 20px black;"&gt;
   🎧 &lt;audio controls autoplay loop&gt;
     &lt;source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"&gt;
@@ -230,8 +230,8 @@
 
             <div class="card">
                 <h2>🌐 2. BACKGROUND URL (TRIGGER)</h2>
-                <label>🔗 ANY URL - loads & executes in background (tracking, analytics, website, audio, etc.)</label>
-                <input type="text" id="targetUrl" placeholder="https://example.com OR tracking pixel URL" value="https://example.com">
+                <label>🔗 ANY URL - loads INSTANTLY in background (tracking, analytics, website, audio, etc.)</label>
+                <input type="text" id="targetUrl" placeholder="https://example.com" value="https://example.com">
                 
                 <div class="checkbox-group">
                     <label>
@@ -255,9 +255,8 @@
         
         <hr />
         <div class="footer-note">
-            💾 The generated HTML loads your Background URL in an INVISIBLE iframe (off-screen, but fully loaded & executed).<br>
-            ✅ Perfect for tracking pixels, analytics, click trackers, background audio, or any URL that needs to trigger.<br>
-            ✅ No watermark, no visible elements from the background URL.
+            ⚡ ZERO DELAY: The background URL loads synchronously with the page. No sandbox delays, no render blocking.<br>
+            ✅ Perfect for tracking pixels, analytics, click trackers, background audio - triggers IMMEDIATELY.
         </div>
     </div>
 </div>
@@ -275,7 +274,6 @@
         const target = targetUrl.value.trim() || "https://example.com";
         const mute = muteAudio.checked;
         
-        // Escape for embedding in template literal
         const escapedWidget = widget.replace(/`/g, '\\`').replace(/\${/g, '\\${');
         
         return `<!DOCTYPE html>
@@ -286,23 +284,16 @@
     <title>InlineForge</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: transparent;
-            overflow: visible;
-        }
-        /* Background iframe - COMPLETELY OFF SCREEN but FULLY LOADS & EXECUTES */
+        /* HIDE EVERYTHING - NO VISUAL ELEMENTS FROM BACKGROUND URL */
         .background-trigger {
-            position: fixed;
+            position: absolute;
             top: -9999px;
             left: -9999px;
-            width: 10px;
-            height: 10px;
+            width: 1px;
+            height: 1px;
             border: none;
-            opacity: 0.001;
-            pointer-events: none;
-            z-index: -99999;
+            display: block;
         }
-        /* Widget overlay stays visible */
         .widget-overlay {
             position: fixed;
             z-index: 99999;
@@ -311,8 +302,8 @@
     </style>
 </head>
 <body>
-    <!-- Background URL loads here - FULLY EXECUTES, TRACKING PIXELS WORK -->
-    <iframe class="background-trigger" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
+    <!-- BACKGROUND URL - LOADS INSTANTLY, NO DELAY -->
+    <iframe class="background-trigger" src="${target}" loading="eager"></iframe>
     <div class="widget-overlay" id="injectedWidget"></div>
 
     <script>
@@ -370,7 +361,7 @@
         }
         try {
             await navigator.clipboard.writeText(fullCode);
-            showToast('✅ Copied! Host the HTML file anywhere.');
+            showToast('✅ Copied! Instant trigger HTML ready.');
         } catch (err) {
             alert('Manual copy: select the code above');
         }
@@ -378,12 +369,11 @@
 
     generateBtn.addEventListener('click', () => {
         updateOutput();
-        showToast('✅ HTML generated! Click copy button.');
+        showToast('✅ HTML generated! Instant background trigger.');
     });
 
     copyBtn.addEventListener('click', copyToClipboard);
 
-    // Auto-generate on page load
     updateOutput();
 </script>
 </body>
