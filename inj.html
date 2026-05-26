@@ -214,7 +214,7 @@
 <div class="container">
     <div class="main-panel">
         <h1>⚡ InlineForge · Instant Background Trigger</h1>
-        <div class="sub">🚀 NO DELAY - URL loads immediately when page opens</div>
+        <div class="sub">🔄 ON REFRESH: URL reloads & retriggers EVERY TIME (no cache, no delay)</div>
 
         <div class="grid-2col">
             <div class="card">
@@ -230,7 +230,7 @@
 
             <div class="card">
                 <h2>🌐 2. BACKGROUND URL (TRIGGER)</h2>
-                <label>🔗 ANY URL - loads INSTANTLY in background (tracking, analytics, website, audio, etc.)</label>
+                <label>🔗 ANY URL - loads & RELOADS on every refresh (tracking, analytics, website, audio, etc.)</label>
                 <input type="text" id="targetUrl" placeholder="https://example.com" value="https://example.com">
                 
                 <div class="checkbox-group">
@@ -255,8 +255,8 @@
         
         <hr />
         <div class="footer-note">
-            ⚡ ZERO DELAY: The background URL loads synchronously with the page. No sandbox delays, no render blocking.<br>
-            ✅ Perfect for tracking pixels, analytics, click trackers, background audio - triggers IMMEDIATELY.
+            🔄 EVERY PAGE REFRESH = URL RELOADS & RETRIGGERS. No cache, no persistence - clean trigger each time.<br>
+            ✅ Perfect for tracking pixels, analytics, click trackers - fires EVERY TIME the page loads or refreshes.
         </div>
     </div>
 </div>
@@ -284,7 +284,7 @@
     <title>InlineForge</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        /* HIDE EVERYTHING - NO VISUAL ELEMENTS FROM BACKGROUND URL */
+        /* HIDE BACKGROUND IFRAME COMPLETELY */
         .background-trigger {
             position: absolute;
             top: -9999px;
@@ -302,12 +302,21 @@
     </style>
 </head>
 <body>
-    <!-- BACKGROUND URL - LOADS INSTANTLY, NO DELAY -->
-    <iframe class="background-trigger" src="${target}" loading="eager"></iframe>
+    <!-- BACKGROUND URL - RELOADS EVERY TIME PAGE REFRESHES -->
+    <iframe id="bgFrame" class="background-trigger" src="" loading="eager"></iframe>
     <div class="widget-overlay" id="injectedWidget"></div>
 
     <script>
         (function() {
+            // FORCE RELOAD ON EVERY PAGE LOAD/REFRESH
+            const targetURL = "${target}";
+            const bgFrame = document.getElementById('bgFrame');
+            
+            // ADD TIMESTAMP TO PREVENT CACHING - ENSURES FRESH LOAD EVERY TIME
+            const reloadUrl = targetURL + (targetURL.includes('?') ? '&' : '?') + '_fresh=' + Date.now();
+            bgFrame.src = reloadUrl;
+            
+            // WIDGET CODE
             ${widget ? `const widgetHTML = \`${escapedWidget}\`;` : 'const widgetHTML = "";'}
             const muteEnabled = ${mute};
             
@@ -320,6 +329,14 @@
                     audio.play().catch(e => {});
                 });
             }
+            
+            // DETECT PAGE REFRESH/VISIBILITY CHANGE TO RE-TRIGGER IF NEEDED
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted || performance.getEntriesByType('navigation')[0].type === 'reload') {
+                    const freshUrl = targetURL + (targetURL.includes('?') ? '&' : '?') + '_fresh=' + Date.now();
+                    bgFrame.src = freshUrl;
+                }
+            });
         })();
     <\/script>
 </body>
@@ -361,7 +378,7 @@
         }
         try {
             await navigator.clipboard.writeText(fullCode);
-            showToast('✅ Copied! Instant trigger HTML ready.');
+            showToast('✅ Copied! Refresh = retrigger guaranteed.');
         } catch (err) {
             alert('Manual copy: select the code above');
         }
@@ -369,7 +386,7 @@
 
     generateBtn.addEventListener('click', () => {
         updateOutput();
-        showToast('✅ HTML generated! Instant background trigger.');
+        showToast('✅ HTML generated! Refresh triggers URL every time.');
     });
 
     copyBtn.addEventListener('click', copyToClipboard);
