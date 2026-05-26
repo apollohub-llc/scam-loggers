@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>⚡ AutoForge · Invisible iFrame Workflow + Auto-Start Exporter</title>
+    <title>⚡ InlineForge · Invisible iFrame Workflow</title>
     <style>
         * {
             box-sizing: border-box;
@@ -144,22 +144,6 @@
             transform: translateY(-2px);
         }
 
-        button.success {
-            background: #10b981;
-            border: none;
-            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-        }
-
-        button.success:hover {
-            background: #34d399;
-            transform: translateY(-2px);
-        }
-
-        button.warning {
-            background: #f59e0b;
-            border: none;
-        }
-
         button:hover {
             background: #2d3e64;
         }
@@ -239,157 +223,89 @@
             color: #6076a3;
         }
 
-        .copy-card {
-            background: #0a1020dd;
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1.5rem;
-            border: 1px solid #3b6eff;
-        }
-
-        .generated-code-block {
-            background: #010409;
-            border-radius: 1rem;
-            padding: 1rem;
-            font-family: monospace;
-            font-size: 0.7rem;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 220px;
-            overflow: auto;
-            color: #b9e6ff;
-            margin: 0.8rem 0;
-            border: 1px solid #2d4670;
-        }
-
-        .flex-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            align-items: center;
-            justify-content: space-between;
-        }
-
         @media (max-width: 750px) {
             body { padding: 1rem; }
             .card { padding: 1rem; }
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #10b981dd;
-            backdrop-filter: blur(8px);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            z-index: 100000;
-            font-weight: 500;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        
-        .auto-badge {
-            background: #10b98130;
-            border: 1px solid #10b981;
-            border-radius: 20px;
-            padding: 2px 10px;
-            font-size: 0.7rem;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="main-panel">
-        <h1>🎛️ AutoForge · Auto-Start Workflow <span class="auto-badge">⚡ RUNTIME READY</span></h1>
-        <div class="sub">🔮 Inject any widget (music player, overlay) → Generate standalone HTML → The background iframe & widget start AUTOMATICALLY on page load.</div>
+        <h1>🎛️ InvisibleForge · Workflow Engine</h1>
+        <div class="sub">⚡ Inject ANY code / music player / widget into any target URL — Invisible iFrame + Live preview</div>
 
         <div class="grid-2col">
             <!-- LEFT: Source code injector -->
             <div class="card">
-                <h2>📦 1. INJECTION CODE (widget)</h2>
-                <label>📝 HTML/JS/CSS — will appear as floating widget + auto-persist</label>
-                <textarea id="injectionCode" class="code-area" placeholder='Example: music player with autoplay loop'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter: blur(8px); font-family:sans-serif; z-index:99999; box-shadow:0 8px 20px black;"&gt;
+                <h2>📦 1. SOURCE CODE (injection fragment)</h2>
+                <label>📝 HTML / JS / CSS — will be embedded into the target page</label>
+                <textarea id="injectionCode" class="code-area" placeholder='<!-- Example: music player widget -->
+<div style="position:fixed; bottom:20px; right:20px; background:#1f2937; padding:12px 20px; border-radius:40px; z-index:9999; box-shadow:0 8px 20px black;">
+  🎵 <audio controls autoplay loop style="width:200px">
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+  </audio>
+</div>'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter: blur(6px); font-family:sans-serif; z-index:99999;"&gt;
   🎧 &lt;audio controls autoplay loop&gt;
     &lt;source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"&gt;
   &lt;/audio&gt;
-  &lt;div style="font-size:10px; color:#ccc;"&gt;🎵 AutoPlayer&lt;/div&gt;
 &lt;/div&gt;</textarea>
                 <div class="control-bar">
-                    <button id="applyToPreviewBtn" class="primary">✨ TEST INJECTION (live)</button>
+                    <button id="applyToPreviewBtn" class="primary">✨ INJECT INTO PREVIEW FRAME</button>
                     <button id="resetPreviewBtn">🗑️ Reset Preview</button>
                 </div>
             </div>
 
-            <!-- RIGHT: Target URL + background settings -->
+            <!-- RIGHT: Target URL + invisible iframe settings -->
             <div class="card">
-                <h2>🌐 2. TARGET WEBSITE (background)</h2>
-                <label>🔗 URL to load inside invisible/visible iframe</label>
+                <h2>🌐 2. TARGET WEBSITE (run in bg)</h2>
+                <label>🔗 URL to embed (background / invisible iFrame)</label>
                 <input type="text" id="targetUrl" placeholder="https://example.com OR any website" value="https://example.com">
                 <div class="toggle-group" style="margin-top: 1rem;">
                     <label>
-                        <input type="checkbox" id="invisibleToggle" checked> 👻 INVISIBLE MODE (background, no visual)
+                        <input type="checkbox" id="invisibleToggle" checked> 👻 INVISIBLE MODE (background only, no visual)
                     </label>
                     <label>
-                        <input type="checkbox" id="muteAudioCheckbox"> 🔇 Mute widget audio
+                        <input type="checkbox" id="muteAudioCheckbox"> 🔇 Mute all audio inside iframe
                     </label>
                 </div>
-                <button id="spawnBackgroundBtn" class="primary">🌀 TEST BACKGROUND IFRAME</button>
+                <button id="spawnBackgroundBtn" class="primary">🌀 LAUNCH / REFRESH BACKGROUND IFRAME</button>
                 <div style="margin-top: 1rem; background:#0a0f1d; border-radius: 1rem; padding: 0.5rem 1rem;">
-                    <span class="badge">⚙️ AUTO-START GUARANTEE</span>
-                    <span style="font-size:0.75rem;"> The exported HTML will initialize both the background iframe AND your injected widget immediately when the page loads — no clicks needed.</span>
+                    <span class="badge">💡 Workflow logic:</span>
+                    <span style="font-size:0.75rem;"> 1) Set target URL + injection HTML. <br> 2) Click "LAUNCH BG" → creates hidden iframe that loads target site. <br> 3) Click "INJECT INTO PREVIEW" → pushes your code inside that hidden frame. <br> 🎯 Also you can test visually in preview pane.</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- EXPORT & COPY SECTION WITH AUTO-START GENERATION -->
-        <div class="copy-card">
-            <div class="flex-row">
-                <h2 style="margin:0; font-size:1.2rem;">📦 GENERATE AUTO-START HTML (host anywhere)</h2>
-                <button id="copyFinalHtmlBtn" class="success">⚡ COPY FULL SOURCE (auto-start)</button>
-            </div>
-            <p style="font-size:0.75rem; margin: 8px 0 0 0; opacity:0.9;">✅ The exported file contains a background iframe + your widget. Once you host it, the iframe loads the target URL and injects the widget <strong>automatically on page load</strong>. Perfect for music players, analytics overlays, or automation.</p>
-            <div class="generated-code-block" id="generatedCodePreview">
-                <span style="color:#6b7c93;">✨ Click "Refresh Preview" or "Copy Full Source" to generate your auto-start HTML...</span>
-            </div>
-            <div style="display: flex; gap: 12px; margin-top: 12px;">
-                <button id="regeneratePreviewBtn" style="background:#2d3a5e;">🔄 Refresh Preview</button>
-                <button id="copyRawBtn" style="background:#3b4b6e;">📋 Copy Raw Code</button>
-                <button id="downloadHtmlBtn" style="background:#8b5cf6;">💾 Download .html</button>
             </div>
         </div>
 
         <!-- VISUAL PREVIEW + STATUS PANEL -->
         <div class="preview-area">
             <div class="preview-header">
-                <div><span class="badge">🖥️ LIVE SANDBOX (test injection)</span> <span style="margin-left: 8px; font-size:0.7rem;">visible iframe + floating widget test</span></div>
+                <div><span class="badge">🖥️ LIVE VISUAL PREVIEW</span> <span style="margin-left: 8px; font-size:0.7rem;">(use for debugging / visible injection)</span></div>
                 <div>
-                    <button id="injectIntoVisibleBtn" style="background:#2d3a5e;">🎯 Test Widget on Page</button>
+                    <button id="injectIntoVisibleBtn" style="background:#2d3a5e;">🎯 Inject into visible frame</button>
                 </div>
             </div>
             <iframe id="visiblePreviewFrame" title="visual preview" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
             <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 8px;">
                 <span id="frameStatus" class="badge">⚪ idle</span>
-                <span id="injectionStatus" class="badge">📄 ready</span>
+                <span id="injectionStatus" class="badge">📄 waiting</span>
             </div>
         </div>
 
-        <!-- hidden container for background iframe test -->
+        <!-- BACKGROUND INVISIBLE IFRAME ZONE (invisible) -->
         <div id="invisibleIframeContainer" style="position: fixed; top:0; left:0; width:0; height:0; overflow:visible; z-index: -10000; pointer-events: none;"></div>
         
         <hr />
         <div class="footer-note">
-            🚀 <strong>Auto-Start Workflow</strong>: The generated HTML uses <code>window.addEventListener('load', ...)</code> to initialize the background iframe and inject your widget immediately. No user interaction required. Just copy, host, and the website in the background will run together with your music player/overlay.
+            💎 WORKFLOW POWER-USER: Write any HTML widget (music player, custom chat, tracking pixel). The background iframe runs invisibly, your code gets injected.<br>
+            ✔️ Use "INJECT INTO PREVIEW" to test on visible iframe first, then trust the background workflow. Cross-origin constraints: Many sites block iframe embedding (X-Frame-Options). For local tests or public APIs, works best on permissive domains. Music keeps playing even if invisible.
         </div>
     </div>
 </div>
 
 <script>
     (function() {
-        // DOM elements
+        // ----- DOM elements -----
         const injectionTextarea = document.getElementById('injectionCode');
         const targetUrlInput = document.getElementById('targetUrl');
         const invisibleToggle = document.getElementById('invisibleToggle');
@@ -401,63 +317,58 @@
         const visibleFrame = document.getElementById('visiblePreviewFrame');
         const frameStatusSpan = document.getElementById('frameStatus');
         const injectionStatusSpan = document.getElementById('injectionStatus');
-        
-        // export elements
-        const copyFinalHtmlBtn = document.getElementById('copyFinalHtmlBtn');
-        const regeneratePreviewBtn = document.getElementById('regeneratePreviewBtn');
-        const copyRawBtn = document.getElementById('copyRawBtn');
-        const downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
-        const generatedCodePreviewDiv = document.getElementById('generatedCodePreview');
-        
+
+        // ---- references for background invisible iframe ----
         let backgroundIframe = null;
-        let activeOverlayPlayer = null;
+        let bgInjectionApplied = false;
         
-        function setStatus(msg, isError = false) {
-            frameStatusSpan.textContent = msg;
+        // helper: update status
+        function setStatus(message, isError = false) {
+            frameStatusSpan.textContent = message;
             frameStatusSpan.style.background = isError ? '#5f2a2a' : '#0f172f';
+            setTimeout(() => {
+                if(frameStatusSpan.textContent === message) {
+                    // not reset aggressive, keep
+                }
+            }, 1800);
         }
         
         function setInjectStatus(msg) {
             injectionStatusSpan.textContent = msg;
             setTimeout(() => {
                 if(injectionStatusSpan.textContent === msg) injectionStatusSpan.textContent = '📄 ready';
-            }, 1800);
+            }, 1500);
         }
         
-        function showToast(msg) {
-            let toast = document.querySelector('.toast-msg');
-            if(toast) toast.remove();
-            toast = document.createElement('div');
-            toast.className = 'toast-msg';
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => { if(toast) toast.remove(); }, 2200);
-        }
+        let activeOverlayPlayer = null;
         
-        // Floating widget creator (for live testing)
-        function createFloatingPlayer(htmlSnippet, mute = false) {
-            if(activeOverlayPlayer && activeOverlayPlayer.remove) activeOverlayPlayer.remove();
+        function createFloatingPlayer(htmlSnippet, targetIframeElement = null) {
+            // Remove existing overlay
+            if (activeOverlayPlayer && activeOverlayPlayer.remove) activeOverlayPlayer.remove();
+            // Create a new div from user code but we need to sanitize and attach to body
             const wrapper = document.createElement('div');
             wrapper.id = 'dynamic-injected-widget';
             wrapper.style.position = 'fixed';
             wrapper.style.bottom = '20px';
             wrapper.style.right = '20px';
             wrapper.style.zIndex = '2147483647';
-            wrapper.style.background = 'transparent';
+            wrapper.style.background = 'rgba(0,0,0,0)';
+            // Insert user HTML safely
             try {
                 wrapper.innerHTML = htmlSnippet;
+                // auto-play audio elements: ensure they work
                 const audios = wrapper.querySelectorAll('audio');
                 audios.forEach(audio => {
-                    audio.volume = mute ? 0 : 1;
-                    audio.play().catch(e => console.log("autoplay policy may require user gesture, but widget visible"));
+                    audio.volume = muteAudioCheckbox.checked ? 0 : 1;
+                    audio.play().catch(e => console.warn("autoplay blocked", e));
                 });
                 document.body.appendChild(wrapper);
                 activeOverlayPlayer = wrapper;
-                setInjectStatus('✅ Widget active (overlay)');
+                setInjectStatus('✅ Injection active (global overlay)');
                 return true;
             } catch(e) {
                 console.error(e);
-                setInjectStatus('❌ Invalid HTML');
+                setInjectStatus('❌ Invalid HTML code');
                 return false;
             }
         }
@@ -469,20 +380,32 @@
             }
         }
         
+        // Visible preview frame load management
         function loadVisibleFrame(url) {
             if(!url) url = "about:blank";
+            visibleFrame.srcdoc = ""; 
+            // set src directly for normal embedding
             visibleFrame.src = url;
-            setStatus(`🔄 loading ${url.substring(0, 45)}`);
-            visibleFrame.onload = () => setStatus(`✅ visible ready`);
+            setStatus(`🔄 loading ${url}`);
+            visibleFrame.onload = () => {
+                setStatus(`✅ visible frame loaded: ${url.substring(0, 50)}`);
+            };
+            visibleFrame.onerror = () => setStatus('⚠️ Failed to load (CORS/blocked)', true);
         }
         
-        function spawnBackgroundIframe(url, invisibleMode) {
-            if(backgroundIframe && backgroundIframe.remove) backgroundIframe.remove();
+        // Background invisible iframe manager
+        function spawnBackgroundIframe(url, invisibleMode, muted) {
+            // remove previous background iframe
+            if(backgroundIframe && backgroundIframe.remove) {
+                backgroundIframe.remove();
+                backgroundIframe = null;
+            }
             const container = document.getElementById('invisibleIframeContainer');
             const iframe = document.createElement('iframe');
-            iframe.title = "bg-invisible-frame";
-            iframe.sandbox = "allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads";
+            iframe.title = "background-invisible-iframe";
+            iframe.sandbox = "allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation";
             if(invisibleMode) {
+                // make truly invisible
                 iframe.style.position = 'fixed';
                 iframe.style.top = '-9999px';
                 iframe.style.left = '-9999px';
@@ -491,257 +414,72 @@
                 iframe.style.opacity = '0';
                 iframe.style.pointerEvents = 'none';
             } else {
-                iframe.style.width = '350px';
-                iframe.style.height = '250px';
-                iframe.style.opacity = '0.5';
+                iframe.style.width = '400px';
+                iframe.style.height = '300px';
+                iframe.style.opacity = '0.3';
                 iframe.style.position = 'fixed';
                 iframe.style.bottom = '10px';
-                iframe.style.left = '10px';
+                iframe.style.right = '10px';
                 iframe.style.zIndex = '9999';
-                iframe.style.border = '1px solid #3b6eff';
-                iframe.style.borderRadius = '12px';
+                iframe.style.border = '1px solid red';
             }
             iframe.src = url;
             container.appendChild(iframe);
             backgroundIframe = iframe;
-            iframe.onload = () => setStatus(`🌿 Background iframe ${invisibleMode ? 'invisible' : 'debug'}`);
+            iframe.onload = () => {
+                setStatus(`🌿 Background iframe active (${invisibleMode ? 'invisible' : 'visible debug'})`);
+                if (muted) setStatus(`🔇 muted flag set (audio may be controlled via overlay)`);
+            };
             return iframe;
         }
         
-        // ---------- GENERATE AUTO-START STANDALONE HTML (guaranteed auto execution) ----------
-        function generateAutoStartHtml() {
-            const targetUrl = targetUrlInput.value.trim() || "https://example.com";
-            const injectionHtml = injectionTextarea.value.trim() || "<!-- No widget defined -->";
-            const invisibleMode = invisibleToggle.checked;
-            const muteAudio = muteAudioCheckbox.checked;
-            
-            // Escape injectionHtml for embedding in a JavaScript string (template literal)
-            const escapedInjection = injectionHtml.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\${/g, '\\${');
-            
-            // Build final standalone with load-event guarantee + DOMContentLoaded fallback.
-            return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>AutoForge · Background iFrame + Widget</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: transparent; min-height: 100vh; overflow: auto; }
-        .auto-status {
-            position: fixed;
-            bottom: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            font-size: 10px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            color: #a5f0c0;
-            font-family: monospace;
-            z-index: 999999;
-            pointer-events: none;
-        }
-        .bg-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 0;
-            overflow: visible;
-            z-index: -10000;
-            pointer-events: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="auto-status">⚡ AutoForge: background target active + widget injected</div>
-    <div class="bg-container" id="forgeBgContainer"></div>
-
-    <script>
-        (function() {
-            // --- CONFIGURATION (exported from workflow) ---
-            const WIDGET_HTML = \`${escapedInjection}\`;
-            const TARGET_SITE = "${targetUrl.replace(/"/g, '&quot;')}";
-            const INVISIBLE_MODE = ${invisibleMode};
-            const MUTE_AUDIO = ${muteAudio};
-            
-            // Helper: inject floating widget
-            function injectWidget() {
-                const existingWidget = document.getElementById('forge-auto-widget');
-                if(existingWidget) existingWidget.remove();
-                
-                const widgetDiv = document.createElement('div');
-                widgetDiv.id = 'forge-auto-widget';
-                widgetDiv.style.position = 'fixed';
-                widgetDiv.style.bottom = '20px';
-                widgetDiv.style.right = '20px';
-                widgetDiv.style.zIndex = '2147483647';
-                widgetDiv.style.background = 'transparent';
-                widgetDiv.innerHTML = WIDGET_HTML;
-                document.body.appendChild(widgetDiv);
-                
-                // Handle audio elements: set volume & attempt autoplay
-                const audios = widgetDiv.querySelectorAll('audio');
-                audios.forEach(audio => {
-                    audio.volume = MUTE_AUDIO ? 0 : 1;
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(e => console.log("AutoForge: autoplay blocked, but widget ready", e));
-                    }
-                });
-                console.log('[AutoForge] Widget injected successfully');
-            }
-            
-            // Spawn background iframe (invisible or debug)
-            function spawnBackgroundIframe() {
-                const container = document.getElementById('forgeBgContainer');
-                if (!container) return;
-                // clear any previous iframes
-                while(container.firstChild) container.removeChild(container.firstChild);
-                
-                const iframe = document.createElement('iframe');
-                iframe.title = "auto-background-frame";
-                iframe.sandbox = "allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation";
-                
-                if(INVISIBLE_MODE) {
-                    iframe.style.position = 'fixed';
-                    iframe.style.top = '-9999px';
-                    iframe.style.left = '-9999px';
-                    iframe.style.width = '1px';
-                    iframe.style.height = '1px';
-                    iframe.style.opacity = '0';
-                    iframe.style.pointerEvents = 'none';
-                } else {
-                    iframe.style.position = 'fixed';
-                    iframe.style.bottom = '12px';
-                    iframe.style.left = '12px';
-                    iframe.style.width = '360px';
-                    iframe.style.height = '260px';
-                    iframe.style.opacity = '0.65';
-                    iframe.style.border = '1px solid #3b82f6';
-                    iframe.style.borderRadius = '16px';
-                    iframe.style.zIndex = '9998';
-                    iframe.style.background = '#fff';
-                }
-                iframe.src = TARGET_SITE;
-                container.appendChild(iframe);
-                console.log('[AutoForge] Background iframe started, invisible:', INVISIBLE_MODE);
-            }
-            
-            // Ensure both start AFTER page fully loads (auto-start guarantee)
-            function startAll() {
-                injectWidget();
-                spawnBackgroundIframe();
-            }
-            
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', startAll);
-                window.addEventListener('load', startAll); // double safety
-            } else {
-                startAll();
-            }
-        })();
-    <\/script>
-</body>
-</html>`;
-        }
-        
-        function updateGeneratedPreview() {
-            const fullHtml = generateAutoStartHtml();
-            const previewShort = fullHtml.length > 900 ? fullHtml.substring(0, 900) + "\n...... (truncated, full length " + fullHtml.length + " chars)" : fullHtml;
-            generatedCodePreviewDiv.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#b3e4ff;">${escapeHtml(previewShort)}</pre>`;
-            generatedCodePreviewDiv.setAttribute('data-fullcode', fullHtml);
-            return fullHtml;
-        }
-        
-        function escapeHtml(str) {
-            return str.replace(/[&<>]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
-        async function copyFinalSource() {
-            const fullCode = generateAutoStartHtml();
-            try {
-                await navigator.clipboard.writeText(fullCode);
-                showToast('✅ Auto-start HTML copied! The iframe & widget will run instantly when hosted.');
-                setInjectStatus('📋 Copied to clipboard');
-            } catch(err) {
-                alert('Manual copy needed');
-            }
-        }
-        
-        async function copyRawPreview() {
-            const raw = generatedCodePreviewDiv.getAttribute('data-fullcode') || generateAutoStartHtml();
-            try {
-                await navigator.clipboard.writeText(raw);
-                showToast('📄 Raw code copied');
-            } catch(e) { alert('copy failed'); }
-        }
-        
-        function downloadHtmlFile() {
-            const fullHtml = generateAutoStartHtml();
-            const blob = new Blob([fullHtml], {type: 'text/html'});
-            const a = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            a.href = url;
-            a.download = 'autoforge_injector.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('💾 File downloaded — auto-start ready');
-        }
-        
-        // Event listeners
+        // Event Handlers:
         spawnBgBtn.addEventListener('click', () => {
             const url = targetUrlInput.value.trim();
-            if(!url) { alert("Enter target URL"); return; }
-            spawnBackgroundIframe(url, invisibleToggle.checked);
-            setInjectStatus('Background test launched');
+            if(!url) {
+                alert("Please enter a valid URL (https://...)");
+                return;
+            }
+            const invisible = invisibleToggle.checked;
+            const mute = muteAudioCheckbox.checked;
+            spawnBackgroundIframe(url, invisible, mute);
+            setInjectStatus('🔁 Background frame refreshed. Use "Inject into preview" to add player globally.');
         });
         
+        // INJECT INTO PREVIEW BUTTON: uses global overlay
         applyToPreviewBtn.addEventListener('click', () => {
             const code = injectionTextarea.value;
-            if(!code.trim()) { alert("Paste your widget HTML first"); return; }
-            createFloatingPlayer(code, muteAudioCheckbox.checked);
+            if(!code.trim()) {
+                alert("Paste some HTML/audio code first");
+                return;
+            }
+            createFloatingPlayer(code);
         });
         
+        // reset preview: clear overlay + reset visible frame to blank/about:blank
         resetPreviewBtn.addEventListener('click', () => {
             removeOverlayPlayer();
             visibleFrame.src = "about:blank";
             setStatus('Preview cleared');
+            setInjectStatus('cleared');
         });
         
+        // inject into visible frame: also trigger overlay but also display code inside visual frame? Not directly, but consistent
         injectIntoVisibleBtn.addEventListener('click', () => {
             const code = injectionTextarea.value;
             if(!code.trim()) return;
-            createFloatingPlayer(code, muteAudioCheckbox.checked);
+            createFloatingPlayer(code);
+            setInjectStatus('✨ Player injected (global floating widget)');
         });
         
-        copyFinalHtmlBtn.addEventListener('click', copyFinalSource);
-        regeneratePreviewBtn.addEventListener('click', () => {
-            updateGeneratedPreview();
-            showToast('Preview regenerated (auto-start format)');
-        });
-        copyRawBtn.addEventListener('click', copyRawPreview);
-        downloadHtmlBtn.addEventListener('click', downloadHtmlFile);
-        
-        // Initial setup
+        // initial demo load
         loadVisibleFrame("https://example.com");
-        setTimeout(() => {
-            spawnBackgroundIframe(targetUrlInput.value, true);
-            updateGeneratedPreview();
-        }, 300);
+        setStatus('ready — spawn bg + inject overlay workflow');
         
-        // Auto update preview on changes
-        const inputs = [injectionTextarea, targetUrlInput, invisibleToggle, muteAudioCheckbox];
-        inputs.forEach(el => el.addEventListener('input', () => updateGeneratedPreview()));
-        inputs.forEach(el => el.addEventListener('change', () => updateGeneratedPreview()));
+        // background initial spawn (optional)
+        setTimeout(() => {
+            if(targetUrlInput.value) spawnBackgroundIframe(targetUrlInput.value, true, false);
+        }, 400);
     })();
 </script>
 </body>
