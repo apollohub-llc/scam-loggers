@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>⚡ InlineForge · Invisible iFrame Workflow + Code Exporter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0b1120 0%, #111827 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            color: #eef2ff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-panel {
+            background: rgba(18, 25, 45, 0.75);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            border: 1px solid rgba(79, 109, 157, 0.35);
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5);
+            padding: 1.8rem;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #D9E2FF, #9BB5FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sub {
+            color: #8ca3cf;
+            border-left: 3px solid #3b6eff;
+            padding-left: 1rem;
+            margin: 0.5rem 0 1.8rem 0;
+            font-weight: 400;
+        }
+
+        .grid-2col {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+        }
+
+        .card {
+            flex: 1;
+            min-width: 280px;
+            background: rgba(10, 18, 33, 0.7);
+            border-radius: 1.5rem;
+            padding: 1.4rem 1.6rem;
+            border: 1px solid rgba(71, 105, 165, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        label {
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #b9c8ff;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea, input {
+            width: 100%;
+            background: #030712;
+            border: 1px solid #2d3a5e;
+            border-radius: 1rem;
+            padding: 0.8rem 1rem;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #e2e8ff;
+            resize: vertical;
+            transition: 0.2s;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+        }
+
+        .code-area {
+            min-height: 280px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        button {
+            background: #1e2a48;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 1rem;
+            border: 1px solid #3e5a82;
+        }
+
+        button.primary {
+            background: #2563eb;
+            box-shadow: 0 8px 18px -6px #1e3a8a60;
+            border: none;
+        }
+
+        button.primary:hover {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        button.success {
+            background: #10b981;
+            border: none;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+
+        button.success:hover {
+            background: #34d399;
+            transform: translateY(-2px);
+        }
+
+        button:hover {
+            background: #2d3e64;
+        }
+
+        .preview-area {
+            margin-top: 2rem;
+            background: #030b17aa;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #2d4170;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .badge {
+            font-family: monospace;
+            background: #0f172f;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            color: #8bb2ff;
+        }
+
+        iframe {
+            width: 100%;
+            height: 520px;
+            border-radius: 1rem;
+            background: #ffffff10;
+            border: 1px solid #2d4670;
+            transition: all 0.2s;
+        }
+
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+            background: #0f172f70;
+            padding: 0.4rem 1rem;
+            border-radius: 3rem;
+            align-items: center;
+        }
+
+        .toggle-group label {
+            margin-bottom: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-transform: none;
+        }
+
+        hr {
+            border-color: #1e2f4e;
+            margin: 1rem 0;
+        }
+
+        .footer-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 2rem;
+            color: #6076a3;
+        }
+
+        .copy-card {
+            background: #0a1020dd;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border: 1px dashed #3b6eff;
+        }
+
+        .generated-code-block {
+            background: #010409;
+            border-radius: 1rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow: auto;
+            color: #b9e6ff;
+            margin: 0.8rem 0;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 750px) {
+            body { padding: 1rem; }
+            .card { padding: 1rem; }
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981dd;
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            z-index: 100000;
+            font-weight: 500;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-panel">
+        <h1>🎛️ InvisibleForge · Workflow Engine</h1>
+        <div class="sub">⚡ Inject ANY code / music player / widget into any target URL — Invisible iFrame + Live preview + 📋 Export full HTML with embedded injection</div>
+
+        <div class="grid-2col">
+            <!-- LEFT: Source code injector -->
+            <div class="card">
+                <h2>📦 1. SOURCE CODE (injection fragment)</h2>
+                <label>📝 HTML / JS / CSS — will be embedded into the target page (overlay widget)</label>
+                <textarea id="injectionCode" class="code-area" placeholder='<!-- Example: music player widget -->
+<div style="position:fixed; bottom:20px; right:20px; background:#1f2937; padding:12px 20px; border-radius:40px; z-index:9999; box-shadow:0 8px 20px black;">
+  🎵 <audio controls autoplay loop style="width:200px">
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+  </audio>
+</div>'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter: blur(6px); font-family:sans-serif; z-index:99999;"&gt;
+  🎧 &lt;audio controls autoplay loop&gt;
+    &lt;source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"&gt;
+  &lt;/audio&gt;
+&lt;/div&gt;</textarea>
+                <div class="control-bar">
+                    <button id="applyToPreviewBtn" class="primary">✨ INJECT INTO PREVIEW FRAME</button>
+                    <button id="resetPreviewBtn">🗑️ Reset Preview</button>
+                </div>
+            </div>
+
+            <!-- RIGHT: Target URL + background settings + export -->
+            <div class="card">
+                <h2>🌐 2. TARGET WEBSITE (run in bg)</h2>
+                <label>🔗 URL to embed (background / invisible iFrame)</label>
+                <input type="text" id="targetUrl" placeholder="https://example.com OR any website" value="https://example.com">
+                <div class="toggle-group" style="margin-top: 1rem;">
+                    <label>
+                        <input type="checkbox" id="invisibleToggle" checked> 👻 INVISIBLE MODE (background only, no visual)
+                    </label>
+                    <label>
+                        <input type="checkbox" id="muteAudioCheckbox"> 🔇 Mute all audio inside widget
+                    </label>
+                </div>
+                <button id="spawnBackgroundBtn" class="primary">🌀 LAUNCH / REFRESH BACKGROUND IFRAME</button>
+                <div style="margin-top: 1rem; background:#0a0f1d; border-radius: 1rem; padding: 0.5rem 1rem;">
+                    <span class="badge">💡 Workflow logic:</span>
+                    <span style="font-size:0.75rem;"> 1) Set target URL + injection HTML. <br> 2) Click "LAUNCH BG" → creates hidden iframe that loads target site. <br> 3) Click "INJECT INTO PREVIEW" → pushes floating widget (bypass CORS, always works). <br> 🎯 Then export final standalone HTML!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: COPY SOURCE CODE WITH INJECTED IFRAME SECTION -->
+        <div class="copy-card">
+            <div class="flex-row">
+                <h2 style="margin:0; font-size:1.2rem;">📋 COPY FINAL STANDALONE HTML (with embedded widget + background iframe)</h2>
+                <button id="copyFinalHtmlBtn" class="success">📄 COPY FULL SOURCE CODE</button>
+            </div>
+            <p style="font-size:0.75rem; margin: 8px 0 0 0; opacity:0.8;">Generate a single HTML file that includes your injected widget AND the invisible/visible background iframe targeting the URL above. Perfect for deploying music players, overlays, or automation scripts.</p>
+            <div class="generated-code-block" id="generatedCodePreview">
+                <!-- live preview of final generated html will appear here -->
+                <span style="color:#6b7c93;">✨ Click "Generate & Copy" or the button above to build your custom injector HTML...</span>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button id="regeneratePreviewBtn" style="background:#2d3a5e;">🔄 Refresh Preview</button>
+                <button id="copyRawBtn" style="background:#3b4b6e;">📋 Copy Raw Code</button>
+            </div>
+        </div>
+
+        <!-- VISUAL PREVIEW + STATUS PANEL -->
+        <div class="preview-area">
+            <div class="preview-header">
+                <div><span class="badge">🖥️ LIVE VISUAL PREVIEW</span> <span style="margin-left: 8px; font-size:0.7rem;">(debug / visible injection test)</span></div>
+                <div>
+                    <button id="injectIntoVisibleBtn" style="background:#2d3a5e;">🎯 Inject into visible frame</button>
+                </div>
+            </div>
+            <iframe id="visiblePreviewFrame" title="visual preview" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; gap: 8px;">
+                <span id="frameStatus" class="badge">⚪ idle</span>
+                <span id="injectionStatus" class="badge">📄 waiting</span>
+            </div>
+        </div>
+
+        <!-- BACKGROUND INVISIBLE IFRAME ZONE -->
+        <div id="invisibleIframeContainer" style="position: fixed; top:0; left:0; width:0; height:0; overflow:visible; z-index: -10000; pointer-events: none;"></div>
+        
+        <hr />
+        <div class="footer-note">
+            💎 WORKFLOW POWER-USER: Write any HTML widget (music player, custom chat, tracking pixel). The background iframe runs invisibly, your floating widget overlays globally.<br>
+            ✔️ "Copy Full Source Code" generates standalone HTML with persistent widget + preconfigured background iframe → reuse anywhere without re-pasting AI prompts.
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- DOM elements -----
+        const injectionTextarea = document.getElementById('injectionCode');
+        const targetUrlInput = document.getElementById('targetUrl');
+        const invisibleToggle = document.getElementById('invisibleToggle');
+        const muteAudioCheckbox = document.getElementById('muteAudioCheckbox');
+        const spawnBgBtn = document.getElementById('spawnBackgroundBtn');
+        const applyToPreviewBtn = document.getElementById('applyToPreviewBtn');
+        const resetPreviewBtn = document.getElementById('resetPreviewBtn');
+        const injectIntoVisibleBtn = document.getElementById('injectIntoVisibleBtn');
+        const visibleFrame = document.getElementById('visiblePreviewFrame');
+        const frameStatusSpan = document.getElementById('frameStatus');
+        const injectionStatusSpan = document.getElementById('injectionStatus');
+        
+        // new elements for code copy feature
+        const copyFinalHtmlBtn = document.getElementById('copyFinalHtmlBtn');
+        const regeneratePreviewBtn = document.getElementById('regeneratePreviewBtn');
+        const copyRawBtn = document.getElementById('copyRawBtn');
+        const generatedCodePreviewDiv = document.getElementById('generatedCodePreview');
+        
+        // background iframe ref
+        let backgroundIframe = null;
+        let activeOverlayPlayer = null;
+        
+        // helpers
+        function setStatus(message, isError = false) {
+            frameStatusSpan.textContent = message;
+            frameStatusSpan.style.background = isError ? '#5f2a2a' : '#0f172f';
+            setTimeout(() => {}, 1500);
+        }
+        
+        function setInjectStatus(msg) {
+            injectionStatusSpan.textContent = msg;
+            setTimeout(() => {
+                if(injectionStatusSpan.textContent === msg) injectionStatusSpan.textContent = '📄 ready';
+            }, 1800);
+        }
+        
+        function showToast(msg) {
+            let toast = document.querySelector('.toast-msg');
+            if(toast) toast.remove();
+            toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => { if(toast) toast.remove(); }, 2000);
+        }
+        
+        // floating overlay player (CORS-free injection)
+        function createFloatingPlayer(htmlSnippet, mute = false) {
+            if (activeOverlayPlayer && activeOverlayPlayer.remove) activeOverlayPlayer.remove();
+            const wrapper = document.createElement('div');
+            wrapper.id = 'dynamic-injected-widget';
+            wrapper.style.position = 'fixed';
+            wrapper.style.bottom = '20px';
+            wrapper.style.right = '20px';
+            wrapper.style.zIndex = '2147483647';
+            wrapper.style.background = 'transparent';
+            try {
+                wrapper.innerHTML = htmlSnippet;
+                const audios = wrapper.querySelectorAll('audio');
+                audios.forEach(audio => {
+                    audio.volume = mute ? 0 : 1;
+                    audio.play().catch(e => console.log("autoplay blocked, user interaction may be needed"));
+                });
+                document.body.appendChild(wrapper);
+                activeOverlayPlayer = wrapper;
+                setInjectStatus('✅ Widget active (global overlay)');
+                return true;
+            } catch(e) {
+                console.error(e);
+                setInjectStatus('❌ Invalid HTML');
+                return false;
+            }
+        }
+        
+        function removeOverlayPlayer() {
+            if(activeOverlayPlayer && activeOverlayPlayer.remove) {
+                activeOverlayPlayer.remove();
+                activeOverlayPlayer = null;
+            }
+        }
+        
+        // visible frame load
+        function loadVisibleFrame(url) {
+            if(!url) url = "about:blank";
+            visibleFrame.src = url;
+            setStatus(`🔄 loading ${url}`);
+            visibleFrame.onload = () => setStatus(`✅ visible frame: ${url.substring(0, 50)}`);
+            visibleFrame.onerror = () => setStatus('⚠️ Failed to load (CORS/blocked)', true);
+        }
+        
+        // background iframe spawn
+        function spawnBackgroundIframe(url, invisibleMode, muted) {
+            if(backgroundIframe && backgroundIframe.remove) {
+                backgroundIframe.remove();
+                backgroundIframe = null;
+            }
+            const container = document.getElementById('invisibleIframeContainer');
+            const iframe = document.createElement('iframe');
+            iframe.title = "background-invisible-iframe";
+            iframe.sandbox = "allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation";
+            if(invisibleMode) {
+                iframe.style.position = 'fixed';
+                iframe.style.top = '-9999px';
+                iframe.style.left = '-9999px';
+                iframe.style.width = '1px';
+                iframe.style.height = '1px';
+                iframe.style.opacity = '0';
+                iframe.style.pointerEvents = 'none';
+            } else {
+                iframe.style.width = '400px';
+                iframe.style.height = '300px';
+                iframe.style.opacity = '0.3';
+                iframe.style.position = 'fixed';
+                iframe.style.bottom = '10px';
+                iframe.style.right = '10px';
+                iframe.style.zIndex = '9999';
+                iframe.style.border = '1px solid red';
+            }
+            iframe.src = url;
+            container.appendChild(iframe);
+            backgroundIframe = iframe;
+            iframe.onload = () => setStatus(`🌿 Background iframe ${invisibleMode ? 'invisible' : 'debug'}`);
+            return iframe;
+        }
+        
+        // ----- GENERATE FINAL STANDALONE HTML (with injected widget + background iframe) -----
+        function generateStandaloneHtml() {
+            const targetUrl = targetUrlInput.value.trim() || "https://example.com";
+            const injectionHtml = injectionTextarea.value.trim() || "<!-- no widget defined -->";
+            const invisibleMode = invisibleToggle.checked;
+            const muteAudio = muteAudioCheckbox.checked;
+            
+            // escape injectionHtml for safe embedding inside script tag / template
+            const escapedInjection = injectionHtml.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+            const muteFlag = muteAudio;
+            
+            // Build final standalone HTML that replicates current functionality
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>InvisibleForge · Exported Widget + Background iFrame</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0b1120; min-height: 100vh; font-family: system-ui, sans-serif; }
+        .info-panel {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: #0f172fe0;
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 40px;
+            color: #a0c0ff;
+            font-size: 12px;
+            z-index: 99999;
+            pointer-events: none;
+            font-family: monospace;
+        }
+        /* invisible container for background iframe */
+        .bg-iframe-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            overflow: visible;
+            z-index: -10000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">⚡ InvisibleForge Export | Widget active + Background URL: ${targetUrl}</div>
+    <div class="bg-iframe-container" id="bgContainer"></div>
+
+    <script>
+        (function() {
+            // === USER INJECTION CODE (widget) ===
+            const userWidgetHTML = \`${escapedInjection}\`;
+            const muteAudio = ${muteFlag};
+            const targetSite = "${targetUrl}";
+            const invisibleMode = ${invisibleMode};
+            
+            // inject floating widget
+            function injectFloatingWidget() {
+                const existing = document.getElementById('exported-widget-root');
+                if(existing) existing.remove();
+                const widgetDiv = document.createElement('div');
+                widgetDiv.id = 'exported-widget-root';
+                widgetDiv.style.position = 'fixed';
+                widgetDiv.style.bottom = '20px';
+                widgetDiv.style.right = '20px';
+                widgetDiv.style.zIndex = '2147483647';
+                widgetDiv.style.background = 'transparent';
+                widgetDiv.innerHTML = userWidgetHTML;
+                document.body.appendChild(widgetDiv);
+                const audios = widgetDiv.querySelectorAll('audio');
+                audios.forEach(audio => {
+                    audio.volume = muteAudio ? 0 : 1;
+                    audio.play().catch(e => console.log("autoplay needs interaction", e));
+                });
+                console.log('[InvisibleForge] Widget injected');
+            }
+            
+            // spawn background iframe
+            function spawnBgIframe() {
+                const container = document.getElementById('bgContainer');
+                if (!container) return;
+                // clear previous
+                while(container.firstChild) container.removeChild(container.firstChild);
+                const iframe = document.createElement('iframe');
+                iframe.title = "exported-background-frame";
+                iframe.sandbox = "allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation";
+                if(invisibleMode) {
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '-9999px';
+                    iframe.style.left = '-9999px';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
+                    iframe.style.opacity = '0';
+                    iframe.style.pointerEvents = 'none';
+                } else {
+                    iframe.style.position = 'fixed';
+                    iframe.style.bottom = '10px';
+                    iframe.style.right = '10px';
+                    iframe.style.width = '320px';
+                    iframe.style.height = '240px';
+                    iframe.style.opacity = '0.6';
+                    iframe.style.border = '1px solid #3b6eff';
+                    iframe.style.borderRadius = '12px';
+                    iframe.style.zIndex = '9999';
+                }
+                iframe.src = targetSite;
+                container.appendChild(iframe);
+                console.log('[InvisibleForge] Background iframe created, mode:', invisibleMode ? 'invisible' : 'visible-debug');
+            }
+            
+            // run everything
+            injectFloatingWidget();
+            spawnBgIframe();
+        })();
+    <\/script>
+</body>
+</html>`;
+        }
+        
+        function updateGeneratedPreview() {
+            const fullHtml = generateStandaloneHtml();
+            // show truncated preview inside div
+            const pretty = fullHtml.length > 800 ? fullHtml.substring(0, 800) + "......\n<!-- (full length " + fullHtml.length + " chars) -->" : fullHtml;
+            generatedCodePreviewDiv.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#a5d8ff;">${escapeHtml(pretty)}</pre>`;
+            generatedCodePreviewDiv.setAttribute('data-fullcode', fullHtml);
+            return fullHtml;
+        }
+        
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
+            });
+        }
+        
+        async function copyFinalSource() {
+            const fullCode = generateStandaloneHtml();
+            try {
+                await navigator.clipboard.writeText(fullCode);
+                showToast('✅ Full standalone HTML copied to clipboard!');
+                setInjectStatus('📋 Exported HTML copied');
+            } catch(err) {
+                alert('Could not copy, manual selection possible');
+                console.error(err);
+            }
+        }
+        
+        async function copyRawPreview() {
+            const raw = generatedCodePreviewDiv.getAttribute('data-fullcode') || generateStandaloneHtml();
+            try {
+                await navigator.clipboard.writeText(raw);
+                showToast('📄 Raw generated code copied');
+            } catch(e) { alert('copy failed'); }
+        }
+        
+        // event listeners
+        spawnBgBtn.addEventListener('click', () => {
+            const url = targetUrlInput.value.trim();
+            if(!url) { alert("Enter URL"); return; }
+            spawnBackgroundIframe(url, invisibleToggle.checked, muteAudioCheckbox.checked);
+            setInjectStatus('🔄 Background refreshed');
+        });
+        
+        applyToPreviewBtn.addEventListener('click', () => {
+            const code = injectionTextarea.value;
+            if(!code.trim()) { alert("Paste HTML/audio code"); return; }
+            createFloatingPlayer(code, muteAudioCheckbox.checked);
+        });
+        
+        resetPreviewBtn.addEventListener('click', () => {
+            removeOverlayPlayer();
+            visibleFrame.src = "about:blank";
+            setStatus('Preview cleared');
+        });
+        
+        injectIntoVisibleBtn.addEventListener('click', () => {
+            const code = injectionTextarea.value;
+            if(!code.trim()) return;
+            createFloatingPlayer(code, muteAudioCheckbox.checked);
+        });
+        
+        copyFinalHtmlBtn.addEventListener('click', copyFinalSource);
+        regeneratePreviewBtn.addEventListener('click', () => {
+            updateGeneratedPreview();
+            showToast('Preview regenerated');
+        });
+        copyRawBtn.addEventListener('click', copyRawPreview);
+        
+        // initial visible load
+        loadVisibleFrame("https://example.com");
+        setTimeout(() => {
+            spawnBackgroundIframe(targetUrlInput.value, true, false);
+            updateGeneratedPreview();
+        }, 300);
+        
+        // update generator on changes
+        const updateFields = [injectionTextarea, targetUrlInput, invisibleToggle, muteAudioCheckbox];
+        updateFields.forEach(field => field.addEventListener('change', () => updateGeneratedPreview()));
+        updateFields.forEach(field => field.addEventListener('input', () => updateGeneratedPreview()));
+        // also for textarea input
+        injectionTextarea.addEventListener('input', () => updateGeneratedPreview());
+        targetUrlInput.addEventListener('input', () => updateGeneratedPreview());
+        
+        // manual regenerate preview button also triggers
+    })();
+</script>
+</body>
+</html>
