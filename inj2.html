@@ -35,7 +35,6 @@
         h1 {
             font-size: 1.9rem;
             font-weight: 600;
-            letter-spacing: -0.3px;
             background: linear-gradient(135deg, #D9E2FF, #9BB5FF);
             -webkit-background-clip: text;
             background-clip: text;
@@ -213,14 +212,14 @@
 <body>
 <div class="container">
     <div class="main-panel">
-        <h1>🎛️ InlineForge · Standalone HTML Generator</h1>
-        <div class="sub">⚡ Inject your widget code into a target URL → Generate hostable HTML → Copy & Deploy</div>
+        <h1>⚡ InlineForge · Standalone HTML Generator</h1>
+        <div class="sub">🔄 Generate HTML with background trigger that RELOADS on every refresh — NO BROKEN ENCODING</div>
 
         <div class="grid-2col">
             <div class="card">
-                <h2>📦 1. WIDGET CODE</h2>
-                <label>📝 Your HTML/JS/CSS widget (music player, overlay, etc.)</label>
-                <textarea id="widgetCode" placeholder='Example: music player widget'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter:blur(8px); z-index:99999; box-shadow:0 8px 20px black;"&gt;
+                <h2>📦 1. WIDGET CODE (optional)</h2>
+                <label>📝 HTML/JS/CSS that shows on screen (leave empty for pure background trigger)</label>
+                <textarea id="widgetCode" placeholder='Leave empty or paste your widget'>&lt;div style="position:fixed; bottom:20px; right:20px; background:#0f172fe6; padding:12px 20px; border-radius:40px; backdrop-filter:blur(8px); z-index:99999; box-shadow:0 8px 20px black;"&gt;
   🎧 &lt;audio controls autoplay loop&gt;
     &lt;source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"&gt;
   &lt;/audio&gt;
@@ -229,16 +228,13 @@
             </div>
 
             <div class="card">
-                <h2>🌐 2. TARGET WEBSITE</h2>
-                <label>🔗 URL to load in background iframe</label>
+                <h2>🌐 2. BACKGROUND URL (TRIGGER)</h2>
+                <label>🔗 ANY URL - loads & RELOADS on every refresh</label>
                 <input type="text" id="targetUrl" placeholder="https://example.com" value="https://example.com">
                 
                 <div class="checkbox-group">
                     <label>
-                        <input type="checkbox" id="invisibleMode" checked> 👻 Invisible iframe (background only)
-                    </label>
-                    <label>
-                        <input type="checkbox" id="muteAudio"> 🔇 Mute widget audio
+                        <input type="checkbox" id="muteAudio"> 🔇 Mute widget audio (if widget has audio)
                     </label>
                 </div>
                 
@@ -258,8 +254,8 @@
         
         <hr />
         <div class="footer-note">
-            💾 This tool generates a SINGLE HTML file. Host it anywhere. When opened, it loads your target website in an OFF-SCREEN iframe + your widget floats on top.<br>
-            ✅ No watermark. No visible iframe. Website runs completely hidden in background.
+            🔄 EVERY PAGE REFRESH = URL RELOADS & RETRIGGERS. No broken encoding. Copy raw HTML, host anywhere.<br>
+            ✅ Perfect for tracking pixels, analytics, click trackers - fires EVERY TIME the page loads or refreshes.
         </div>
     </div>
 </div>
@@ -267,20 +263,34 @@
 <script>
     const widgetCode = document.getElementById('widgetCode');
     const targetUrl = document.getElementById('targetUrl');
-    const invisibleMode = document.getElementById('invisibleMode');
     const muteAudio = document.getElementById('muteAudio');
     const generateBtn = document.getElementById('generateBtn');
     const copyBtn = document.getElementById('copyBtn');
     const outputCode = document.getElementById('outputCode');
 
+    function escapeForHtml(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function escapeForScript(str) {
+        return str
+            .replace(/\\/g, '\\\\')
+            .replace(/`/g, '\\`')
+            .replace(/\$/g, '\\$')
+            .replace(/<\/script/g, '<\\/script');
+    }
+
     function generateStandaloneHTML() {
-        const widget = widgetCode.value.trim() || "<!-- No widget provided -->";
+        const widget = widgetCode.value.trim() || "";
         const target = targetUrl.value.trim() || "https://example.com";
-        const invisible = invisibleMode.checked;
         const mute = muteAudio.checked;
         
-        // Escape for embedding in template literal
-        const escapedWidget = widget.replace(/`/g, '\\`').replace(/\${/g, '\\${');
+        const escapedWidget = escapeForScript(widget);
         
         return `<!DOCTYPE html>
 <html lang="en">
@@ -290,23 +300,15 @@
     <title>InlineForge</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: transparent;
-            overflow: visible;
-        }
-        /* Iframe moved COMPLETELY OFF SCREEN - not visible, not taking up space */
-        .background-iframe {
-            position: fixed;
+        .background-trigger {
+            position: absolute;
             top: -9999px;
             left: -9999px;
             width: 1px;
             height: 1px;
             border: none;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -99999;
+            display: block;
         }
-        /* Widget stays visible on screen */
         .widget-overlay {
             position: fixed;
             z-index: 99999;
@@ -315,12 +317,17 @@
     </style>
 </head>
 <body>
-    <iframe class="background-iframe" src="${target}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation allow-downloads allow-presentation"></iframe>
+    <iframe id="bgFrame" class="background-trigger" src=""></iframe>
     <div class="widget-overlay" id="injectedWidget"></div>
 
     <script>
         (function() {
-            const widgetHTML = \`${escapedWidget}\`;
+            const targetURL = "${escapeForScript(target)}";
+            const bgFrame = document.getElementById('bgFrame');
+            const freshUrl = targetURL + (targetURL.includes('?') ? '&' : '?') + '_fresh=' + Date.now();
+            bgFrame.src = freshUrl;
+            
+            ${widget ? `const widgetHTML = \`${escapedWidget}\`;` : 'const widgetHTML = "";'}
             const muteEnabled = ${mute};
             
             const container = document.getElementById('injectedWidget');
@@ -329,9 +336,16 @@
                 const audios = container.querySelectorAll('audio');
                 audios.forEach(audio => {
                     audio.volume = muteEnabled ? 0 : 1;
-                    audio.play().catch(e => console.log('Autoplay blocked - user interaction may be needed'));
+                    audio.play().catch(e => {});
                 });
             }
+            
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted || performance.getEntriesByType('navigation')[0].type === 'reload') {
+                    const freshUrl2 = targetURL + (targetURL.includes('?') ? '&' : '?') + '_fresh=' + Date.now();
+                    bgFrame.src = freshUrl2;
+                }
+            });
         })();
     <\/script>
 </body>
@@ -341,18 +355,9 @@
     function updateOutput() {
         const html = generateStandaloneHTML();
         const preview = html.length > 1500 ? html.substring(0, 1500) + "\n... (full length " + html.length + " chars)" : html;
-        outputCode.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#b9e6ff;">${escapeHtml(preview)}</pre>`;
+        outputCode.innerHTML = `<pre style="margin:0; font-family: monospace; white-space: pre-wrap; color:#b9e6ff;">${escapeForHtml(preview)}</pre>`;
         outputCode.setAttribute('data-fullcode', html);
         return html;
-    }
-
-    function escapeHtml(str) {
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
     }
 
     function showToast(msg) {
@@ -373,9 +378,16 @@
         }
         try {
             await navigator.clipboard.writeText(fullCode);
-            showToast('✅ Copied! Host the HTML file anywhere.');
+            showToast('✅ Copied! Raw HTML ready to host.');
         } catch (err) {
-            alert('Manual copy: select the code above');
+            // Fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = fullCode;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('✅ Copied! Raw HTML ready to host.');
         }
     }
 
@@ -386,7 +398,6 @@
 
     copyBtn.addEventListener('click', copyToClipboard);
 
-    // Auto-generate on page load
     updateOutput();
 </script>
 </body>
