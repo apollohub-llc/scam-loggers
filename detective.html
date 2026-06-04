@@ -662,6 +662,175 @@
         bindEvents();
     }
     init();
+
+
+
+
+
+
+
+
+(function() {
+    "use strict";
+
+    let taxDebt = 0;
+    let coins = 0; // Starting coins
+
+    function updateDisplay() {
+        // Remove existing display if any
+        let oldDisplay = document.getElementById("taxCoinDisplay");
+        if (oldDisplay) oldDisplay.remove();
+
+        // Create floating display
+        let display = document.createElement("div");
+        display.id = "taxCoinDisplay";
+        display.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            color: gold;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 999999;
+            border: 2px solid gold;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            pointer-events: none;
+        `;
+        display.innerHTML = `💰 COINS: ${Math.floor(coins)} | 💸 TAX DEBT: $${taxDebt.toFixed(2)}`;
+        document.body.appendChild(display);
+    }
+
+    function createCoinExplosion() {
+        // Remove any existing explosion container
+        let oldExplosion = document.getElementById("coinExplosion");
+        if (oldExplosion) oldExplosion.remove();
+
+        let explosionContainer = document.createElement("div");
+        explosionContainer.id = "coinExplosion";
+        explosionContainer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999999;
+            overflow: hidden;
+        `;
+        document.body.appendChild(explosionContainer);
+
+        // Create 150 flying coins
+        for (let i = 0; i < 150; i++) {
+            let coin = document.createElement("div");
+            coin.innerHTML = "🪙";
+            coin.style.cssText = `
+                position: absolute;
+                font-size: ${Math.random() * 30 + 20}px;
+                left: ${Math.random() * 100}%;
+                top: 50%;
+                animation: coinFly ${Math.random() * 1.5 + 0.8}s ease-out forwards;
+                opacity: 1;
+            `;
+            // Random direction
+            let xMove = (Math.random() - 0.5) * 500;
+            let yMove = (Math.random() - 0.5) * 400 - 200;
+            coin.style.setProperty('--x', xMove + 'px');
+            coin.style.setProperty('--y', yMove + 'px');
+            explosionContainer.appendChild(coin);
+        }
+
+        // Add keyframes if not already present
+        if (!document.querySelector("#coinFlyKeyframes")) {
+            let style = document.createElement("style");
+            style.id = "coinFlyKeyframes";
+            style.textContent = `
+                @keyframes coinFly {
+                    0% {
+                        transform: translate(0, 0) rotate(0deg);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translate(var(--x, 100px), var(--y, -200px)) rotate(720deg);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Remove explosion container after animation
+        setTimeout(() => {
+            if (explosionContainer) explosionContainer.remove();
+        }, 2500);
+    }
+
+    function askForTax() {
+        let currentTaxDue = (Math.random() * 100 + 0.01).toFixed(2);
+        let totalDue = taxDebt + parseFloat(currentTaxDue);
+        
+        let userInput = prompt(
+            `💰 TAX COLLECTION 💰\n\n` +
+            `New tax due: $${currentTaxDue}\n` +
+            `Previous unpaid debt: $${taxDebt.toFixed(2)}\n` +
+            `━━━━━━━━━━━━━━━━━━\n` +
+            `TOTAL DUE: $${totalDue.toFixed(2)}\n\n` +
+            `Enter amount you want to pay:`
+        );
+
+        if (userInput === null) {
+            // Paid nothing, debt increases by full amount
+            taxDebt += parseFloat(currentTaxDue);
+            console.log(`❌ No payment made. New debt: $${taxDebt.toFixed(2)}`);
+        } else {
+            let payment = parseFloat(userInput);
+            if (isNaN(payment) || payment < 0) payment = 0;
+            
+            let remaining = totalDue - payment;
+            if (remaining < 0) {
+                // Overpaid? We'll just set debt to 0 and give "change" as imaginary
+                taxDebt = 0;
+                console.log(`✅ Overpaid! Debt cleared. Change: $${Math.abs(remaining).toFixed(2)}`);
+            } else {
+                taxDebt = remaining;
+                console.log(`💰 Paid: $${payment.toFixed(2)} | Remaining debt: $${taxDebt.toFixed(2)}`);
+            }
+        }
+
+        // Check if debt reached or exceeded 1000
+        if (taxDebt >= 1000) {
+            console.log(`💥 TAX DEBT REACHED $${taxDebt.toFixed(2)}! COINS RESETTING... 💥`);
+            createCoinExplosion();
+            
+            // Reset coins to 0
+            coins = 0;
+            taxDebt = 0;
+            
+            alert(`💥💥💥 TAX DEBT REACHED $1000! 💥💥💥\nYour coins have been reset to 0!\n(Explosion animation played)`);
+        } else {
+            // Add some coins for paying taxes (incentive)
+            let coinsEarned = Math.floor(Math.random() * 50) + 10;
+            coins += coinsEarned;
+            console.log(`🎉 Earned ${coinsEarned} coins for tax compliance! Total coins: ${Math.floor(coins)}`);
+        }
+
+        updateDisplay();
+    }
+
+    // Initialize display
+    updateDisplay();
+    
+    // Run every 2 minutes (120,000 milliseconds)
+    setInterval(askForTax, 120000);
+    
+    // Optional: first tax after 5 seconds
+    setTimeout(askForTax, 5000);
+
+    console.log("💰 TAX SYSTEM ACTIVATED 💰 | Debt carries over | $1000 debt = coin reset + explosion");
+})();
 </script>
 </body>
 </html>
