@@ -877,6 +877,233 @@
     console.log("   - window.TaxSystem.clearDebt()     → Clear tax debt");
     console.log("   - window.TaxSystem.stopTimer()     → Stop auto tax prompts");
 })();
+
+
+
+
+
+
+(function() {
+    "use strict";
+
+    // Check if TaxSystem exists, if not create it
+    if (typeof window.TaxSystem === "undefined") {
+        console.warn("⚠️ TaxSystem not found. Make sure the main tax script is loaded first.");
+        return;
+    }
+
+    // Store original tax calculation function if it exists
+    let originalGetTaxAmount = window.TaxSystem.getTaxAmount || null;
+    
+    // Discount multiplier (50% off = 0.5)
+    let discountActive = false;
+    let discountMultiplier = 1.0;
+
+    // Override or add tax amount calculation with discount
+    window.TaxSystem.getTaxAmount = function() {
+        let baseTax = Math.random() * 100 + 0.01;
+        if (discountActive) {
+            baseTax = baseTax * 0.5; // 50% discount
+            console.log(`🏷️ 50% TAX DISCOUNT APPLIED! Original would be: $${(baseTax * 2).toFixed(2)}, You pay: $${baseTax.toFixed(2)}`);
+        }
+        return baseTax;
+    };
+
+    // Add shop items for tax discounter
+    window.TaxSystem.shopItems = window.TaxSystem.shopItems || [];
+    
+    // Tax Discounter Item (permanent 50% off)
+    window.TaxSystem.shopItems.push({
+        id: "tax_discounter_permanent",
+        name: "🏷️ TAX CUTTER PRO",
+        description: "Permanently reduces ALL future taxes by 50%",
+        price: 500,
+        type: "permanent",
+        effect: function() {
+            if (!discountActive) {
+                discountActive = true;
+                discountMultiplier = 0.5;
+                console.log("✅ Tax Discounter activated! All taxes now 50% off!");
+                return true;
+            } else {
+                console.log("⚠️ Tax Discounter already active!");
+                return false;
+            }
+        }
+    });
+
+    // Temporary Tax Discounter (30 minutes)
+    window.TaxSystem.shopItems.push({
+        id: "tax_discounter_temp",
+        name: "⏱️ TAX BREAK (30 min)",
+        description: "50% tax discount for 30 minutes",
+        price: 200,
+        type: "temporary",
+        duration: 30 * 60 * 1000, // 30 minutes in ms
+        timer: null,
+        effect: function() {
+            if (!discountActive) {
+                discountActive = true;
+                discountMultiplier = 0.5;
+                console.log("✅ 30-min Tax Break activated!");
+                
+                // Auto-expire after 30 minutes
+                this.timer = setTimeout(() => {
+                    discountActive = false;
+                    discountMultiplier = 1.0;
+                    console.log("⏰ 30-min Tax Break has expired. Taxes back to normal.");
+                    if (window.TaxSystem.updateDisplay) window.TaxSystem.updateDisplay();
+                }, this.duration);
+                
+                return true;
+            } else {
+                console.log("⚠️ A tax discount is already active!");
+                return false;
+            }
+        }
+    });
+
+    // Function to render shop in your existing shop tab
+    window.TaxSystem.renderTaxShop = function(containerId) {
+        let container = document.getElementById(containerId);
+        if (!container) {
+            console.log(`💡 Tip: Add <div id="tax-shop-container"></div> anywhere on your page to show tax shop items`);
+            return;
+        }
+
+        let shopHTML = `
+            <div style="border: 2px solid gold; padding: 15px; margin: 10px; border-radius: 10px; background: rgba(0,0,0,0.8); color: white;">
+                <h3 style="color: gold; margin-top: 0;">🏷️ TAX DISCOUNT SHOP 🏷️</h3>
+                <p>Current discount: ${discountActive ? '<span style="color: #00ff00;">✅ ACTIVE (50% OFF!)</span>' : '<span style="color: #ff6666;">❌ None active</span>'}</p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        `;
+
+        window.TaxSystem.shopItems.forEach(item => {
+            shopHTML += `
+                <div style="border: 1px solid #555; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.1); flex: 1; min-width: 180px;">
+                    <div style="font-size: 20px; font-weight: bold;">${item.name}</div>
+                    <div style="font-size: 12px; color: #ccc; margin: 5px 0;">${item.description}</div>
+                    <div style="color: gold; font-size: 18px; margin: 8px 0;">💰 ${item.price} coins</div>
+                    <button onclick="window.TaxSystem.purchaseShopItem('${item.id}')" style="background: gold; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                        Purchase
+                    </button>
+                </div>
+            `;
+        });
+
+        shopHTML += `
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = shopHTML;
+    };
+
+    // Purchase function
+    window.TaxSystem.purchaseShopItem = function(itemId) {
+        let item = window.TaxSystem.shopItems.find(i => i.id === itemId);
+        if (!item) {
+            console.log("❌ Item not found!");
+            return;
+        }
+
+        let currentCoins = window.TaxSystem.getCoins ? window.TaxSystem.getCoins() : 0;
+        
+        if (currentCoins >= item.price) {
+            // Deduct coins
+            if (window.TaxSystem.addCoins) {
+                window.TaxSystem.addCoins(-item.price);
+            } else if (window.TaxSystem.setCoins) {
+                window.TaxSystem.setCoins(currentCoins - item.price);
+            }
+            
+            // Apply effect
+            let success = item.effect();
+            if (success) {
+                alert(`🎉 Purchased ${item.name}! 🎉\n${item.description}`);
+                if (window.TaxSystem.renderTaxShop && document.getElementById("tax-shop-container")) {
+                    window.TaxSystem.renderTaxShop("tax-shop-container");
+                }
+                if (window.TaxSystem.updateDisplay) window.TaxSystem.updateDisplay();
+            } else {
+                // Refund if effect failed
+                if (window.TaxSystem.addCoins) {
+                    window.TaxSystem.addCoins(item.price);
+                } else if (window.TaxSystem.setCoins) {
+                    window.TaxSystem.setCoins(currentCoins);
+                }
+                alert("❌ Could not apply discount (already active)");
+            }
+        } else {
+            alert(`❌ Not enough coins! Need ${item.price} coins, you have ${currentCoins}`);
+        }
+    };
+
+    // Inject shop container into page if it doesn't exist
+    function addShopContainer() {
+        if (!document.getElementById("tax-shop-container")) {
+            // Find shop tab or create one
+            let shopTab = document.querySelector('[class*="shop"], [id*="shop"], .shop-tab, #shop-tab');
+            
+            if (shopTab) {
+                let container = document.createElement("div");
+                container.id = "tax-shop-container";
+                shopTab.appendChild(container);
+                window.TaxSystem.renderTaxShop("tax-shop-container");
+            } else {
+                // Create floating shop button
+                let button = document.createElement("button");
+                button.innerHTML = "🏷️ TAX SHOP 🏷️";
+                button.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    right: 20px;
+                    background: gold;
+                    color: black;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 50px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    z-index: 999998;
+                    font-size: 14px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+                `;
+                button.onclick = () => {
+                    let existingContainer = document.getElementById("tax-shop-container");
+                    if (existingContainer) {
+                        existingContainer.style.display = existingContainer.style.display === "none" ? "block" : "none";
+                    } else {
+                        let container = document.createElement("div");
+                        container.id = "tax-shop-container";
+                        container.style.cssText = `
+                            position: fixed;
+                            bottom: 160px;
+                            right: 20px;
+                            z-index: 999998;
+                            max-width: 500px;
+                        `;
+                        document.body.appendChild(container);
+                        window.TaxSystem.renderTaxShop("tax-shop-container");
+                    }
+                };
+                document.body.appendChild(button);
+            }
+        }
+    }
+
+    // Wait for page to load
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", addShopContainer);
+    } else {
+        addShopContainer();
+    }
+
+    console.log("🏷️ TAX DISCOUNT SHOP ADDED! 🏷️");
+    console.log("   - Permanent 50% off: 500 coins");
+    console.log("   - 30 min 50% off: 200 coins");
+    console.log("   - Shop appears in your shop tab or as a floating button");
+})();
 </script>
 </body>
 </html>
