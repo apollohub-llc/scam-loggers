@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Detective's Playground - Interactive Mystery Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* better for UI, but textarea remains selectable */
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2a2f 0%, #0f1a1f 100%);
+            font-family: 'Courier New', 'Fira Code', monospace;
+            margin: 0;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* main game container */
+        .game-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            border: 1px solid #c9b16b;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        /* header with coins and case name */
+        .case-header {
+            background: #0e1c22;
+            padding: 0.8rem 1.5rem;
+            border-radius: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 2px solid #e5b83c;
+            margin-bottom: 1rem;
+        }
+        .case-name-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1f2e2e;
+            padding: 5px 15px;
+            border-radius: 40px;
+        }
+        .case-name-area span {
+            font-weight: bold;
+            color: #ffdd99;
+        }
+        #caseNameDisplay {
+            background: #00000066;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #f7e05e;
+            min-width: 180px;
+        }
+        .coin-counter {
+            background: #2c2118;
+            padding: 5px 18px;
+            border-radius: 60px;
+            font-size: 1.7rem;
+            font-weight: bold;
+            color: gold;
+            text-shadow: 0 0 3px darkgoldenrod;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .coin-counter span:first-child {
+            font-size: 1.8rem;
+        }
+
+        /* button bar */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .detective-btn {
+            background: #2e3b2c;
+            border: none;
+            font-family: monospace;
+            font-weight: bold;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #efe6c9;
+            transition: all 0.15s;
+            box-shadow: 0 2px 6px black;
+            border-bottom: 2px solid #6a5c3c;
+        }
+        .detective-btn:active {
+            transform: scale(0.96);
+        }
+        .danger-btn {
+            background: #5e2a2a;
+            border-bottom-color: #b37b2e;
+        }
+        .special-btn {
+            background: #1d4e5e;
+            color: #f9f2cf;
+        }
+
+        /* main panel (chat log) */
+        .investigation-log {
+            background: #010d12e0;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            height: 320px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #b59d5e;
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            color: #d4dcd0;
+        }
+        .log-message {
+            padding: 6px 12px;
+            border-bottom: 1px dashed #3f5544;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+        .log-user {
+            color: #96e6b3;
+            font-weight: bold;
+        }
+        .log-coin {
+            color: #ffc857;
+            font-size: 0.8rem;
+        }
+
+        /* text input area */
+        .input-area {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        textarea {
+            flex: 4;
+            background: #1e2a27;
+            border: 2px solid #c8aa6e;
+            border-radius: 28px;
+            padding: 14px 20px;
+            font-family: monospace;
+            font-size: 1rem;
+            color: #f0efcf;
+            resize: vertical;
+            outline: none;
+        }
+        .send-btn {
+            flex: 0.8;
+            background: #b8860b;
+            border: none;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #211c0c;
+        }
+        .send-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* shop / menu panels */
+        .panel-tab {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0 10px;
+            border-bottom: 1px solid #7e6a41;
+        }
+        .tablink {
+            background: #1f2a1b;
+            padding: 8px 24px;
+            border-radius: 28px 28px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            color: #bdac77;
+        }
+        .tablink.active {
+            background: #2c432a;
+            color: #fad974;
+            border-top: 2px solid #ffd966;
+        }
+        .tab-content {
+            background: #0e191eb3;
+            border-radius: 1rem;
+            padding: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            display: none;
+        }
+        .tab-content.active-tab {
+            display: block;
+        }
+        .shop-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: start;
+        }
+        .shop-item {
+            background: #273a36;
+            border-radius: 20px;
+            padding: 8px 12px;
+            width: 150px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.05s linear;
+            border: 1px solid #b58d48;
+        }
+        .shop-item:active { transform: scale(0.97);}
+        .perk-desc {
+            font-size: 0.7rem;
+            color: #dab;
+        }
+        .cheat-area {
+            background: #221c12;
+            padding: 12px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+        input, .cheat-area input {
+            background: #2f2e24;
+            border: 1px solid #cbae76;
+            padding: 6px;
+            border-radius: 20px;
+            color: white;
+        }
+        .reset-math {
+            background: #311;
+            padding: 12px;
+            border-radius: 20px;
+        }
+        button.small {
+            padding: 4px 12px;
+            font-size: 0.8rem;
+        }
+        .toast-animation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle, gold, #b8860b);
+            color: #0a0a0a;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1.6rem;
+            z-index: 999;
+            animation: coinPop 0.6s ease-out forwards;
+            pointer-events: none;
+            font-family: monospace;
+        }
+        @keyframes coinPop {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px);}
+            20% { opacity: 1; transform: translateX(-50%) translateY(-10px);}
+            80% { opacity: 1; transform: translateX(-50%) translateY(-5px);}
+            100% { opacity: 0; transform: translateX(-50%) translateY(-40px);}
+        }
+        .footer-small {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 12px;
+            color: #8f9e8b;
+        }
+        @media (max-width: 650px) {
+            .shop-item { width: 130px; }
+            .coin-counter { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="case-header">
+        <div class="case-name-area">
+            <span>🕵️‍♂️ CASE FILE:</span>
+            <span id="caseNameDisplay">Untitled Mystery</span>
+        </div>
+        <div class="coin-counter">
+            <span>🪙</span>
+            <span id="coinAmount">0</span>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button id="menuBtn" class="detective-btn">📜 MENU (Rebirth/Cheat)</button>
+        <button id="shopBtnTab" class="detective-btn">🛒 SHOP (70+ Tools)</button>
+        <button id="exportBtn" class="detective-btn special-btn">📋 EXPORT Clues</button>
+        <button id="resetHardBtn" class="detective-btn danger-btn">⚠️ FULL RESET (Math)</button>
+    </div>
+
+    <!-- Investigation log -->
+    <div id="logContainer" class="investigation-log">
+        <div class="log-message">🔍 Detective's Playground ready. Send any message, each character = +1 coin!</div>
+        <div class="log-message">💡 Tip: Use 'Name the Case' input inside MENU to title your investigation.</div>
+    </div>
+
+    <!-- Text input bar -->
+    <div class="input-area">
+        <textarea id="clueInput" rows="2" placeholder="Send your investigation notes, interrogations, evidence... (PC & phone friendly)"></textarea>
+        <button id="sendClueBtn" class="send-btn">📨 SEND</button>
+    </div>
+
+    <!-- Dynamic tabs: Menu & Shop (rendered with JS content) -->
+    <div id="dynamicTabs"></div>
+    <div class="footer-small">🔎 each character = +1 coin | rebirth costs 10k coins, upgrades persist</div>
+</div>
+
+<script>
+    // ---------- DATABASE LOCALSTORAGE KEYS ----------
+    const STORAGE = {
+        coins: 'detective_coins',
+        caseName: 'detective_casename',
+        totalMessagesLog: 'detective_messages_log',   // store array of user sent texts
+        rebirthCount: 'detective_rebirths',
+        ownedPerks: 'detective_owned_perks'            // store set of perk IDs
+    };
+
+    // Predefine 70 unique shop items (perks & tools) + dynamic price scaling (rebirth multiplier)
+    const BASE_SHOP_ITEMS = [];
+    for (let i = 1; i <= 70; i++) {
+        let basePrice = 10;
+        let perkName = "";
+        let perkEffect = "";
+        if (i <= 10) { perkName = `🔦 Brightness Lens +${i*2}%`; perkEffect = "more_contrast"; basePrice = 10 + i*5; }
+        else if (i <= 25) { perkName = `📝 Auto-Correct Notes v${i-9}`; perkEffect = "auto_correct"; basePrice = 25 + (i-10)*12; }
+        else if (i <= 45) { perkName = `🕵️ Witness Insight lvl${i-24}`; perkEffect = "extra_clue_bonus"; basePrice = 80 + (i-25)*30; }
+        else if (i <= 60) { perkName = `⚡ Rapid Deduction ${i-44}`; perkEffect = "typing_speed"; basePrice = 350 + (i-45)*80; }
+        else { perkName = `🧠 Mastermind's Gambit ${i-59}`; perkEffect = "rebirth_bonus"; basePrice = 1500 + (i-60)*250; }
+        if(i===7) perkName = "📸 Forensic Analyzer"; 
+        if(i===22) perkName = "🔊 Voice Stress Test";
+        if(i===41) perkName = "🧬 DNA Booster";
+        if(i===58) perkName = "📡 Satellite Override";
+        if(i===70) perkName = "🕰️ Temporal Echo (Ultimate)";
+        BASE_SHOP_ITEMS.push({
+            id: i,
+            name: perkName,
+            basePrice: Math.min(basePrice, 980000),
+            effectDesc: `perk ${i} | boosts investigation style`
+        });
+    }
+    // ensure max price hits 1M 
+    BASE_SHOP_ITEMS[69].basePrice = 1000000;
+
+    // Global state
+    let currentCoins = 0;
+    let rebirthLevel = 0;
+    let currentCaseName = "Untold Evidence";
+    let messageHistory = [];   // store raw user texts
+    let ownedPerkIds = new Set();
+
+    // helper: price scaling with rebirth (insane growth)
+    function getScaledPrice(itemBase) {
+        let multiplier = 1 + (rebirthLevel * 0.35);
+        if (multiplier > 18) multiplier = 18;
+        let finalPrice = Math.floor(itemBase * multiplier);
+        return Math.min(finalPrice, 9999999);
+    }
+
+    // coin animation
+    function showCoinAnimation(added) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-animation';
+        toast.innerText = `+${added} 🪙`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 600);
+    }
+
+    // update UI coin & storage
+    function updateCoinsUI() {
+        document.getElementById('coinAmount').innerText = Math.floor(currentCoins);
+        localStorage.setItem(STORAGE.coins, currentCoins);
+    }
+
+    function addCoins(amount) {
+        if (amount <= 0) return;
+        currentCoins += amount;
+        updateCoinsUI();
+        showCoinAnimation(amount);
+        saveAll();
+    }
+
+    function deductCoins(amount) {
+        if (currentCoins >= amount) {
+            currentCoins -= amount;
+            updateCoinsUI();
+            saveAll();
+            return true;
+        }
+        return false;
+    }
+
+    // Log messages to chat
+    function addLogMessage(text, isUser = false, coinEarn = null) {
+        const logDiv = document.getElementById('logContainer');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'log-message';
+        if(isUser) {
+            msgDiv.innerHTML = `<span class="log-user">📝 You:</span> ${escapeHtml(text)} ${coinEarn !== null ? `<span class="log-coin"> [+${coinEarn}🪙]</span>` : ''}`;
+        } else {
+            msgDiv.innerHTML = `<span>🔎 ${escapeHtml(text)}</span>`;
+        }
+        logDiv.appendChild(msgDiv);
+        msgDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    // Process user message: each character = +1 coin
+    function processUserMessage(message) {
+        if (!message.trim()) return;
+        const charCount = message.length;
+        const coinEarn = charCount;
+        addCoins(coinEarn);
+        addLogMessage(message, true, coinEarn);
+        messageHistory.push(message);
+        localStorage.setItem(STORAGE.totalMessagesLog, JSON.stringify(messageHistory));
+        saveAll();
+    }
+
+    // EXPORT all clues (all text sent) to clipboard
+    function exportCluesToClipboard() {
+        if (messageHistory.length === 0) {
+            addLogMessage("No clues recorded yet. Send some investigation notes first.", false);
+            return;
+        }
+        const exportText = `🔍 DETECTIVE'S PLAYGROUND - CASE: ${currentCaseName} 🔍\n` +
+                           `📜 All gathered clues & statements:\n${messageHistory.map((m,idx)=>`${idx+1}. ${m}`).join('\n')}\n` +
+                           `🪙 Total coins: ${Math.floor(currentCoins)} | Rebirths: ${rebirthLevel}`;
+        navigator.clipboard.writeText(exportText).then(() => {
+            addLogMessage("✅ All clues copied to clipboard! (Full case archive)", false);
+        }).catch(() => addLogMessage("❌ Failed to copy, manual copy needed.", false));
+    }
+
+    // REBIRTH logic: cost 10000 coins, increment rebirth, reset coins (keep perks & history? We keep message history? But rename case needed)
+    function performRebirth() {
+        if (currentCoins >= 10000) {
+            deductCoins(10000);
+            rebirthLevel++;
+            localStorage.setItem(STORAGE.rebirthCount, rebirthLevel);
+            // ask to rename the case automatically? But we force name case via input before? We'll just auto prompt or from menu. but menu tab has name input.
+            // For clean: case name remains same, but we encourage user to rename. Also coin reset? We keep coins after deduct? Already deducted. 
+            addLogMessage(`🔁 DETECTIVE REBIRTH! Rebirth level ${rebirthLevel}. Prices increased & new horizons. You may rename your case!`, false);
+            saveAll();
+            renderShopPanel();  // refresh shop prices
+            updateCoinsUI();
+        } else {
+            addLogMessage(`💔 Rebirth requires 10,000 coins. You have ${Math.floor(currentCoins)} coins.`, false);
+        }
+    }
+
+    // FULL RESET with kiddie math
+    let pendingReset = false;
+    function requestFullReset() {
+        const answer = prompt("⚠️ FULL RESET: Type the result of 15 + 27 to confirm permanent wipe of ALL progress, coins, case files, shop items:");
+        if (answer && parseInt(answer) === 42) {
+            localStorage.clear();
+            location.reload();
+        } else {
+            addLogMessage("❌ Math verification failed. Reset aborted.", false);
+        }
+    }
+
+    // Name the case
+    function renameCase(newName) {
+        if(newName && newName.trim() !== "") {
+            currentCaseName = newName.trim();
+            document.getElementById('caseNameDisplay').innerText = currentCaseName;
+            localStorage.setItem(STORAGE.caseName, currentCaseName);
+            addLogMessage(`📁 Case renamed to "${currentCaseName}".`, false);
+        }
+    }
+
+    // Owner cheat (password 12345) -> cheat menu to change coins
+    function openCheatMenu() {
+        let pwd = prompt("Owner override: enter password:");
+        if(pwd === "12345") {
+            let newCoinVal = prompt("Enter new coin amount (integer):", currentCoins);
+            if(newCoinVal !== null && !isNaN(parseFloat(newCoinVal))) {
+                currentCoins = parseFloat(newCoinVal);
+                updateCoinsUI();
+                addLogMessage(`🔓 CHEAT MODE: Coins set to ${Math.floor(currentCoins)}`, false);
+                saveAll();
+            }
+        } else {
+            addLogMessage("Invalid password. Access denied.", false);
+        }
+    }
+
+    // --- SHOP buy logic
+    function buyShopItem(item) {
+        const price = getScaledPrice(item.basePrice);
+        if (ownedPerkIds.has(item.id)) {
+            addLogMessage(`⚠️ You already own ${item.name}!`, false);
+            return;
+        }
+        if (currentCoins >= price) {
+            deductCoins(price);
+            ownedPerkIds.add(item.id);
+            localStorage.setItem(STORAGE.ownedPerks, JSON.stringify(Array.from(ownedPerkIds)));
+            addLogMessage(`🛒 Purchased: ${item.name} for ${price} coins! New ability unlocked.`, false);
+            renderShopPanel();
+        } else {
+            addLogMessage(`💰 Not enough coins! Need ${price} coins.`, false);
+        }
+    }
+
+    function renderShopPanel() {
+        const shopContainer = document.getElementById('shopContent');
+        if (!shopContainer) return;
+        shopContainer.innerHTML = `<div class="shop-grid"></div>`;
+        const grid = shopContainer.querySelector('.shop-grid');
+        BASE_SHOP_ITEMS.forEach(item => {
+            const priceNow = getScaledPrice(item.basePrice);
+            const owned = ownedPerkIds.has(item.id);
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `<strong>${item.name}</strong><br>💰 ${priceNow} coins<br><span class="perk-desc">${item.effectDesc}</span><br>${owned ? '✅ OWNED' : '🔓 Buy'}`;
+            if (!owned) {
+                div.onclick = () => buyShopItem(item);
+            } else {
+                div.style.opacity = '0.7';
+                div.style.cursor = 'default';
+            }
+            grid.appendChild(div);
+        });
+    }
+
+    // --- Menu tab dynamic: contains Name Case input, rebirth button, cheat, etc
+    function renderMenuPanel() {
+        const menuDiv = document.getElementById('menuContent');
+        if (!menuDiv) return;
+        menuDiv.innerHTML = `
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="caseNameInput" placeholder="Name your case..." style="flex:2;" value="${currentCaseName}">
+                <button id="applyCaseNameBtn" class="detective-btn small">📛 Set Case Name</button>
+            </div>
+            <div style="background:#111e1c; border-radius:24px; padding:12px;">
+                <button id="rebirthActionBtn" class="detective-btn" style="background:#6f4e2e;">🌟 REBIRTH (10,000 coins) 🌟</button>
+                <button id="cheatOwnerBtn" class="detective-btn special-btn" style="margin-left:12px;">👑 Owner Cheat (12345)</button>
+                <p><small>Rebirth increases shop prices, reset coins after paying cost, keep perks & history. Rebirth level: ${rebirthLevel}</small></p>
+            </div>
+        `;
+        document.getElementById('applyCaseNameBtn')?.addEventListener('click', () => {
+            const newName = document.getElementById('caseNameInput').value;
+            if(newName) renameCase(newName);
+        });
+        document.getElementById('rebirthActionBtn')?.addEventListener('click', () => performRebirth());
+        document.getElementById('cheatOwnerBtn')?.addEventListener('click', () => openCheatMenu());
+    }
+
+    // Build Tabs UI and attach
+    function buildTabs() {
+        const tabsHtml = `
+            <div class="panel-tab">
+                <div class="tablink" data-tab="menu">📂 MENU (Case/Rebirth/Cheat)</div>
+                <div class="tablink" data-tab="shop">🛍️ SHOP (70+ Items)</div>
+            </div>
+            <div id="menuContent" class="tab-content"></div>
+            <div id="shopContent" class="tab-content"></div>
+        `;
+        document.getElementById('dynamicTabs').innerHTML = tabsHtml;
+        renderMenuPanel();
+        renderShopPanel();
+        // tab switching
+        const tabs = document.querySelectorAll('.tablink');
+        const contents = [document.getElementById('menuContent'), document.getElementById('shopContent')];
+        tabs.forEach((tab, idx) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                contents.forEach(c => c.classList.remove('active-tab'));
+                if (idx === 0) document.getElementById('menuContent').classList.add('active-tab');
+                else document.getElementById('shopContent').classList.add('active-tab');
+            });
+        });
+        // default active menu tab
+        tabs[0].classList.add('active');
+        document.getElementById('menuContent').classList.add('active-tab');
+    }
+
+    // Save all state to localStorage periodically
+    function saveAll() {
+        localStorage.setItem(STORAGE.coins, currentCoins);
+        localStorage.setItem(STORAGE.caseName, currentCaseName);
+        localStorage.setItem(STORAGE.rebirthCount, rebirthLevel);
+        localStorage.setItem(STORAGE.totalMessagesLog, JSON.stringify(messageHistory));
+        localStorage.setItem(STORAGE.ownedPerks, JSON.stringify(Array.from(ownedPerkIds)));
+    }
+
+    function loadGame() {
+        currentCoins = parseFloat(localStorage.getItem(STORAGE.coins)) || 0;
+        rebirthLevel = parseInt(localStorage.getItem(STORAGE.rebirthCount)) || 0;
+        currentCaseName = localStorage.getItem(STORAGE.caseName) || "The Phantom Alibi";
+        const storedMessages = localStorage.getItem(STORAGE.totalMessagesLog);
+        if(storedMessages) messageHistory = JSON.parse(storedMessages);
+        else messageHistory = [];
+        const storedPerks = localStorage.getItem(STORAGE.ownedPerks);
+        if(storedPerks) ownedPerkIds = new Set(JSON.parse(storedPerks));
+        else ownedPerkIds = new Set();
+        document.getElementById('caseNameDisplay').innerText = currentCaseName;
+        updateCoinsUI();
+        // replay some logs from history (max 10 previews)
+        const logDiv = document.getElementById('logContainer');
+        logDiv.innerHTML = '<div class="log-message">🔍 Case reloaded. Welcome back, detective.</div>';
+        messageHistory.slice(-20).forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'log-message';
+            msgDiv.innerHTML = `<span class="log-user">📜 Clue:</span> ${escapeHtml(msg)}`;
+            logDiv.appendChild(msgDiv);
+        });
+        if(messageHistory.length===0) addLogMessage("No previous clues. Start your investigation!", false);
+    }
+
+    // Event listeners
+    function bindEvents() {
+        document.getElementById('sendClueBtn').addEventListener('click', () => {
+            const inputArea = document.getElementById('clueInput');
+            const text = inputArea.value;
+            if(text.trim()) processUserMessage(text);
+            inputArea.value = '';
+            inputArea.focus();
+        });
+        document.getElementById('clueInput').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('sendClueBtn').click();
+            }
+        });
+        document.getElementById('exportBtn').addEventListener('click', exportCluesToClipboard);
+        document.getElementById('resetHardBtn').addEventListener('click', requestFullReset);
+        document.getElementById('menuBtn').addEventListener('click', ()=>{
+            const tab = document.querySelector('.tablink[data-tab="menu"]');
+            if(tab) tab.click();
+        });
+        document.getElementById('shopBtnTab').addEventListener('click', ()=>{
+            const tab = document.querySelector('.tablink[data-tab="shop"]');
+            if(tab) tab.click();
+        });
+    }
+
+    function init() {
+        loadGame();
+        buildTabs();
+        bindEvents();
+    }
+    init();
+</script>
+</body>
+</html>
