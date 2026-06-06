@@ -2,15 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XSS Sentinel | Live InnerHTML Vulnerability Scanner</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: linear-gradient(145deg, #09090b 0%, #121214 100%);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -18,31 +13,19 @@
       min-height: 100vh;
       color: #e4e4e7;
     }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 2rem; }
     .badge {
       display: inline-block;
       background: rgba(249, 115, 22, 0.15);
-      backdrop-filter: blur(4px);
       border: 1px solid rgba(249, 115, 22, 0.4);
       color: #f97316;
       font-size: 0.75rem;
       font-weight: 600;
       padding: 0.25rem 1rem;
       border-radius: 40px;
-      letter-spacing: 0.5px;
       margin-bottom: 1rem;
     }
-
     h1 {
       font-size: 2.5rem;
       font-weight: 800;
@@ -50,238 +33,59 @@
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      letter-spacing: -0.02em;
     }
-
-    .sub {
-      color: #a1a1aa;
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
+    .sub { color: #a1a1aa; margin-top: 0.5rem; font-size: 0.95rem; }
     .scan-card {
       background: rgba(20, 20, 23, 0.8);
-      backdrop-filter: blur(8px);
       border: 1px solid #27272a;
       border-radius: 1.5rem;
       padding: 1.8rem;
       margin-bottom: 2rem;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
     }
-
-    .label {
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #e4e4e7;
-    }
-
+    .label { font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
     textarea {
       width: 100%;
       background: #09090b;
       border: 1px solid #3f3f46;
       border-radius: 1rem;
       padding: 1rem 1.2rem;
-      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-family: monospace;
       font-size: 0.9rem;
       color: #f4f4f5;
       resize: vertical;
-      transition: 0.2s;
     }
-
-    textarea:focus {
-      outline: none;
-      border-color: #f97316;
-      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
-    }
-
+    textarea:focus { outline: none; border-color: #f97316; }
+    .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn {
       background: #27272a;
-      border: 1px solid transparent;
       padding: 0.7rem 1.6rem;
       border-radius: 2rem;
       font-weight: 600;
       font-size: 0.9rem;
       cursor: pointer;
-      transition: 0.2s;
       color: #e4e4e7;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      border: none;
     }
-
-    .btn-primary {
-      background: #f97316;
-      color: #09090b;
-      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
-    }
-
-    .btn-primary:hover {
-      background: #ea580c;
-      transform: scale(1.01);
-    }
-
-    .btn-outline {
-      border: 1px solid #3f3f46;
-      background: transparent;
-    }
-
-    .btn-outline:hover {
-      background: #18181b;
-      border-color: #f97316;
-    }
-
-    .results-dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 1.5rem;
-      margin-top: 0.5rem;
-    }
-
-    @media (max-width: 780px) {
-      .results-dashboard {
-        grid-template-columns: 1fr;
-        gap: 1.2rem;
-      }
-    }
-
-    .panel {
-      background: rgba(18, 18, 20, 0.9);
-      border-radius: 1.25rem;
-      border: 1px solid #27272a;
-      overflow: hidden;
-    }
-
-    .panel-header {
-      padding: 1rem 1.5rem;
-      background: #18181b;
-      border-bottom: 1px solid #27272a;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .verdict-badge {
-      margin-left: auto;
-      font-size: 0.75rem;
-      background: #09090b;
-      padding: 0.2rem 0.8rem;
-      border-radius: 30px;
-      border: 1px solid #27272a;
-    }
-
-    .vuln-list {
-      padding: 0.8rem;
-      max-height: 450px;
-      overflow-y: auto;
-    }
-
-    .vuln-item {
-      background: #09090b;
-      margin-bottom: 0.75rem;
-      border-radius: 0.75rem;
-      padding: 0.9rem 1rem;
-      border-left: 4px solid #ef4444;
-      border-top: 1px solid #18181b;
-      border-right: 1px solid #18181b;
-      border-bottom: 1px solid #18181b;
-      transition: 0.15s;
-      font-family: monospace;
-    }
-
-    .vuln-item:hover {
-      border-color: #f97316;
-      background: #141417;
-    }
-
-    .vuln-location {
-      font-weight: 700;
-      color: #f97316;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .vuln-snippet {
-      background: #020205;
-      padding: 0.6rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      color: #d4d4d8;
-      font-size: 0.75rem;
-      margin-top: 6px;
-      border: 1px solid #27272a;
-    }
-
-    .safe-message {
-      color: #a1a1aa;
-      text-align: center;
-      padding: 3rem 2rem;
-      font-weight: 500;
-    }
-
-    .warning-note {
-      background: rgba(249, 115, 22, 0.05);
-      border-left: 4px solid #f97316;
-      margin: 1rem 0 0 0;
-      padding: 0.8rem 1.2rem;
-      border-radius: 0.75rem;
-      font-size: 0.8rem;
-      color: #fdba74;
-      border-top: 1px solid rgba(249, 115, 22, 0.1);
-      border-right: 1px solid rgba(249, 115, 22, 0.1);
-      border-bottom: 1px solid rgba(249, 115, 22, 0.1);
-    }
-
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      border-top: 1px solid #27272a;
-      padding: 0.8rem 1.2rem;
-      font-size: 0.75rem;
-      color: #71717a;
-    }
-
-    .source-preview {
-      background: #09090b;
-      padding: 1.2rem;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.75rem;
-      max-height: 450px;
-      overflow-y: auto;
-    }
-
-    .highlight-vuln {
-      background-color: rgba(239, 68, 68, 0.25);
-      border: 1px dashed #ef4444;
-      border-radius: 4px;
-      padding: 1px 4px;
-      font-weight: bold;
-      color: #f87171;
-    }
-
-    footer {
-      margin-top: 2rem;
-      text-align: center;
-      font-size: 0.75rem;
-      color: #52525b;
-    }
+    .btn-primary { background: #f97316; color: #09090b; }
+    .btn-primary:hover { background: #ea580c; }
+    .btn-outline { border: 1px solid #3f3f46; background: transparent; }
+    .btn-outline:hover { background: #18181b; border-color: #f97316; }
+    .results-dashboard { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; }
+    @media (max-width: 780px) { .results-dashboard { grid-template-columns: 1fr; } }
+    .panel { background: rgba(18, 18, 20, 0.9); border-radius: 1.25rem; border: 1px solid #27272a; overflow: hidden; }
+    .panel-header { padding: 1rem 1.5rem; background: #18181b; border-bottom: 1px solid #27272a; font-weight: 600; display: flex; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+    .verdict-badge { margin-left: auto; font-size: 0.75rem; background: #09090b; padding: 0.2rem 0.8rem; border-radius: 30px; border: 1px solid #27272a; }
+    .vuln-list { padding: 0.8rem; max-height: 450px; overflow-y: auto; }
+    .vuln-item { background: #09090b; margin-bottom: 0.75rem; border-radius: 0.75rem; padding: 0.9rem 1rem; border-left: 4px solid #ef4444; border: 1px solid #18181b; border-left: 4px solid #ef4444; }
+    .vuln-item:hover { border-color: #f97316; background: #141417; }
+    .vuln-location { font-weight: 700; color: #f97316; margin-bottom: 6px; display: flex; gap: 8px; font-size: 0.85rem; }
+    .vuln-snippet { background: #020205; padding: 0.6rem; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; color: #d4d4d8; font-size: 0.75rem; margin-top: 6px; border: 1px solid #27272a; font-family: monospace; }
+    .safe-message { color: #a1a1aa; text-align: center; padding: 3rem 2rem; font-weight: 500; font-size: 0.9rem; }
+    .warning-note { background: rgba(249, 115, 22, 0.05); border-left: 4px solid #f97316; margin: 1rem 0 0 0; padding: 0.8rem 1.2rem; border-radius: 0.75rem; font-size: 0.8rem; color: #fdba74; }
+    .stats { display: flex; justify-content: space-between; border-top: 1px solid #27272a; padding: 0.8rem 1.2rem; font-size: 0.75rem; color: #71717a; }
+    .source-preview { background: #09090b; padding: 1.2rem; font-family: monospace; font-size: 0.75rem; max-height: 450px; overflow-y: auto; color: #e4e4e7; }
+    .highlight-vuln { background-color: rgba(239, 68, 68, 0.25); border: 1px dashed #ef4444; border-radius: 4px; padding: 1px 4px; font-weight: bold; color: #f87171; }
+    footer { margin-top: 2rem; text-align: center; font-size: 0.75rem; color: #52525b; }
   </style>
 </head>
 <body>
@@ -289,56 +93,39 @@
   <div class="header">
     <div class="badge">🔍 XSS SENTINEL ENGINE v2.5</div>
     <h1>⚡ XSS Sentinel</h1>
-    <div class="sub">Pinpoint insecure <strong>DOM Sinks</strong> instantly. Paste code directly or run a URL endpoint scan.</div>
+    <div class="sub">Pinpoint insecure DOM Sinks instantly. Paste code directly or run a URL endpoint scan.</div>
   </div>
 
   <div class="scan-card">
-    <div class="label">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
-      Target Code Snippet / Webpage HTML Source / URL Target
-    </div>
-    <textarea id="urlInput" rows="6" placeholder="Paste target source code here directly to bypass CORS restrictions...&#10;Or input a URL endpoint (e.g., https://httpbin.org/html)"></textarea>
+    <div class="label">🎯 Target Code Snippet / HTML Source / URL Endpoint</div>
+    <textarea id="urlInput" rows="6" placeholder="Paste code snippet here or enter a URL target..."></textarea>
     <div class="button-group">
-      <button id="scanBtn" class="btn btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Analyze & Parse Targets
-      </button>
+      <button id="scanBtn" class="btn btn-primary">Analyze Parameters</button>
       <button id="exampleBtn" class="btn btn-outline">🌐 Load Vulnerable Demo</button>
       <button id="clearBtn" class="btn btn-outline">🗑️ Clear Console</button>
     </div>
     <div class="warning-note">
-      🚀 <strong>Scanner Update:</strong> If text input begins with <code>http://</code> or <code>https://</code>, it fires a web fetch execution. Otherwise, it compiles your pasted markup input instantly in-memory.
+      🚀 <strong>Input Note:</strong> Paste code directly to run the analyzer instantly without browser CORS fetch blocks.
     </div>
   </div>
 
   <div class="results-dashboard">
     <div class="panel">
-      <div class="panel-header">
-        <span style="color:#ef4444;">⚠️</span> FLAGGED INSECURE SINKS
-        <span class="verdict-badge" id="vulnCountBadge">0 issues</span>
-      </div>
+      <div class="panel-header">⚠️ Flagged Insecure Sinks <span class="verdict-badge" id="vulnCountBadge">0 issues</span></div>
       <div id="vulnContainer" class="vuln-list">
-        <div class="safe-message">✨ Console Idle.<br>Input raw source or target endpoints to begin detection routines.</div>
+        <div class="safe-message">✨ Console Idle.<br>Input source elements or load the test module.</div>
       </div>
-      <div class="stats" id="statsFooter">
-        <span>🧪 Audited Sinks:</span>
-        <span>innerHTML · outerHTML · insertAdjacentHTML · document.write</span>
-      </div>
+      <div class="stats"><span>🧪 Audited:</span><span>innerHTML · outerHTML · insertAdjacentHTML · document.write</span></div>
     </div>
 
     <div class="panel">
-      <div class="panel-header">
-        <span style="color:#f97316;">📄</span> CONTEXT PREVIEW MAP
-        <span class="verdict-badge">static analyzer</span>
-      </div>
+      <div class="panel-header">📄 Context Preview Map</div>
       <div id="sourcePreviewArea" class="source-preview">
-        <span style="color:#71717a;">⚡ Click on any flagged item in the left viewport console matrix to open contextual snippet arrays here.</span>
+        <span style="color:#71717a;">⚡ Code blocks and remediation mappings display here upon asset selection.</span>
       </div>
     </div>
   </div>
-  <footer>
-    🛡️ Static Security Engineering Sandbox environment. Educational Use Only.
-  </footer>
+  <footer>Static Security Engineering Sandbox environment. Educational Use Only.</footer>
 </div>
 
 <script>
@@ -355,186 +142,112 @@
     let latestVulnerabilities = [];
     
     function escapeHtml(str) {
-      return str.replace(/[&<>]/g, function(m) {
-        if(m === '&') return '&amp;';
-        if(m === '<') return '&lt;';
-        if(m === '>') return '&gt;';
-        return m;
-      });
+      return str.replace(/[&<>]/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[m]));
     }
     
     function renderVulnerabilities(vulns, rawHtml) {
       latestVulnerabilities = vulns;
       latestRawHTML = rawHtml;
-      
       if(!vulns.length) {
-        vulnContainer.innerHTML = `<div class="safe-message" style="color: #4ade80;">✅ Verification Complete: No vulnerable DOM sink patterns located inside evaluated codebase parameters.</div>`;
+        vulnContainer.innerHTML = `<div class="safe-message" style="color: #4ade80;">✅ No vulnerable DOM sinks detected.</div>`;
         vulnCountBadge.innerText = `0 issues`;
-        sourcePreviewArea.innerHTML = `<span style="color:#71717a;">✨ Zero critical sink parameters mapping inside contextual views.</span>`;
+        sourcePreviewArea.innerHTML = `<span style="color:#71717a;">✨ Code checks clean.</span>`;
         return;
       }
-      
       vulnCountBadge.innerText = `${vulns.length} issue${vulns.length > 1 ? 's' : ''}`;
-      let vulnItemsHtml = '';
-      
-      vulns.forEach((vuln, idx) => {
-        let snippetPreview = vuln.snippet.length > 120 ? vuln.snippet.substring(0, 120) + '...' : vuln.snippet;
-        vulnItemsHtml += `
-          <div class="vuln-item" data-vuln-index="${idx}" style="cursor:pointer;">
-            <div class="vuln-location">
-              <strong>💥 ${escapeHtml(vuln.type)}</strong> 
-              <span style="font-size:0.7rem; background:#18181b; padding:2px 8px; border-radius:20px; border: 1px solid #27272a; color:#a1a1aa;">📍 ${escapeHtml(vuln.location)}</span>
-            </div>
-            <div class="vuln-snippet">
-              ${escapeHtml(snippetPreview)}
-            </div>
-            <div style="margin-top: 8px; font-size:0.7rem; color:#f97316; font-weight:600;">Inspect source context →</div>
-          </div>
-        `;
+      let html = '';
+      vulns.forEach((v, idx) => {
+        html += `
+          <div class="vuln-item" data-vuln-index="${idx}" style="cursor:pointer; margin-bottom: 10px; padding: 10px; border-left: 4px solid #ef4444; background: #09090b;">
+            <div class="vuln-location"><strong>💥 ${escapeHtml(v.type)}</strong> <span style="color:#a1a1aa; font-size:0.75rem;">📍 ${v.location}</span></div>
+            <div class="vuln-snippet">${escapeHtml(v.snippet)}</div>
+          </div>`;
       });
-      vulnContainer.innerHTML = vulnItemsHtml;
+      vulnContainer.innerHTML = html;
       
       document.querySelectorAll('[data-vuln-index]').forEach(el => {
         el.addEventListener('click', () => {
-          const idxAttr = el.getAttribute('data-vuln-index');
-          if(idxAttr !== null) {
-            const index = parseInt(idxAttr, 10);
-            if(latestVulnerabilities[index] && latestRawHTML) {
-              showVulnerabilityDetails(latestVulnerabilities[index], latestRawHTML);
-            }
-          }
+          const index = parseInt(el.getAttribute('data-vuln-index'), 10);
+          showVulnerabilityDetails(latestVulnerabilities[index], latestRawHTML);
         });
       });
-      
-      if(vulns.length > 0 && latestRawHTML) {
-        showVulnerabilityDetails(vulns[0], latestRawHTML);
-      }
+      showVulnerabilityDetails(vulns[0], latestRawHTML);
     }
     
     function showVulnerabilityDetails(vuln, rawHtml) {
-      let contextWindow = 400;
-      let index = vuln.startIdx !== undefined ? vuln.startIdx : rawHtml.indexOf(vuln.fullContext);
+      let index = rawHtml.indexOf(vuln.fullContext);
       if(index === -1) index = 0;
-      
-      let start = Math.max(0, index - contextWindow / 2);
-      let end = Math.min(rawHtml.length, index + contextWindow / 2);
+      let start = Math.max(0, index - 200);
+      let end = Math.min(rawHtml.length, index + 200);
       let extracted = rawHtml.substring(start, end);
+      let marker = index - start;
       
-      let relativeMarker = index - start;
-      let targetLength = vuln.fullContext ? vuln.fullContext.length : 20;
-      
-      let marked = escapeHtml(extracted.substring(0, relativeMarker)) + 
+      let marked = escapeHtml(extracted.substring(0, marker)) + 
                    `<span class="highlight-vuln">` + 
-                   escapeHtml(extracted.substring(relativeMarker, relativeMarker + targetLength)) + 
+                   escapeHtml(extracted.substring(marker, marker + vuln.fullContext.length)) + 
                    `</span>` + 
-                   escapeHtml(extracted.substring(relativeMarker + targetLength));
+                   escapeHtml(extracted.substring(marker + vuln.fullContext.length));
 
       sourcePreviewArea.innerHTML = `
-        <div style="margin-bottom: 12px;">
-          <span style="background:rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color:#f87171; padding:3px 8px; border-radius:30px; font-size: 0.75rem; font-weight:600;">CRITICAL ATTACHMENT FIELD: ${escapeHtml(vuln.type)}</span>
-        </div>
-        <div style="background:#020205; padding:12px; border-radius:8px; font-family: monospace; white-space: pre-wrap; font-size:0.75rem; border-left: 3px solid #f97316; border: 1px solid #27272a; color:#e4e4e7;">${marked}</div>
-        <div class="warning-note">
-          💡 <strong>Remediation Strategy:</strong> Passing unvalidated variables straight to DOM rendering sinks causes client executions. Strip tags completely or mutate to safely configured alternatives like <code>textContent</code> / <code>innerText</code>.
-        </div>`;
+        <div style="margin-bottom:10px;"><span style="color:#f87171; font-weight:600;">[CRITICAL] Sink Location:</span></div>
+        <div style="background:#020205; padding:12px; border-radius:8px; border:1px solid #27272a; white-space:pre-wrap;">${marked}</div>`;
     }
     
-    function detectXSSVulnerabilities(htmlContent, sourceUrl = '') {
+    function detectXSS(htmlContent) {
       const vulns = [];
       const lines = htmlContent.split(/\r?\n/);
-      
-      const regexPatterns = [
-        { type: 'Unsafe .innerHTML Sink', regex: /([a-zA-Z_$][\w$]*\.innerHTML\s*=\s*[^;\n]+)/gi },
-        { type: 'Unsafe .outerHTML Sink', regex: /([a-zA-Z_$][\w$]*\.outerHTML\s*=\s*[^;\n]+)/gi },
-        { type: 'Unsafe insertAdjacentHTML Call', regex: /([a-zA-Z_$][\w$]*\.insertAdjacentHTML\s*\([^)]+\))/gi },
-        { type: 'Insecure document.write Execution', regex: /(document\.write(ln)?\s*\([^)]+\))/gi }
+      const patterns = [
+        { type: '.innerHTML Assignment', regex: /([a-zA-Z_$][\w$]*\.innerHTML\s*=\s*[^;\n]+)/gi },
+        { type: '.outerHTML Assignment', regex: /([a-zA-Z_$][\w$]*\.outerHTML\s*=\s*[^;\n]+)/gi },
+        { type: 'insertAdjacentHTML Call', regex: /([a-zA-Z_$][\w$]*\.insertAdjacentHTML\s*\([^)]+\))/gi },
+        { type: 'document.write Call', regex: /(document\.write(ln)?\s*\([^)]+\))/gi }
       ];
       
-      regexPatterns.forEach(pattern => {
-        pattern.regex.lastIndex = 0;
-        let match;
-        while ((match = pattern.regex.exec(htmlContent)) !== null) {
-          const fullMatch = match[1] || match[0];
-          let lineNo = 'unknown';
-          
-          for(let i = 0; i < lines.length; i++) {
-            if(lines[i].includes(fullMatch.trim().substring(0, 30))) {
-              lineNo = `Line ${i + 1}`;
-              break;
-            }
+      patterns.forEach(p => {
+        p.regex.lastIndex = 0;
+        let m;
+        while ((m = p.regex.exec(htmlContent)) !== null) {
+          let matchStr = m[1] || m[0];
+          let lineNo = 'Unknown';
+          for(let i=0; i<lines.length; i++) {
+            if(lines[i].includes(matchStr.trim().substring(0, 20))) { lineNo = `Line ${i+1}`; break; }
           }
-          
-          vulns.push({
-            type: pattern.type,
-            location: lineNo,
-            snippet: fullMatch.trim(),
-            fullContext: fullMatch,
-            startIdx: match.index
-          });
+          vulns.push({ type: p.type, location: lineNo, snippet: matchStr.trim(), fullContext: matchStr });
         }
       });
-      
       return vulns;
     }
     
     async function executeScan() {
       let input = urlTextarea.value.trim();
-      if(!input) {
-        vulnContainer.innerHTML = `<div class="safe-message" style="color:#f97316;">⚠️ Provide valid input configurations inside data buffer parameters before parsing.</div>`;
-        return;
-      }
-      
+      if(!input) return;
       if(input.startsWith('http://') || input.startsWith('https://')) {
-        vulnContainer.innerHTML = `<div class="safe-message">⏳ Issuing cross-origin fetch request tracking: ${escapeHtml(input)}...</div>`;
+        vulnContainer.innerHTML = `<div class="safe-message">⏳ Fetching target URL...</div>`;
         try {
-          const controller = new AbortController();
-          setTimeout(() => controller.abort(), 8000);
-          const response = await fetch(input, { mode: 'cors', signal: controller.signal });
-          const text = await response.text();
-          const vulns = detectXSSVulnerabilities(text, input);
-          renderVulnerabilities(vulns, text);
+          const res = await fetch(input, { mode: 'cors' });
+          const text = await res.text();
+          renderVulnerabilities(detectXSS(text), text);
         } catch(e) {
-          vulnContainer.innerHTML = `<div class="safe-message" style="color:#ef4444;">❌ Network Blocked Request: CORS limitations terminated execution.<br><br>💡 <strong>Workaround:</strong> Manually view source code from the page target, copy it, and paste raw lines directly here instead.</div>`;
+          vulnContainer.innerHTML = `<div class="safe-message" style="color:#ef4444;">❌ CORS Error: Web request blocked.<br><br>👉 Paste raw code strings directly instead!</div>`;
         }
       } else {
-        const vulns = detectXSSVulnerabilities(input, 'Pasted Source Code');
-        renderVulnerabilities(vulns, input);
+        renderVulnerabilities(detectXSS(input), input);
       }
     }
     
-    function loadDemoTest() {
-      const demoHtmlSnippet = `<!DOCTYPE html>
-<html>
-<head><title>Staging Sample Target</title></head>
-<body>
-  <div id="dashboard"></div>
-  <script>
-    const userPayload = location.hash.substring(1);
-    
-    // Flagged Vulnerable Targets:
-    document.getElementById('dashboard').innerHTML = "<h3>Welcome " + userPayload + "</h3>";
-    document.write("<p>Session tracked: " + userPayload + "</p>");
-    element.insertAdjacentHTML('beforeend', userPayload);
-    window.targetNode.outerHTML = '<div>' + userPayload + '</div>';
-  </script>
-</body>
-</html>`;
-      urlTextarea.value = demoHtmlSnippet;
-      const vulns = detectXSSVulnerabilities(demoHtmlSnippet, 'Demo Execution');
-      renderVulnerabilities(vulns, demoHtmlSnippet);
-    }
-    
-    function clearResults() {
-      vulnContainer.innerHTML = `<div class="safe-message">✨ Console Idle.<br>Input raw source or target endpoints to begin detection routines.</div>`;
-      sourcePreviewArea.innerHTML = `<span style="color:#71717a;">⚡ Click on any flagged item in the left viewport console matrix to open contextual snippet arrays here.</span>`;
-      latestVulnerabilities = [];
-      latestRawHTML = '';
-      vulnCountBadge.innerText = `0 issues`;
-    }
+    exampleBtn.addEventListener('click', () => {
+      const demo = `\n<script>\n  el.innerHTML = userInput;\n  document.write(badData);\n<\/script>`;
+      urlTextarea.value = demo;
+      renderVulnerabilities(detectXSS(demo), demo);
+    });
     
     scanBtn.addEventListener('click', executeScan);
-    exampleBtn.addEventListener('click', loadDemoTest);
-    clearBtn.addEventListener('click', clearResults);
+    clearBtn.addEventListener('click', () => {
+      urlTextarea.value = '';
+      vulnContainer.innerHTML = `<div class="safe-message">✨ Console Idle.</div>`;
+      sourcePreviewArea.innerHTML = `<span style="color:#71717a;">⚡ Logs cleared.</span>`;
+      vulnCountBadge.innerText = '0 issues';
+    });
   })();
 </script>
 </body>
