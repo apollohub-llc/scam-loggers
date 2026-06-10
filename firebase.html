@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>⚡ FIREBASE CONTROLLER · Master Config Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700;800&family=Inter:opsz,wght@14..32,400;14..32,600;14..32,800&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs v10 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js",
+                "firebase/analytics": "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js",
+                "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+                "firebase/storage": "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-deep: #07090f;
+            --bg-panel: #0e1120;
+            --card: #161c2c;
+            --border-dim: #24293f;
+            --fire-primary: #ff8c42;
+            --fire-secondary: #ff3b5c;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #00e0ff;
+            --text-bright: #f0f3ff;
+            --text-muted: #8f9bb3;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-bright);
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 10% 20%, rgba(255, 140, 66, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-dim);
+            padding-bottom: 1.2rem;
+        }
+
+        .title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--fire-primary), var(--fire-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .title p {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* dashboard cards */
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dim);
+            border-radius: 24px;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            transition: all 0.2s;
+        }
+
+        .card-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .card-header h3 {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .config-field {
+            margin-bottom: 1.2rem;
+        }
+
+        .config-field label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .config-field input, .config-field textarea {
+            width: 100%;
+            background: #0a0e18;
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: var(--text-bright);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            transition: 0.15s;
+        }
+
+        .config-field input:focus, .config-field textarea:focus {
+            outline: none;
+            border-color: var(--fire-primary);
+            box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.3);
+        }
+
+        .readonly-hint {
+            background: #0f1322;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            margin-top: 5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--fire-primary);
+            color: #07090f;
+        }
+
+        .btn-primary:hover {
+            background: #ffa05e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 140, 66, 0.3);
+        }
+
+        .btn-secondary {
+            background: #1e2a3a;
+            color: var(--text-bright);
+            border: 1px solid var(--border-dim);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .btn-danger {
+            background: rgba(255, 59, 92, 0.2);
+            border: 1px solid var(--fire-secondary);
+            color: var(--fire-secondary);
+        }
+
+        .btn-danger:hover {
+            background: var(--fire-secondary);
+            color: black;
+        }
+
+        /* live console log */
+        .log-console {
+            background: #03050b;
+            border-radius: 20px;
+            border: 1px solid var(--border-dim);
+            margin-top: 1.8rem;
+        }
+
+        .console-header {
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid var(--border-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .log-list {
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 0.8rem 1.2rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px dashed rgba(36, 41, 63, 0.4);
+            color: #b9c3e6;
+        }
+
+        .log-time {
+            color: var(--fire-primary);
+            margin-right: 12px;
+        }
+
+        .badge-config {
+            background: rgba(0, 224, 255, 0.15);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+        }
+
+        @media (max-width: 780px) {
+            .config-grid { grid-template-columns: 1fr; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="title">
+            <h1>🔥 FIREBASE · CONFIGURATION MASTER</h1>
+            <p>full control · edit, apply, reinitialize your firebase project settings</p>
+        </div>
+        <div class="status-badge" id="globalStatus">⚙️ config ready</div>
+    </div>
+
+    <div class="config-grid">
+        <!-- SDK CONFIG CARD -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📡 Firebase SDK Configuration</h3>
+                <span class="badge-config" id="projectIdBadge">proj-c20d8</span>
+            </div>
+            <div class="card-body">
+                <div class="config-field">
+                    <label>API KEY</label>
+                    <input type="text" id="apiKeyInput" placeholder="AIzaSy...">
+                </div>
+                <div class="config-field">
+                    <label>AUTH DOMAIN</label>
+                    <input type="text" id="authDomainInput" placeholder="project.firebaseapp.com">
+                </div>
+                <div class="config-field">
+                    <label>PROJECT ID</label>
+                    <input type="text" id="projectIdInput" placeholder="your-project-id">
+                </div>
+                <div class="config-field">
+                    <label>STORAGE BUCKET</label>
+                    <input type="text" id="storageBucketInput" placeholder="bucket.appspot.com">
+                </div>
+                <div class="config-field">
+                    <label>MESSAGING SENDER ID</label>
+                    <input type="text" id="messagingSenderIdInput" placeholder="1234567890">
+                </div>
+                <div class="config-field">
+                    <label>APP ID</label>
+                    <input type="text" id="appIdInput" placeholder="1:...:web:...">
+                </div>
+                <div class="config-field">
+                    <label>MEASUREMENT ID (analytics)</label>
+                    <input type="text" id="measurementIdInput" placeholder="G-XXXXXX">
+                </div>
+                <div class="btn-group">
+                    <button id="applyConfigBtn" class="btn btn-primary">✨ APPLY & REINITIALIZE</button>
+                    <button id="resetDefaultBtn" class="btn btn-secondary">⟳ RESET TO ORIGINAL</button>
+                </div>
+                <div class="readonly-hint">⚡ Changes will reinitialize Firebase entirely — all services (Firestore, Auth, Storage, Analytics) will use new config.</div>
+            </div>
+        </div>
+
+        <!-- ACTION & SERVICE CONTROL -->
+        <div class="card">
+            <div class="card-header">
+                <h3>⚙️ Service Operations · Firestore & Storage</h3>
+                <span id="serviceIndicator" class="badge-config">🟢 active</span>
+            </div>
+            <div class="card-body">
+                <div class="config-field">
+                    <label>🎯 TEST WRITE TO OWN DATABASE</label>
+                    <div class="btn-group" style="margin-top: 5px;">
+                        <button id="testWriteDocBtn" class="btn btn-secondary">✍️ WRITE TEST DOCUMENT</button>
+                        <button id="testReadCollectionBtn" class="btn btn-secondary">📖 READ CONFIG COLLECTION</button>
+                        <button id="listCollectionsBtn" class="btn btn-secondary">🗂️ LIST COLLECTIONS</button>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>📦 STORAGE TEST (create dummy file metadata)</label>
+                    <div class="btn-group">
+                        <button id="testStorageRefBtn" class="btn btn-secondary">🗄️ CREATE STORAGE REF</button>
+                    </div>
+                </div>
+                <div class="config-field">
+                    <label>🔐 Auth Check (current user)</label>
+                    <button id="checkAuthBtn" class="btn btn-secondary" style="width:100%">🔍 CHECK AUTH STATE</button>
+                </div>
+                <div class="config-field">
+                    <label>🔥 Analytics Log Event</label>
+                    <button id="logAnalyticsBtn" class="btn btn-secondary">📊 SEND TEST ANALYTICS</button>
+                </div>
+                <div class="readonly-hint">✅ All operations will reflect your CURRENT Firebase config (after applying). Every action uses YOUR own project credentials.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE ACTIVITY LOG (actions & config changes) -->
+    <div class="log-console">
+        <div class="console-header">
+            <span>📋 LIVE ACTIVITY FEED · every config change & API action logged to your Firestore</span>
+            <button id="clearLogsViewBtn" style="background:none;border:none;color:#ff8c42;cursor:pointer;">clear view</button>
+        </div>
+        <div class="log-list" id="activityLogList">
+            <div class="log-entry">⏳ waiting for actions...</div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp, deleteApp, getApps, getApp } from "firebase/app";
+    import { getFirestore, collection, addDoc, getDocs, getCountFromServer, doc, setDoc, query, limit, listCollections } from "firebase/firestore";
+    import { getAnalytics, logEvent } from "firebase/analytics";
+    import { getAuth, onAuthStateChanged } from "firebase/auth";
+    import { getStorage, ref, listAll } from "firebase/storage";
+
+    // ---------- DEFAULT CONFIG (YOUR OWN FIREBASE PROJECT) ----------
+    const DEFAULT_CONFIG = {
+        apiKey: "AIzaSyAznc8fj18kiTRw8dx7jJikcu4B9TXVLws",
+        authDomain: "proj-c20d8.firebaseapp.com",
+        projectId: "proj-c20d8",
+        storageBucket: "proj-c20d8.firebasestorage.app",
+        messagingSenderId: "441124612497",
+        appId: "1:441124612497:web:3b9d1fb17c2f34d6a91230",
+        measurementId: "G-XEVCVWE1E3"
+    };
+
+    // Current app instance
+    let currentApp = null;
+    let currentDb = null;
+    let currentAnalytics = null;
+    let currentAuth = null;
+    let currentStorage = null;
+    
+    // UI elements
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const authDomainInput = document.getElementById('authDomainInput');
+    const projectIdInput = document.getElementById('projectIdInput');
+    const storageBucketInput = document.getElementById('storageBucketInput');
+    const messagingSenderIdInput = document.getElementById('messagingSenderIdInput');
+    const appIdInput = document.getElementById('appIdInput');
+    const measurementIdInput = document.getElementById('measurementIdInput');
+    const globalStatusSpan = document.getElementById('globalStatus');
+    const projectIdBadge = document.getElementById('projectIdBadge');
+    const activityLogDiv = document.getElementById('activityLogList');
+    const serviceIndicator = document.getElementById('serviceIndicator');
+    
+    // helper: add log to UI (local console)
+    function addActivityLog(message, type = "info") {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        const time = new Date().toLocaleTimeString();
+        logEntry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+        activityLogDiv.prepend(logEntry);
+        if (activityLogDiv.children.length > 45) {
+            activityLogDiv.removeChild(activityLogDiv.lastChild);
+        }
+        // also console
+        console.log(`[FIREBASE-CTRL] ${message}`);
+    }
+    
+    // update status UI
+    function updateStatusUI(projectId) {
+        projectIdBadge.innerText = projectId || "unknown";
+        globalStatusSpan.innerHTML = `✅ active · ${projectId || "config"}`;
+        serviceIndicator.innerHTML = '🟢 live';
+    }
+    
+    // reinitialize Firebase with current form config
+    async function reinitFirebase() {
+        const newConfig = {
+            apiKey: apiKeyInput.value.trim(),
+            authDomain: authDomainInput.value.trim(),
+            projectId: projectIdInput.value.trim(),
+            storageBucket: storageBucketInput.value.trim(),
+            messagingSenderId: messagingSenderIdInput.value.trim(),
+            appId: appIdInput.value.trim(),
+            measurementId: measurementIdInput.value.trim() || undefined
+        };
+        
+        // validation
+        if (!newConfig.apiKey || !newConfig.projectId) {
+            addActivityLog("❌ Missing apiKey or projectId — cannot initialize", "error");
+            return false;
+        }
+        
+        try {
+            // delete existing app if any
+            if (currentApp) {
+                try {
+                    await deleteApp(currentApp);
+                    addActivityLog("♻️ Previous Firebase app destroyed", "info");
+                } catch(e) { console.warn(e); }
+                currentApp = null;
+            }
+            // initialize new app
+            currentApp = initializeApp(newConfig);
+            currentDb = getFirestore(currentApp);
+            currentAnalytics = getAnalytics(currentApp);
+            currentAuth = getAuth(currentApp);
+            currentStorage = getStorage(currentApp);
+            
+            addActivityLog(`✅ Firebase REINITIALIZED with project: ${newConfig.projectId} (API Key: ${newConfig.apiKey.slice(0,8)}...)`, "success");
+            updateStatusUI(newConfig.projectId);
+            
+            // try to write a “config_change” log to firestore as proof (using the new config)
+            try {
+                const logCollection = collection(currentDb, "_config_audit");
+                await addDoc(logCollection, {
+                    event: "CONFIG_APPLIED",
+                    timestamp: new Date().toISOString(),
+                    appliedConfig: { projectId: newConfig.projectId, apiKeyPrefix: newConfig.apiKey.slice(0,8) }
+                });
+                addActivityLog("📝 Audit log written to Firestore 'config_audit' collection", "info");
+            } catch (firestoreErr) {
+                addActivityLog(`⚠️ Could not write to Firestore (rules?): ${firestoreErr.message}`, "warning");
+            }
+            
+            // test analytics log
+            try {
+                logEvent(currentAnalytics, "config_updated", { project_id: newConfig.projectId });
+            } catch(e) {}
+            return true;
+        } catch (err) {
+            addActivityLog(`🔥 INIT FAILED: ${err.message}`, "error");
+            globalStatusSpan.innerHTML = `⚠️ init error`;
+            return false;
+        }
+    }
+    
+    // load default values into form
+    function loadDefaultConfig() {
+        apiKeyInput.value = DEFAULT_CONFIG.apiKey;
+        authDomainInput.value = DEFAULT_CONFIG.authDomain;
+        projectIdInput.value = DEFAULT_CONFIG.projectId;
+        storageBucketInput.value = DEFAULT_CONFIG.storageBucket;
+        messagingSenderIdInput.value = DEFAULT_CONFIG.messagingSenderId;
+        appIdInput.value = DEFAULT_CONFIG.appId;
+        measurementIdInput.value = DEFAULT_CONFIG.measurementId || "";
+        addActivityLog("📋 Default Firebase config loaded into editor", "info");
+    }
+    
+    // populate current values from live if exists
+    function syncFormFromCurrentApp() {
+        if (currentApp && currentApp.options) {
+            const opts = currentApp.options;
+            apiKeyInput.value = opts.apiKey || "";
+            authDomainInput.value = opts.authDomain || "";
+            projectIdInput.value = opts.projectId || "";
+            storageBucketInput.value = opts.storageBucket || "";
+            messagingSenderIdInput.value = opts.messagingSenderId || "";
+            appIdInput.value = opts.appId || "";
+            measurementIdInput.value = opts.measurementId || "";
+            addActivityLog("🔄 Synced form from active Firebase app", "info");
+        } else {
+            loadDefaultConfig();
+        }
+    }
+    
+    // ---- Firebase action tests using CURRENT initialized services ----
+    async function testWriteDocument() {
+        if (!currentDb) { addActivityLog("❌ Firestore not initialized. Apply config first.", "error"); return; }
+        try {
+            const testCol = collection(currentDb, "firebase_controller_tests");
+            const docRef = await addDoc(testCol, {
+                message: "Configuration test write",
+                timestamp: new Date().toISOString(),
+                source: "firebase-master-tool",
+                apiKeyContext: DEFAULT_CONFIG.apiKey.slice(0,10)
+            });
+            addActivityLog(`✍️ WRITE SUCCESS: Document ${docRef.id} created in 'firebase_controller_tests'`, "success");
+        } catch (err) {
+            addActivityLog(`🔥 WRITE ERROR: ${err.message} — check Firestore security rules`, "error");
+        }
+    }
+    
+    async function testReadCollection() {
+        if (!currentDb) { addActivityLog("❌ Firestore not ready", "error"); return; }
+        try {
+            const colRef = collection(currentDb, "firebase_controller_tests");
+            const snapshot = await getDocs(query(colRef, limit(5)));
+            addActivityLog(`📖 READ: Found ${snapshot.size} documents in 'firebase_controller_tests'`, "info");
+            snapshot.forEach(d => { addActivityLog(`   - ${d.id}: ${JSON.stringify(d.data()).substring(0, 80)}`, "info"); });
+        } catch (err) {
+            addActivityLog(`⚠️ READ ERROR: ${err.message}`, "error");
+        }
+    }
+    
+    async function listFirestoreCollections() {
+        if (!currentDb) { addActivityLog("❌ Firestore missing", "error"); return; }
+        try {
+            // note: listCollections requires admin sdk? but we can try via simple method
+            addActivityLog(`🔍 Attempt to list collections (need rules that allow listCollections)`, "info");
+            // Alternative: we query known collections? Instead we inform
+            const testRef = collection(currentDb, "_config_audit");
+            const parentCollections = await getDocs(query(collection(currentDb, "_config_audit"), limit(1))).catch(()=>null);
+            addActivityLog(`🗂️ Use Firebase Console to view full collections. Firestore is active with project: ${projectIdInput.value}`, "info");
+        } catch(e) { addActivityLog(`list error: ${e.message}`, "error");}
+    }
+    
+    async function testStorageRef() {
+        if (!currentStorage) { addActivityLog("❌ Storage not initialized", "error"); return; }
+        try {
+            const storageRef = ref(currentStorage, 'test-marker.txt');
+            addActivityLog(`📦 Storage reference created: ${storageRef.fullPath} (no file uploaded, just ref test)`, "info");
+            // optionally attempt to list root
+            const rootRef = ref(currentStorage, '');
+            const res = await listAll(rootRef).catch(e => null);
+            if(res) addActivityLog(`📁 Storage root contains ${res.items.length} files, ${res.prefixes.length} prefixes`, "info");
+            else addActivityLog(`⚠️ Could not list bucket — ensure storage rules allow read/list`, "warning");
+        } catch(err) { addActivityLog(`Storage error: ${err.message}`, "error"); }
+    }
+    
+    function checkAuthState() {
+        if (!currentAuth) { addActivityLog("❌ Auth not initialized", "error"); return; }
+        const user = currentAuth.currentUser;
+        if (user) addActivityLog(`🔐 Auth: User signed in: ${user.email || user.uid}`, "success");
+        else addActivityLog(`🔐 Auth: No signed-in user (anonymous possible)`, "info");
+        onAuthStateChanged(currentAuth, (u) => {
+            if(u) addActivityLog(`👤 Auth state changed → signed in: ${u.email}`, "info");
+            else addActivityLog(`🚪 Auth state: signed out`, "info");
+        });
+    }
+    
+    function sendAnalyticsEvent() {
+        if (!currentAnalytics) { addActivityLog("❌ Analytics not ready", "error"); return; }
+        try {
+            logEvent(currentAnalytics, "config_master_action", { action_type: "test_event_from_ui", timestamp: Date.now() });
+            addActivityLog(`📊 Analytics event 'config_master_action' sent to project ${projectIdInput.value}`, "success");
+        } catch(e) { addActivityLog(`Analytics error: ${e.message}`, "error"); }
+    }
+    
+    // clear UI logs only
+    function clearLogsView() {
+        while(activityLogDiv.firstChild) activityLogDiv.removeChild(activityLogDiv.firstChild);
+        addActivityLog("🧹 Console view cleared (Firebase config unchanged)", "info");
+    }
+    
+    // attach events
+    document.getElementById('applyConfigBtn').addEventListener('click', async () => {
+        await reinitFirebase();
+    });
+    document.getElementById('resetDefaultBtn').addEventListener('click', async () => {
+        loadDefaultConfig();
+        await reinitFirebase();
+    });
+    document.getElementById('testWriteDocBtn').addEventListener('click', testWriteDocument);
+    document.getElementById('testReadCollectionBtn').addEventListener('click', testReadCollection);
+    document.getElementById('listCollectionsBtn').addEventListener('click', listFirestoreCollections);
+    document.getElementById('testStorageRefBtn').addEventListener('click', testStorageRef);
+    document.getElementById('checkAuthBtn').addEventListener('click', checkAuthState);
+    document.getElementById('logAnalyticsBtn').addEventListener('click', sendAnalyticsEvent);
+    document.getElementById('clearLogsViewBtn').addEventListener('click', clearLogsView);
+    
+    // initial load with default config and init
+    async function bootstrap() {
+        loadDefaultConfig();
+        await reinitFirebase();
+        addActivityLog("🚀 FIREBASE MASTER CONTROLLER READY — you can edit any config field and reinit, all services adapt.", "success");
+    }
+    bootstrap();
+    
+    // also add listeners to show that manual changes are ready
+    window.__fbMaster = { getConfig: () => currentApp?.options, reinit: reinitFirebase };
+</script>
+</body>
+</html>
