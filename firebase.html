@@ -2,21 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>⚡ FIREBASE CONTROLLER · Master Config Editor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700;800&family=Inter:opsz,wght@14..32,400;14..32,600;14..32,800&display=swap" rel="stylesheet">
-    <!-- Firebase SDKs v10 -->
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
-                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js",
-                "firebase/analytics": "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
-                "firebase/storage": "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js"
-            }
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grandpa's Journal · Post Manager</title>
     <style>
         * {
             margin: 0;
@@ -24,257 +11,274 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --bg-deep: #07090f;
-            --bg-panel: #0e1120;
-            --card: #161c2c;
-            --border-dim: #24293f;
-            --fire-primary: #ff8c42;
-            --fire-secondary: #ff3b5c;
-            --accent-blue: #3b82f6;
-            --accent-cyan: #00e0ff;
-            --text-bright: #f0f3ff;
-            --text-muted: #8f9bb3;
-            --success: #10b981;
-            --warning: #f59e0b;
-        }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-deep);
-            color: var(--text-bright);
-            padding: 2rem 1.5rem;
-            position: relative;
+            background: #f5f3ef;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            padding: 20px;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at 10% 20%, rgba(255, 140, 66, 0.08), transparent 70%);
-            pointer-events: none;
-        }
-
+        /* Main Container */
         .container {
-            max-width: 1300px;
+            max-width: 1400px;
             margin: 0 auto;
-            position: relative;
-            z-index: 2;
         }
 
-        /* header */
+        /* Header */
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid var(--border-dim);
-            padding-bottom: 1.2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0dbd1;
         }
 
-        .title h1 {
-            font-size: 2.2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--fire-primary), var(--fire-secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
+        .header h1 {
+            font-family: 'Fraunces', serif;
+            font-size: 3rem;
+            color: #2c2c2c;
         }
 
-        .title p {
-            font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
+        .header p {
+            color: #666;
+            margin-top: 8px;
         }
 
-        .status-badge {
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid var(--success);
-            border-radius: 40px;
-            padding: 6px 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* dashboard cards */
-        .config-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-dim);
-            border-radius: 24px;
-            overflow: hidden;
-            backdrop-filter: blur(2px);
-            transition: all 0.2s;
-        }
-
-        .card-header {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-dim);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .card-header h3 {
-            font-weight: 700;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-body {
-            padding: 1.5rem;
-        }
-
-        .config-field {
-            margin-bottom: 1.2rem;
-        }
-
-        .config-field label {
-            display: block;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-
-        .config-field input, .config-field textarea {
-            width: 100%;
-            background: #0a0e18;
-            border: 1px solid var(--border-dim);
+        /* Toolbar */
+        .toolbar {
+            background: white;
             border-radius: 12px;
-            padding: 10px 14px;
-            color: var(--text-bright);
-            font-family: 'Space Mono', monospace;
-            font-size: 0.8rem;
-            transition: 0.15s;
-        }
-
-        .config-field input:focus, .config-field textarea:focus {
-            outline: none;
-            border-color: var(--fire-primary);
-            box-shadow: 0 0 0 2px rgba(255, 140, 66, 0.3);
-        }
-
-        .readonly-hint {
-            background: #0f1322;
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 0.7rem;
-            color: var(--accent-cyan);
-            margin-top: 5px;
-        }
-
-        .btn-group {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             display: flex;
-            gap: 10px;
-            margin-top: 24px;
+            gap: 12px;
             flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .btn {
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.8rem;
+            padding: 8px 16px;
+            border-radius: 8px;
             border: none;
+            font-weight: 600;
             cursor: pointer;
+            font-family: monospace;
             transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
         }
 
         .btn-primary {
-            background: var(--fire-primary);
-            color: #07090f;
+            background: #2c2c2c;
+            color: white;
         }
 
         .btn-primary:hover {
-            background: #ffa05e;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 140, 66, 0.3);
-        }
-
-        .btn-secondary {
-            background: #1e2a3a;
-            color: var(--text-bright);
-            border: 1px solid var(--border-dim);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
+            background: #1a1a1a;
         }
 
         .btn-danger {
-            background: rgba(255, 59, 92, 0.2);
-            border: 1px solid var(--fire-secondary);
-            color: var(--fire-secondary);
+            background: #dc2626;
+            color: white;
         }
 
         .btn-danger:hover {
-            background: var(--fire-secondary);
-            color: black;
+            background: #b91c1c;
         }
 
-        /* live console log */
-        .log-console {
-            background: #03050b;
-            border-radius: 20px;
-            border: 1px solid var(--border-dim);
-            margin-top: 1.8rem;
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
         }
 
-        .console-header {
-            padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid var(--border-dim);
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Posts Grid */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+            gap: 20px;
+        }
+
+        /* Post Card */
+        .post-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .post-header {
+            background: #2c2c2c;
+            color: white;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
-        .log-list {
-            max-height: 280px;
-            overflow-y: auto;
-            padding: 0.8rem 1.2rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
+        .post-title-input {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: white;
+            padding: 6px 10px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 60%;
+            font-family: monospace;
         }
 
-        .log-entry {
-            padding: 6px 0;
-            border-bottom: 1px dashed rgba(36, 41, 63, 0.4);
-            color: #b9c3e6;
+        .post-actions {
+            display: flex;
+            gap: 8px;
         }
 
-        .log-time {
-            color: var(--fire-primary);
-            margin-right: 12px;
+        .post-actions button {
+            padding: 4px 10px;
+            font-size: 12px;
         }
 
-        .badge-config {
-            background: rgba(0, 224, 255, 0.15);
+        .post-content {
+            padding: 16px;
+        }
+
+        .post-content textarea {
+            width: 100%;
+            min-height: 150px;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .post-meta {
+            padding: 12px 16px;
+            background: #f9f9f9;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+        }
+
+        /* Modal for new post */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c2c2c;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Firebase config panel */
+        .config-panel {
+            background: #1e1e1e;
+            color: #0f0;
+            padding: 15px;
             border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.65rem;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
         }
 
-        @media (max-width: 780px) {
-            .config-grid { grid-template-columns: 1fr; }
-            body { padding: 1rem; }
+        .config-panel h3 {
+            color: #ff8c42;
+            margin-bottom: 10px;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .config-row input {
+            flex: 1;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #0f0;
+            padding: 6px;
+            font-family: monospace;
+        }
+
+        .config-row label {
+            width: 140px;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
         }
     </style>
 </head>
@@ -282,111 +286,94 @@
 
 <div class="container">
     <div class="header">
-        <div class="title">
-            <h1>🔥 FIREBASE · CONFIGURATION MASTER</h1>
-            <p>full control · edit, apply, reinitialize your firebase project settings</p>
-        </div>
-        <div class="status-badge" id="globalStatus">⚙️ config ready</div>
+        <h1>📓 Grandpa's Journal</h1>
+        <p>Edit ALL posts — titles, content, everything</p>
     </div>
 
-    <div class="config-grid">
-        <!-- SDK CONFIG CARD -->
-        <div class="card">
-            <div class="card-header">
-                <h3>📡 Firebase SDK Configuration</h3>
-                <span class="badge-config" id="projectIdBadge">proj-c20d8</span>
-            </div>
-            <div class="card-body">
-                <div class="config-field">
-                    <label>API KEY</label>
-                    <input type="text" id="apiKeyInput" placeholder="AIzaSy...">
-                </div>
-                <div class="config-field">
-                    <label>AUTH DOMAIN</label>
-                    <input type="text" id="authDomainInput" placeholder="project.firebaseapp.com">
-                </div>
-                <div class="config-field">
-                    <label>PROJECT ID</label>
-                    <input type="text" id="projectIdInput" placeholder="your-project-id">
-                </div>
-                <div class="config-field">
-                    <label>STORAGE BUCKET</label>
-                    <input type="text" id="storageBucketInput" placeholder="bucket.appspot.com">
-                </div>
-                <div class="config-field">
-                    <label>MESSAGING SENDER ID</label>
-                    <input type="text" id="messagingSenderIdInput" placeholder="1234567890">
-                </div>
-                <div class="config-field">
-                    <label>APP ID</label>
-                    <input type="text" id="appIdInput" placeholder="1:...:web:...">
-                </div>
-                <div class="config-field">
-                    <label>MEASUREMENT ID (analytics)</label>
-                    <input type="text" id="measurementIdInput" placeholder="G-XXXXXX">
-                </div>
-                <div class="btn-group">
-                    <button id="applyConfigBtn" class="btn btn-primary">✨ APPLY & REINITIALIZE</button>
-                    <button id="resetDefaultBtn" class="btn btn-secondary">⟳ RESET TO ORIGINAL</button>
-                </div>
-                <div class="readonly-hint">⚡ Changes will reinitialize Firebase entirely — all services (Firestore, Auth, Storage, Analytics) will use new config.</div>
-            </div>
+    <!-- Firebase Config Panel (Editable) -->
+    <div class="config-panel" id="configPanel">
+        <h3>🔥 FIREBASE CONFIGURATION (EDIT ANYTHING)</h3>
+        <div class="config-row">
+            <label>API Key:</label>
+            <input type="text" id="apiKey" placeholder="AIzaSy...">
         </div>
-
-        <!-- ACTION & SERVICE CONTROL -->
-        <div class="card">
-            <div class="card-header">
-                <h3>⚙️ Service Operations · Firestore & Storage</h3>
-                <span id="serviceIndicator" class="badge-config">🟢 active</span>
-            </div>
-            <div class="card-body">
-                <div class="config-field">
-                    <label>🎯 TEST WRITE TO OWN DATABASE</label>
-                    <div class="btn-group" style="margin-top: 5px;">
-                        <button id="testWriteDocBtn" class="btn btn-secondary">✍️ WRITE TEST DOCUMENT</button>
-                        <button id="testReadCollectionBtn" class="btn btn-secondary">📖 READ CONFIG COLLECTION</button>
-                        <button id="listCollectionsBtn" class="btn btn-secondary">🗂️ LIST COLLECTIONS</button>
-                    </div>
-                </div>
-                <div class="config-field">
-                    <label>📦 STORAGE TEST (create dummy file metadata)</label>
-                    <div class="btn-group">
-                        <button id="testStorageRefBtn" class="btn btn-secondary">🗄️ CREATE STORAGE REF</button>
-                    </div>
-                </div>
-                <div class="config-field">
-                    <label>🔐 Auth Check (current user)</label>
-                    <button id="checkAuthBtn" class="btn btn-secondary" style="width:100%">🔍 CHECK AUTH STATE</button>
-                </div>
-                <div class="config-field">
-                    <label>🔥 Analytics Log Event</label>
-                    <button id="logAnalyticsBtn" class="btn btn-secondary">📊 SEND TEST ANALYTICS</button>
-                </div>
-                <div class="readonly-hint">✅ All operations will reflect your CURRENT Firebase config (after applying). Every action uses YOUR own project credentials.</div>
-            </div>
+        <div class="config-row">
+            <label>Auth Domain:</label>
+            <input type="text" id="authDomain" placeholder="project.firebaseapp.com">
+        </div>
+        <div class="config-row">
+            <label>Project ID:</label>
+            <input type="text" id="projectId" placeholder="your-project-id">
+        </div>
+        <div class="config-row">
+            <label>Storage Bucket:</label>
+            <input type="text" id="storageBucket" placeholder="bucket.appspot.com">
+        </div>
+        <div class="config-row">
+            <label>Messaging Sender ID:</label>
+            <input type="text" id="messagingSenderId" placeholder="123456789">
+        </div>
+        <div class="config-row">
+            <label>App ID:</label>
+            <input type="text" id="appId" placeholder="1:...:web:...">
+        </div>
+        <div class="config-row">
+            <label>Measurement ID:</label>
+            <input type="text" id="measurementId" placeholder="G-XXXXXX">
+        </div>
+        <div class="config-row">
+            <label>Collection Name:</label>
+            <input type="text" id="collectionName" value="posts">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn btn-primary" id="saveConfigBtn">💾 SAVE CONFIG</button>
+            <button class="btn btn-warning" id="reinitBtn">🔄 REINIT FIREBASE</button>
+            <button class="btn btn-danger" id="resetDefaultBtn">⟳ RESET TO DEFAULT</button>
         </div>
     </div>
 
-    <!-- LIVE ACTIVITY LOG (actions & config changes) -->
-    <div class="log-console">
-        <div class="console-header">
-            <span>📋 LIVE ACTIVITY FEED · every config change & API action logged to your Firestore</span>
-            <button id="clearLogsViewBtn" style="background:none;border:none;color:#ff8c42;cursor:pointer;">clear view</button>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div>
+            <button class="btn btn-primary" id="newPostBtn">➕ NEW POST</button>
+            <button class="btn btn-primary" id="refreshBtn">🔄 REFRESH POSTS</button>
+            <button class="btn btn-warning" id="saveAllBtn">💾 SAVE ALL CHANGES</button>
         </div>
-        <div class="log-list" id="activityLogList">
-            <div class="log-entry">⏳ waiting for actions...</div>
+        <div>
+            <span id="postCount" style="font-family: monospace;">0 posts</span>
+        </div>
+    </div>
+
+    <!-- Posts Grid -->
+    <div id="postsGrid" class="posts-grid">
+        <div class="empty-state">📭 No posts yet. Click "New Post" to create one.</div>
+    </div>
+</div>
+
+<!-- Modal for new post -->
+<div id="newPostModal" class="modal">
+    <div class="modal-content">
+        <h3>✏️ Create New Post</h3>
+        <input type="text" id="newPostTitle" placeholder="Post title" autocomplete="off">
+        <textarea id="newPostContent" rows="8" placeholder="Write your content here... HTML supported"></textarea>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+            <button class="btn" id="cancelModalBtn">Cancel</button>
+            <button class="btn btn-primary" id="createPostBtn">Create Post</button>
         </div>
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp, deleteApp, getApps, getApp } from "firebase/app";
-    import { getFirestore, collection, addDoc, getDocs, getCountFromServer, doc, setDoc, query, limit, listCollections } from "firebase/firestore";
-    import { getAnalytics, logEvent } from "firebase/analytics";
-    import { getAuth, onAuthStateChanged } from "firebase/auth";
-    import { getStorage, ref, listAll } from "firebase/storage";
+<!-- Toast container -->
+<div id="toastContainer"></div>
 
-    // ---------- DEFAULT CONFIG (YOUR OWN FIREBASE PROJECT) ----------
+<script type="module">
+    // Import Firebase
+    import { initializeApp, deleteApp, getApps } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    // DEFAULT CONFIG (Your Firebase)
     const DEFAULT_CONFIG = {
         apiKey: "AIzaSyAznc8fj18kiTRw8dx7jJikcu4B9TXVLws",
         authDomain: "proj-c20d8.firebaseapp.com",
@@ -394,246 +381,412 @@
         storageBucket: "proj-c20d8.firebasestorage.app",
         messagingSenderId: "441124612497",
         appId: "1:441124612497:web:3b9d1fb17c2f34d6a91230",
-        measurementId: "G-XEVCVWE1E3"
+        measurementId: "G-XEVCVWE1E3",
+        collectionName: "posts"
     };
 
-    // Current app instance
+    // DOM elements
+    const apiKeyInput = document.getElementById('apiKey');
+    const authDomainInput = document.getElementById('authDomain');
+    const projectIdInput = document.getElementById('projectId');
+    const storageBucketInput = document.getElementById('storageBucket');
+    const messagingSenderIdInput = document.getElementById('messagingSenderId');
+    const appIdInput = document.getElementById('appId');
+    const measurementIdInput = document.getElementById('measurementId');
+    const collectionNameInput = document.getElementById('collectionName');
+    const postsGrid = document.getElementById('postsGrid');
+    const postCountSpan = document.getElementById('postCount');
+    const toastContainer = document.getElementById('toastContainer');
+
     let currentApp = null;
-    let currentDb = null;
-    let currentAnalytics = null;
-    let currentAuth = null;
-    let currentStorage = null;
+    let db = null;
+    let currentPosts = []; // Store posts for editing
     
-    // UI elements
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const authDomainInput = document.getElementById('authDomainInput');
-    const projectIdInput = document.getElementById('projectIdInput');
-    const storageBucketInput = document.getElementById('storageBucketInput');
-    const messagingSenderIdInput = document.getElementById('messagingSenderIdInput');
-    const appIdInput = document.getElementById('appIdInput');
-    const measurementIdInput = document.getElementById('measurementIdInput');
-    const globalStatusSpan = document.getElementById('globalStatus');
-    const projectIdBadge = document.getElementById('projectIdBadge');
-    const activityLogDiv = document.getElementById('activityLogList');
-    const serviceIndicator = document.getElementById('serviceIndicator');
-    
-    // helper: add log to UI (local console)
-    function addActivityLog(message, type = "info") {
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-entry';
-        const time = new Date().toLocaleTimeString();
-        logEntry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
-        activityLogDiv.prepend(logEntry);
-        if (activityLogDiv.children.length > 45) {
-            activityLogDiv.removeChild(activityLogDiv.lastChild);
-        }
-        // also console
-        console.log(`[FIREBASE-CTRL] ${message}`);
+    function showToast(msg, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        if (isError) toast.style.background = '#dc2626';
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
     }
-    
-    // update status UI
-    function updateStatusUI(projectId) {
-        projectIdBadge.innerText = projectId || "unknown";
-        globalStatusSpan.innerHTML = `✅ active · ${projectId || "config"}`;
-        serviceIndicator.innerHTML = '🟢 live';
-    }
-    
-    // reinitialize Firebase with current form config
-    async function reinitFirebase() {
-        const newConfig = {
+
+    // Get current config from inputs
+    function getCurrentConfig() {
+        return {
             apiKey: apiKeyInput.value.trim(),
             authDomain: authDomainInput.value.trim(),
             projectId: projectIdInput.value.trim(),
             storageBucket: storageBucketInput.value.trim(),
             messagingSenderId: messagingSenderIdInput.value.trim(),
             appId: appIdInput.value.trim(),
-            measurementId: measurementIdInput.value.trim() || undefined
+            measurementId: measurementIdInput.value.trim() || undefined,
+            collectionName: collectionNameInput.value.trim() || "posts"
         };
+    }
+
+    // Load config to UI
+    function loadConfigToUI(config) {
+        apiKeyInput.value = config.apiKey || '';
+        authDomainInput.value = config.authDomain || '';
+        projectIdInput.value = config.projectId || '';
+        storageBucketInput.value = config.storageBucket || '';
+        messagingSenderIdInput.value = config.messagingSenderId || '';
+        appIdInput.value = config.appId || '';
+        measurementIdInput.value = config.measurementId || '';
+        collectionNameInput.value = config.collectionName || 'posts';
+    }
+
+    // Save config to localStorage
+    function saveConfigToLocal() {
+        const config = getCurrentConfig();
+        localStorage.setItem('firebase_blog_config', JSON.stringify(config));
+        showToast('✅ Config saved to localStorage');
+    }
+
+    // Load config from localStorage
+    function loadConfigFromLocal() {
+        const saved = localStorage.getItem('firebase_blog_config');
+        if (saved) {
+            try {
+                const config = JSON.parse(saved);
+                loadConfigToUI(config);
+                showToast('📂 Loaded saved config');
+                return true;
+            } catch(e) {}
+        }
+        return false;
+    }
+
+    // Reset to default
+    function resetToDefault() {
+        loadConfigToUI(DEFAULT_CONFIG);
+        showToast('⟳ Reset to default Firebase config');
+    }
+
+    // Initialize Firebase with current UI values
+    async function initFirebase() {
+        const config = getCurrentConfig();
         
-        // validation
-        if (!newConfig.apiKey || !newConfig.projectId) {
-            addActivityLog("❌ Missing apiKey or projectId — cannot initialize", "error");
+        if (!config.apiKey || !config.projectId) {
+            showToast('❌ API Key and Project ID are required!', true);
             return false;
         }
-        
+
         try {
-            // delete existing app if any
             if (currentApp) {
                 try {
                     await deleteApp(currentApp);
-                    addActivityLog("♻️ Previous Firebase app destroyed", "info");
-                } catch(e) { console.warn(e); }
-                currentApp = null;
-            }
-            // initialize new app
-            currentApp = initializeApp(newConfig);
-            currentDb = getFirestore(currentApp);
-            currentAnalytics = getAnalytics(currentApp);
-            currentAuth = getAuth(currentApp);
-            currentStorage = getStorage(currentApp);
-            
-            addActivityLog(`✅ Firebase REINITIALIZED with project: ${newConfig.projectId} (API Key: ${newConfig.apiKey.slice(0,8)}...)`, "success");
-            updateStatusUI(newConfig.projectId);
-            
-            // try to write a “config_change” log to firestore as proof (using the new config)
-            try {
-                const logCollection = collection(currentDb, "_config_audit");
-                await addDoc(logCollection, {
-                    event: "CONFIG_APPLIED",
-                    timestamp: new Date().toISOString(),
-                    appliedConfig: { projectId: newConfig.projectId, apiKeyPrefix: newConfig.apiKey.slice(0,8) }
-                });
-                addActivityLog("📝 Audit log written to Firestore 'config_audit' collection", "info");
-            } catch (firestoreErr) {
-                addActivityLog(`⚠️ Could not write to Firestore (rules?): ${firestoreErr.message}`, "warning");
+                } catch(e) {}
             }
             
-            // test analytics log
-            try {
-                logEvent(currentAnalytics, "config_updated", { project_id: newConfig.projectId });
-            } catch(e) {}
+            const firebaseConfig = {
+                apiKey: config.apiKey,
+                authDomain: config.authDomain,
+                projectId: config.projectId,
+                storageBucket: config.storageBucket,
+                messagingSenderId: config.messagingSenderId,
+                appId: config.appId,
+                measurementId: config.measurementId
+            };
+            
+            currentApp = initializeApp(firebaseConfig);
+            db = getFirestore(currentApp);
+            const analytics = getAnalytics(currentApp);
+            const auth = getAuth(currentApp);
+            
+            showToast(`✅ Firebase initialized! Collection: ${config.collectionName}`);
+            await loadPosts();
             return true;
-        } catch (err) {
-            addActivityLog(`🔥 INIT FAILED: ${err.message}`, "error");
-            globalStatusSpan.innerHTML = `⚠️ init error`;
+        } catch(err) {
+            showToast(`❌ Init failed: ${err.message}`, true);
             return false;
         }
     }
-    
-    // load default values into form
-    function loadDefaultConfig() {
-        apiKeyInput.value = DEFAULT_CONFIG.apiKey;
-        authDomainInput.value = DEFAULT_CONFIG.authDomain;
-        projectIdInput.value = DEFAULT_CONFIG.projectId;
-        storageBucketInput.value = DEFAULT_CONFIG.storageBucket;
-        messagingSenderIdInput.value = DEFAULT_CONFIG.messagingSenderId;
-        appIdInput.value = DEFAULT_CONFIG.appId;
-        measurementIdInput.value = DEFAULT_CONFIG.measurementId || "";
-        addActivityLog("📋 Default Firebase config loaded into editor", "info");
-    }
-    
-    // populate current values from live if exists
-    function syncFormFromCurrentApp() {
-        if (currentApp && currentApp.options) {
-            const opts = currentApp.options;
-            apiKeyInput.value = opts.apiKey || "";
-            authDomainInput.value = opts.authDomain || "";
-            projectIdInput.value = opts.projectId || "";
-            storageBucketInput.value = opts.storageBucket || "";
-            messagingSenderIdInput.value = opts.messagingSenderId || "";
-            appIdInput.value = opts.appId || "";
-            measurementIdInput.value = opts.measurementId || "";
-            addActivityLog("🔄 Synced form from active Firebase app", "info");
-        } else {
-            loadDefaultConfig();
+
+    // Load all posts from Firestore
+    async function loadPosts() {
+        if (!db) {
+            showToast('Firebase not initialized', true);
+            return;
         }
-    }
-    
-    // ---- Firebase action tests using CURRENT initialized services ----
-    async function testWriteDocument() {
-        if (!currentDb) { addActivityLog("❌ Firestore not initialized. Apply config first.", "error"); return; }
+        
+        const config = getCurrentConfig();
+        const postsRef = collection(db, config.collectionName);
+        
         try {
-            const testCol = collection(currentDb, "firebase_controller_tests");
-            const docRef = await addDoc(testCol, {
-                message: "Configuration test write",
-                timestamp: new Date().toISOString(),
-                source: "firebase-master-tool",
-                apiKeyContext: DEFAULT_CONFIG.apiKey.slice(0,10)
+            const q = query(postsRef, orderBy('timestamp', 'desc'));
+            const snapshot = await getDocs(q);
+            currentPosts = [];
+            snapshot.forEach(docSnap => {
+                currentPosts.push({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                });
             });
-            addActivityLog(`✍️ WRITE SUCCESS: Document ${docRef.id} created in 'firebase_controller_tests'`, "success");
-        } catch (err) {
-            addActivityLog(`🔥 WRITE ERROR: ${err.message} — check Firestore security rules`, "error");
+            renderPosts();
+            postCountSpan.textContent = `${currentPosts.length} posts`;
+            showToast(`📖 Loaded ${currentPosts.length} posts`);
+        } catch(err) {
+            showToast(`❌ Failed to load posts: ${err.message}`, true);
+            renderEmpty();
         }
     }
-    
-    async function testReadCollection() {
-        if (!currentDb) { addActivityLog("❌ Firestore not ready", "error"); return; }
-        try {
-            const colRef = collection(currentDb, "firebase_controller_tests");
-            const snapshot = await getDocs(query(colRef, limit(5)));
-            addActivityLog(`📖 READ: Found ${snapshot.size} documents in 'firebase_controller_tests'`, "info");
-            snapshot.forEach(d => { addActivityLog(`   - ${d.id}: ${JSON.stringify(d.data()).substring(0, 80)}`, "info"); });
-        } catch (err) {
-            addActivityLog(`⚠️ READ ERROR: ${err.message}`, "error");
+
+    // Render all posts (editable cards)
+    function renderPosts() {
+        if (!currentPosts.length) {
+            renderEmpty();
+            return;
         }
-    }
-    
-    async function listFirestoreCollections() {
-        if (!currentDb) { addActivityLog("❌ Firestore missing", "error"); return; }
-        try {
-            // note: listCollections requires admin sdk? but we can try via simple method
-            addActivityLog(`🔍 Attempt to list collections (need rules that allow listCollections)`, "info");
-            // Alternative: we query known collections? Instead we inform
-            const testRef = collection(currentDb, "_config_audit");
-            const parentCollections = await getDocs(query(collection(currentDb, "_config_audit"), limit(1))).catch(()=>null);
-            addActivityLog(`🗂️ Use Firebase Console to view full collections. Firestore is active with project: ${projectIdInput.value}`, "info");
-        } catch(e) { addActivityLog(`list error: ${e.message}`, "error");}
-    }
-    
-    async function testStorageRef() {
-        if (!currentStorage) { addActivityLog("❌ Storage not initialized", "error"); return; }
-        try {
-            const storageRef = ref(currentStorage, 'test-marker.txt');
-            addActivityLog(`📦 Storage reference created: ${storageRef.fullPath} (no file uploaded, just ref test)`, "info");
-            // optionally attempt to list root
-            const rootRef = ref(currentStorage, '');
-            const res = await listAll(rootRef).catch(e => null);
-            if(res) addActivityLog(`📁 Storage root contains ${res.items.length} files, ${res.prefixes.length} prefixes`, "info");
-            else addActivityLog(`⚠️ Could not list bucket — ensure storage rules allow read/list`, "warning");
-        } catch(err) { addActivityLog(`Storage error: ${err.message}`, "error"); }
-    }
-    
-    function checkAuthState() {
-        if (!currentAuth) { addActivityLog("❌ Auth not initialized", "error"); return; }
-        const user = currentAuth.currentUser;
-        if (user) addActivityLog(`🔐 Auth: User signed in: ${user.email || user.uid}`, "success");
-        else addActivityLog(`🔐 Auth: No signed-in user (anonymous possible)`, "info");
-        onAuthStateChanged(currentAuth, (u) => {
-            if(u) addActivityLog(`👤 Auth state changed → signed in: ${u.email}`, "info");
-            else addActivityLog(`🚪 Auth state: signed out`, "info");
+        
+        postsGrid.innerHTML = '';
+        
+        currentPosts.forEach((post, index) => {
+            const card = document.createElement('div');
+            card.className = 'post-card';
+            card.dataset.id = post.id;
+            
+            card.innerHTML = `
+                <div class="post-header">
+                    <input type="text" class="post-title-input" value="${escapeHtml(post.title || 'Untitled')}" data-field="title" data-id="${post.id}">
+                    <div class="post-actions">
+                        <button class="btn btn-success save-single-btn" data-id="${post.id}" style="font-size: 11px;">💾 Save</button>
+                        <button class="btn btn-danger delete-single-btn" data-id="${post.id}" style="font-size: 11px;">🗑️ Delete</button>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <textarea class="post-content-textarea" data-field="content" data-id="${post.id}" rows="8">${escapeHtml(post.content || '')}</textarea>
+                </div>
+                <div class="post-meta">
+                    <span>📅 ${post.timestamp ? new Date(post.timestamp).toLocaleString() : 'Just now'}</span>
+                    <span>🆔 ${post.id.slice(0, 8)}...</span>
+                </div>
+            `;
+            
+            postsGrid.appendChild(card);
+        });
+        
+        // Attach event listeners for save/delete buttons
+        document.querySelectorAll('.save-single-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                await saveSinglePost(id);
+            });
+        });
+        
+        document.querySelectorAll('.delete-single-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm('Delete this post?')) {
+                    await deleteSinglePost(btn.dataset.id);
+                }
+            });
+        });
+        
+        // Auto-save on input blur for title
+        document.querySelectorAll('.post-title-input').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const id = input.dataset.id;
+                await saveSinglePost(id);
+            });
+        });
+        
+        // Auto-save on input blur for content
+        document.querySelectorAll('.post-content-textarea').forEach(textarea => {
+            textarea.addEventListener('blur', async () => {
+                const id = textarea.dataset.id;
+                await saveSinglePost(id);
+            });
         });
     }
     
-    function sendAnalyticsEvent() {
-        if (!currentAnalytics) { addActivityLog("❌ Analytics not ready", "error"); return; }
+    function renderEmpty() {
+        postsGrid.innerHTML = '<div class="empty-state">📭 No posts yet. Click "New Post" to create one.</div>';
+        postCountSpan.textContent = '0 posts';
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Save a single post
+    async function saveSinglePost(postId) {
+        if (!db) {
+            showToast('Firebase not initialized', true);
+            return;
+        }
+        
+        // Find the card
+        const card = document.querySelector(`.post-card[data-id="${postId}"]`);
+        if (!card) return;
+        
+        const titleInput = card.querySelector(`.post-title-input`);
+        const contentTextarea = card.querySelector(`.post-content-textarea`);
+        
+        const newTitle = titleInput ? titleInput.value : '';
+        const newContent = contentTextarea ? contentTextarea.value : '';
+        
+        const config = getCurrentConfig();
+        const postRef = doc(db, config.collectionName, postId);
+        
         try {
-            logEvent(currentAnalytics, "config_master_action", { action_type: "test_event_from_ui", timestamp: Date.now() });
-            addActivityLog(`📊 Analytics event 'config_master_action' sent to project ${projectIdInput.value}`, "success");
-        } catch(e) { addActivityLog(`Analytics error: ${e.message}`, "error"); }
+            await updateDoc(postRef, {
+                title: newTitle,
+                content: newContent,
+                updatedAt: new Date().toISOString()
+            });
+            
+            // Update local array
+            const postIndex = currentPosts.findIndex(p => p.id === postId);
+            if (postIndex !== -1) {
+                currentPosts[postIndex].title = newTitle;
+                currentPosts[postIndex].content = newContent;
+            }
+            
+            showToast(`✅ Post saved: "${newTitle.slice(0, 30)}"`);
+        } catch(err) {
+            showToast(`❌ Save failed: ${err.message}`, true);
+        }
     }
     
-    // clear UI logs only
-    function clearLogsView() {
-        while(activityLogDiv.firstChild) activityLogDiv.removeChild(activityLogDiv.firstChild);
-        addActivityLog("🧹 Console view cleared (Firebase config unchanged)", "info");
+    // Delete single post
+    async function deleteSinglePost(postId) {
+        if (!db) return;
+        
+        const config = getCurrentConfig();
+        const postRef = doc(db, config.collectionName, postId);
+        
+        try {
+            await deleteDoc(postRef);
+            currentPosts = currentPosts.filter(p => p.id !== postId);
+            renderPosts();
+            postCountSpan.textContent = `${currentPosts.length} posts`;
+            showToast(`🗑️ Post deleted`);
+        } catch(err) {
+            showToast(`❌ Delete failed: ${err.message}`, true);
+        }
     }
     
-    // attach events
-    document.getElementById('applyConfigBtn').addEventListener('click', async () => {
-        await reinitFirebase();
-    });
-    document.getElementById('resetDefaultBtn').addEventListener('click', async () => {
-        loadDefaultConfig();
-        await reinitFirebase();
-    });
-    document.getElementById('testWriteDocBtn').addEventListener('click', testWriteDocument);
-    document.getElementById('testReadCollectionBtn').addEventListener('click', testReadCollection);
-    document.getElementById('listCollectionsBtn').addEventListener('click', listFirestoreCollections);
-    document.getElementById('testStorageRefBtn').addEventListener('click', testStorageRef);
-    document.getElementById('checkAuthBtn').addEventListener('click', checkAuthState);
-    document.getElementById('logAnalyticsBtn').addEventListener('click', sendAnalyticsEvent);
-    document.getElementById('clearLogsViewBtn').addEventListener('click', clearLogsView);
-    
-    // initial load with default config and init
-    async function bootstrap() {
-        loadDefaultConfig();
-        await reinitFirebase();
-        addActivityLog("🚀 FIREBASE MASTER CONTROLLER READY — you can edit any config field and reinit, all services adapt.", "success");
+    // Save all posts (iterate through all and save)
+    async function saveAllPosts() {
+        if (!db) {
+            showToast('Firebase not initialized', true);
+            return;
+        }
+        
+        let saved = 0;
+        for (const post of currentPosts) {
+            const card = document.querySelector(`.post-card[data-id="${post.id}"]`);
+            if (card) {
+                const titleInput = card.querySelector(`.post-title-input`);
+                const contentTextarea = card.querySelector(`.post-content-textarea`);
+                
+                if (titleInput && contentTextarea) {
+                    const config = getCurrentConfig();
+                    const postRef = doc(db, config.collectionName, post.id);
+                    try {
+                        await updateDoc(postRef, {
+                            title: titleInput.value,
+                            content: contentTextarea.value,
+                            updatedAt: new Date().toISOString()
+                        });
+                        saved++;
+                    } catch(e) {}
+                }
+            }
+        }
+        showToast(`💾 Saved ${saved} posts`);
+        await loadPosts(); // Reload to refresh
     }
+    
+    // Create new post
+    async function createNewPost(title, content) {
+        if (!db) {
+            showToast('Firebase not initialized', true);
+            return;
+        }
+        
+        const config = getCurrentConfig();
+        const postsRef = collection(db, config.collectionName);
+        
+        try {
+            const docRef = await addDoc(postsRef, {
+                title: title || 'Untitled',
+                content: content || '',
+                timestamp: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+            });
+            showToast(`✅ New post created!`);
+            await loadPosts();
+            return docRef.id;
+        } catch(err) {
+            showToast(`❌ Create failed: ${err.message}`, true);
+            return null;
+        }
+    }
+    
+    // Modal handling
+    const modal = document.getElementById('newPostModal');
+    const newPostTitle = document.getElementById('newPostTitle');
+    const newPostContent = document.getElementById('newPostContent');
+    
+    document.getElementById('newPostBtn').onclick = () => {
+        newPostTitle.value = '';
+        newPostContent.value = '';
+        modal.classList.add('active');
+    };
+    
+    document.getElementById('cancelModalBtn').onclick = () => {
+        modal.classList.remove('active');
+    };
+    
+    document.getElementById('createPostBtn').onclick = async () => {
+        const title = newPostTitle.value.trim();
+        const content = newPostContent.value;
+        if (!title) {
+            showToast('Please enter a title', true);
+            return;
+        }
+        await createNewPost(title, content);
+        modal.classList.remove('active');
+    };
+    
+    // Close modal on outside click
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+    };
+    
+    // Button handlers
+    document.getElementById('refreshBtn').onclick = loadPosts;
+    document.getElementById('saveAllBtn').onclick = saveAllPosts;
+    document.getElementById('saveConfigBtn').onclick = () => {
+        saveConfigToLocal();
+        initFirebase();
+    };
+    document.getElementById('reinitBtn').onclick = initFirebase;
+    document.getElementById('resetDefaultBtn').onclick = () => {
+        resetToDefault();
+        initFirebase();
+    };
+    
+    // Load saved config or default, then init
+    function bootstrap() {
+        const hasSaved = loadConfigFromLocal();
+        if (!hasSaved) {
+            loadConfigToUI(DEFAULT_CONFIG);
+        }
+        initFirebase();
+    }
+    
     bootstrap();
-    
-    // also add listeners to show that manual changes are ready
-    window.__fbMaster = { getConfig: () => currentApp?.options, reinit: reinitFirebase };
 </script>
 </body>
 </html>
