@@ -98,6 +98,11 @@
             resize: vertical;
             line-height: 1.45;
         }
+        textarea:focus {
+            outline: none;
+            border-color: #3366bb;
+            box-shadow: 0 0 0 2px rgba(51,102,187,0.2);
+        }
         .embed-helper {
             margin-top: 12px;
             font-size: 0.85rem;
@@ -210,20 +215,21 @@
     <div id="editorPanel" class="editor-panel">
         <div class="editor-title">📝 Full Wiki Content Editor (HTML + embeds supported)</div>
         <textarea id="wikiTextarea" placeholder="Write your Evidence Watchers entry here... 
-You can embed:
-- YouTube: https://www.youtube.com/watch?v=VIDEOID
-- Images: https://i.postimg.cc/xxx.png
-- Google Drive folders or files (preview will appear)
-- Any HTML, iframes, etc.
+
+You can embed anything:
+• YouTube videos: https://www.youtube.com/watch?v=VIDEOID
+• Images: https://i.postimg.cc/xxx.png
+• Google Drive folders/files: https://drive.google.com/drive/folders/xxx
+• Custom HTML, iframes, tables, etc.
 
 Example:
-<h2>Important finding</h2>
-<p>Text with <strong>evidence</strong></p>
-<img src='https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png' width='400'>
-<div class='drive-preview'>📁 <a href='https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm' target='_blank'>Google Drive Folder</a> - preview image auto</div>
+&lt;h2&gt;My Evidence&lt;/h2&gt;
+&lt;p&gt;Check this video:&lt;/p&gt;
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+&lt;img src='https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png'&gt;
 "></textarea>
         <div class="embed-helper">
-            💡 <strong>Smart embed:</strong> YouTube links convert to iframes, image links become &lt;img&gt;, Google Drive links (folders/files) show clickable preview block. You can also write raw HTML / iframes.
+            💡 <strong>Smart embed:</strong> YouTube links convert to iframes, image links become &lt;img&gt;, Google Drive links (folders/files) show rich preview blocks. You can also write raw HTML / iframes.
         </div>
 
         <!-- Password protection block -->
@@ -245,7 +251,7 @@ Example:
     <!-- VIEW MODE (display wiki content) -->
     <div id="viewContainer" class="view-mode">
         <div id="wikiRender" class="article-content">
-            <!-- default welcome text -->
+            <!-- default welcome text shown when no content exported yet -->
             <div style="text-align:center; padding: 2rem;">
                 <h2>Evidence Watchers Wikipedia</h2>
                 <p>Click <strong>✏️ Edit / Create</strong> to start building your databaseless wiki.<br>
@@ -264,7 +270,7 @@ Example:
     // ---------- Helper: smart embed transformer ----------
     // Converts raw text (textarea content) into HTML with automatic embeds for youtube, image links, google drive preview
     function transformEmbeddedContent(rawHtml) {
-        if (!rawHtml) return '<p><em>Empty content</em></p>';
+        if (!rawHtml || rawHtml.trim() === '') return '<p><em>Empty wiki content. Go to Edit mode and add evidence.</em></p>';
         let processed = rawHtml;
         
         // Process youtube links (standard youtube.com/watch?v=... or youtu.be)
@@ -480,23 +486,8 @@ Example:
     const passwordInput = document.getElementById('wikiPassword');
     const encryptCheckbox = document.getElementById('encryptUrlCheckbox');
 
-    // default rich demo content
-    const defaultContent = `<h1>📜 Evidence Watchers Wikipedia</h1>
-<p>Welcome to a <strong>databaseless, self-contained wiki</strong>. All content is embedded directly — no server required.</p>
-<h2>🧪 Embedded Evidence Examples</h2>
-<p><strong>YouTube Evidence:</strong><br>
-https://www.youtube.com/watch?v=dQw4w9WgXcQ</p>
-<p><strong>Image Evidence (postimg):</strong><br>
-https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png</p>
-<p><strong>Google Drive Folder Preview:</strong><br>
-https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm</p>
-<p><strong>Custom HTML & Text:</strong></p>
-<blockquote style="border-left:4px solid #3366bb; padding-left:16px;">“Every fact deserves a link, every claim deserves evidence.”</blockquote>
-<p>You can also embed iframes, tables, and more.</p>
-<hr>
-<p>Created with ✨ Evidence Watchers Wikipedia — open knowledge, forever.</p>`;
-
-    wikiTextarea.value = defaultContent;
+    // TEXTAREA STARTS EMPTY — only placeholder, no default inner text
+    wikiTextarea.value = "";
     
     function refreshDisplay() {
         if (isEditMode) {
@@ -506,8 +497,17 @@ https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm</p>
             editorPanel.classList.add('hidden');
             viewContainer.classList.remove('hidden');
             const raw = wikiTextarea.value;
-            const transformed = transformEmbeddedContent(raw);
-            wikiRenderDiv.innerHTML = transformed;
+            if (raw && raw.trim() !== "") {
+                const transformed = transformEmbeddedContent(raw);
+                wikiRenderDiv.innerHTML = transformed;
+            } else {
+                // Show friendly empty state
+                wikiRenderDiv.innerHTML = `<div style="text-align:center; padding: 3rem; color: #6c757d;">
+                    <h3>📭 No wiki content yet</h3>
+                    <p>Go to <strong>Edit / Create</strong> mode and add evidence, embeds, and text.</p>
+                    <p style="font-size:0.9rem;">Tip: You can embed YouTube, images, Google Drive folders, and custom HTML.</p>
+                </div>`;
+            }
         }
     }
     
@@ -516,30 +516,26 @@ https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm</p>
         refreshDisplay();
     });
     
-    // FIXED EXPORT: direct new tab without about:blank issues
+    // Robust export: opens new tab with fully generated wiki
     function doExport() {
         const content = wikiTextarea.value;
         if (!content.trim()) {
-            alert("⚠️ Please add some content before exporting.");
+            alert("⚠️ Please add some content in the textarea before exporting.");
             return;
         }
         const password = passwordInput.value;
         const encrypt = encryptCheckbox.checked;
         const fullHtml = generateExportedHTML(content, password, (password !== "" && encrypt));
         
-        // Create Blob and open in new tab - robust cross-browser method
-        const blob = new Blob([fullHtml], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(blob);
-        
-        // Use window.open with proper handling to avoid about:blank
+        // Use direct write to new tab - most reliable
         const newTab = window.open();
         if (newTab) {
-            // Write directly to the new tab to avoid popup blockers causing about:blank
             newTab.document.write(fullHtml);
             newTab.document.close();
-            URL.revokeObjectURL(blobUrl);
         } else {
-            // Fallback if popup blocked: use an anchor download + info
+            // Fallback download if popup blocked
+            const blob = new Blob([fullHtml], { type: 'text/html' });
+            const blobUrl = URL.createObjectURL(blob);
             const downloadLink = document.createElement('a');
             downloadLink.href = blobUrl;
             downloadLink.download = 'evidence_watchers_export.html';
@@ -555,12 +551,11 @@ https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm</p>
     
     exportBtn.addEventListener('click', doExport);
     
-    // initial mode: edit mode active
+    // initial mode: edit mode active, empty textarea
     isEditMode = true;
     refreshDisplay();
     
-    // also add preview when toggling to view mode
-    console.log("Evidence Watchers Wikipedia — fully functional, export opens new tab with password & embed support");
+    console.log("Evidence Watchers Wikipedia — ready | textarea empty, full embed support, password & export fixed");
 </script>
 </body>
 </html>
