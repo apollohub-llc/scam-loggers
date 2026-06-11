@@ -185,28 +185,6 @@
             padding: 1rem;
             color: #6c757d;
         }
-        .password-overlay {
-            background: rgba(0,0,0,0.75);
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        .password-card {
-            background: white;
-            max-width: 400px;
-            width: 90%;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-        .error-msg {
-            color: #b32424;
-            margin-top: 12px;
-        }
         .hidden {
             display: none;
         }
@@ -255,7 +233,7 @@ Example:
                 <input type="password" id="wikiPassword" placeholder="leave empty = no password" autocomplete="off">
             </div>
             <label class="checkbox-label">
-                <input type="checkbox" id="encryptUrlCheckbox"> ✨ Encrypt URL parameters (split+reverse+chunk scrambling) when password enabled
+                <input type="checkbox" id="encryptUrlCheckbox"> ✨ Encrypt content (split+reverse+chunks) when password enabled
             </label>
             <span class="warning">⚠️ If password set, exported page will ask for password before showing content.</span>
         </div>
@@ -286,193 +264,203 @@ Example:
     // ---------- Helper: smart embed transformer ----------
     // Converts raw text (textarea content) into HTML with automatic embeds for youtube, image links, google drive preview
     function transformEmbeddedContent(rawHtml) {
-        // Step 1: Process youtube links (standard youtube.com/watch?v=... or youtu.be)
+        if (!rawHtml) return '<p><em>Empty content</em></p>';
         let processed = rawHtml;
-        // youtube regex: match typical youtube links
-        const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+)(&[\w=]*)?|https?:\/\/(?:www\.)?youtu\.be\/([\w-]+))/gi;
-        processed = processed.replace(youtubeRegex, (match, p1, p2, p3, p4) => {
-            let videoId = p2 || p4;
+        
+        // Process youtube links (standard youtube.com/watch?v=... or youtu.be)
+        const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+)(?:&[\w=]*)?|https?:\/\/(?:www\.)?youtu\.be\/([\w-]+))/gi;
+        processed = processed.replace(youtubeRegex, (match, p1, p2, p3) => {
+            let videoId = p2 || p3;
             if (videoId) {
-                return `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="width:100%; aspect-ratio:16/9; border-radius:8px;"></iframe></div>`;
+                return `<div class="video-embed" style="margin:16px 0;"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="width:100%; aspect-ratio:16/9; border-radius:8px;"></iframe></div>`;
             }
             return match;
         });
 
-        // Process standalone image links (jpg, png, gif, webp etc)
-        const imageRegex = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?)/gi;
+        // Process standalone image links (jpg, png, gif, webp, bmp, svg)
+        const imageRegex = /(https?:\/\/[^\s<]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s<]*)?)/gi;
         processed = processed.replace(imageRegex, (url) => {
-            // avoid double wrapping if already inside img tag (simple heuristic)
+            // avoid double wrapping if already inside img tag
             if (processed.includes(`src="${url}"`) || processed.includes(`src='${url}'`)) return url;
-            return `<img src="${url}" alt="evidence image" style="max-width:100%; border-radius:6px; margin: 8px 0;" loading="lazy">`;
+            return `<img src="${url}" alt="evidence image" style="max-width:100%; border-radius:8px; margin: 12px 0; box-shadow:0 1px 3px rgba(0,0,0,0.1);" loading="lazy">`;
         });
 
-        // Process Google Drive links: folders or files -> preview block with nice preview image and link
-        const driveRegex = /(https?:\/\/drive\.google\.com\/(drive\/folders\/[a-zA-Z0-9_-]+|file\/d\/[a-zA-Z0-9_-]+.*?\/view))/gi;
+        // Process Google Drive links: folders or files -> rich preview block
+        const driveRegex = /(https?:\/\/drive\.google\.com\/(?:drive\/folders\/[a-zA-Z0-9_-]+|file\/d\/[a-zA-Z0-9_-]+(?:\/view)?|open\?id=[a-zA-Z0-9_-]+))/gi;
         processed = processed.replace(driveRegex, (driveUrl) => {
-            // Generate preview card: Drive icon + direct link, plus preview image simulation (we use google drive's folder embed preview)
             let folderIdMatch = driveUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
             let fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            let embedPreviewUrl = '';
+            let openIdMatch = driveUrl.match(/open\?id=([a-zA-Z0-9_-]+)/);
+            
             if (folderIdMatch) {
                 const folderId = folderIdMatch[1];
-                embedPreviewUrl = `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
-                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:12px; border-radius:12px;">
-                            <div style="display:flex; gap:12px; align-items:center;">
+                const embedPreviewUrl = `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
+                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:14px; border-radius:14px; margin:14px 0;">
+                            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                                 <span style="font-size:2rem;">📁</span>
-                                <div><strong>Google Drive Folder</strong><br><a href="${driveUrl}" target="_blank" rel="noopener">Open in Drive →</a></div>
+                                <div style="flex:1"><strong>Google Drive Folder</strong><br><a href="${driveUrl}" target="_blank" rel="noopener noreferrer">Open in Drive →</a></div>
                             </div>
-                            <div style="margin-top:10px;"><iframe src="${embedPreviewUrl}" style="width:100%; height:220px; border:0; border-radius:8px;" allowfullscreen></iframe></div>
-                            <div style="font-size:0.75rem; margin-top:8px;">📎 Folder preview (embed)</div>
+                            <div style="margin-top:12px;"><iframe src="${embedPreviewUrl}" style="width:100%; height:240px; border:0; border-radius:10px; background:#f5f5f5;" allowfullscreen></iframe></div>
+                            <div style="font-size:0.7rem; margin-top:8px; color:#4a5568;">📎 Folder preview (embedded)</div>
                         </div>`;
-            } else if (fileIdMatch) {
-                const fileId = fileIdMatch[1];
-                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:12px; border-radius:12px;">
-                            <div style="display:flex; gap:12px;">
-                                <span>📄</span>
-                                <div><strong>Google Drive File</strong><br><a href="${driveUrl}" target="_blank">Open File ↗</a></div>
+            } else if (fileIdMatch || openIdMatch) {
+                const fileId = fileIdMatch ? fileIdMatch[1] : openIdMatch[1];
+                const directLink = `https://drive.google.com/file/d/${fileId}/preview`;
+                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:14px; border-radius:14px; margin:14px 0;">
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <span style="font-size:1.8rem;">📄</span>
+                                <div><strong>Google Drive File</strong><br><a href="${driveUrl}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></div>
                             </div>
-                            <div style="margin-top:10px; background:#eef2f8; text-align:center; padding:10px;">🖼️ <em>preview: Google Drive embedded viewer not available for all files, but you can download.</em></div>
+                            <div style="margin-top:12px;"><iframe src="${directLink}" style="width:100%; height:280px; border:0; border-radius:10px;" allowfullscreen></iframe></div>
+                            <div style="font-size:0.7rem; margin-top:6px;">📎 Document preview (Google Drive embed)</div>
                         </div>`;
             }
-            return `<div class="drive-preview"><a href="${driveUrl}" target="_blank">📂 Google Drive Link</a> (click to access)</div>`;
+            return `<div class="drive-preview" style="background:#f0f4f8; padding:12px; border-radius:12px; margin:10px 0;"><a href="${driveUrl}" target="_blank" rel="noopener">📂 Google Drive Link</a> (click to access)</div>`;
         });
-
-        // Also handle plain links that are not transformed: but we want to keep user raw html also.
-        // Return final
+        
         return processed;
     }
 
     // function to generate full wiki page source with password protection and embed transformation
-    // If password is used, we generate a self-contained html that demands password.
     function generateExportedHTML(contentRaw, password, encryptFlag) {
         let finalInnerContent = transformEmbeddedContent(contentRaw);
-        // Escape content to be safely placed in JS? we'll build full html string.
-        // We must also allow innerhtml assignment in export.
-        // Build a standalone HTML with password gate.
         const siteTitle = "Evidence Watchers Wikipedia";
-        // if no password -> just full page
+        
+        // if no password -> straight page without gate
         if (!password || password.trim() === "") {
-            // No password required, straight view
             return `<!DOCTYPE html>
             <html lang="en">
             <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${siteTitle}</title>
             <style>
                 *{margin:0;padding:0;box-sizing:border-box;}
-                body{background:#f6f6f6;font-family:'Segoe UI','Georgia',serif;}
-                .wiki-page{max-width:1100px;margin:0 auto;background:white;box-shadow:0 0 8px rgba(0,0,0,0.05);padding:2rem 2rem 3rem;}
-                h1,h2{font-family:'Linux Libertine',Georgia,serif;border-bottom:1px solid #a2a9b1;}
+                body{background:#f6f6f6;font-family:'Segoe UI','Georgia',serif;padding:20px;}
+                .wiki-page{max-width:1100px;margin:0 auto;background:white;box-shadow:0 2px 12px rgba(0,0,0,0.08);border-radius:4px;padding:2rem 2rem 3rem;}
+                h1,h2,h3{font-family:'Linux Libertine','Georgia',serif;border-bottom:1px solid #a2a9b1;margin-top:1em;}
                 img,iframe{max-width:100%;border-radius:8px;margin:1rem 0;}
                 .drive-preview{background:#f8f9fa;border-radius:12px;padding:1rem;}
-                .footer{text-align:center;margin-top:2rem;border-top:1px solid #eaecf0;padding:1rem;color:#6c757d;}
+                .footer{text-align:center;margin-top:2rem;border-top:1px solid #eaecf0;padding:1rem;color:#6c757d;font-size:0.8rem;}
+                .article-content{line-height:1.6;}
             </style>
             </head>
-            <body><div class="wiki-page"><div class="article-content">${finalInnerContent}</div><div class="footer">Evidence Watchers Wikipedia · open evidence</div></div></body></html>`;
-        } else {
-            // password protection needed: generate html with password challenge + decrypt ability, but since we encrypt url params? 
-            // Export with password: we have two modes: encrypt URL or not. For exported page, we want to store the encrypted payload or raw?
-            // According to requirement: after export, takes to whole page with embeds + text, and if password enabled every exported site should ask first.
-            // We do NOT rely on url params only, but we embed the content inside a variable, then ask password.
-            // Optionally encrypt the content inside script using split/reverse/junk if encryptFlag.
-            let payloadToStore = finalInnerContent;
-            let scriptDecryptLogic = "";
+            <body><div class="wiki-page"><div class="article-content">${finalInnerContent}</div><div class="footer">Evidence Watchers Wikipedia · open evidence · exported snapshot</div></div></body></html>`;
+        } 
+        else {
+            // password protection enabled
+            let storedData;
+            let decryptFunctionCode = "";
+            
             if (encryptFlag) {
-                // --- apply encryption: reverse + split into random chunks (simulated enc) on payload string (content)
-                // We apply similar to given spec but on the html content string.
-                const reversed = payloadToStore.split('').reverse().join('');
-                const chunkCount = Math.floor(Math.random() * 20) + 8;  // 8-28
-                const chunkSize = Math.ceil(reversed.length / chunkCount);
+                // --- apply chunk split + reverse obfuscation on the FINAL inner content
+                const reversedPayload = finalInnerContent.split('').reverse().join('');
+                const chunkCount = Math.floor(Math.random() * 20) + 8; // between 8 and 28
+                const chunkSize = Math.ceil(reversedPayload.length / chunkCount);
                 let chunks = [];
                 for (let i = 0; i < chunkCount; i++) {
                     let start = i * chunkSize;
-                    if (start < reversed.length) {
-                        chunks.push(reversed.substring(start, start + chunkSize));
+                    if (start < reversedPayload.length) {
+                        chunks.push(reversedPayload.substring(start, start + chunkSize));
                     }
                 }
-                // store chunks + chunkCount as object stringified
                 const encryptedObj = {
-                    c: chunks,
-                    r: true,  // reversed flag
-                    chunkCount: chunkCount
+                    chunks: chunks,
+                    method: "reverse_split"
                 };
-                const encryptedStr = JSON.stringify(encryptedObj);
-                // we will store that, and decryption routine reverses and joins.
-                payloadToStore = encryptedStr;
-                scriptDecryptLogic = `
-                    function decryptContent(encData) {
+                storedData = JSON.stringify(encryptedObj);
+                decryptFunctionCode = `
+                    function decryptContent(encryptedStr) {
                         try {
-                            const obj = JSON.parse(encData);
-                            if(obj.c && Array.isArray(obj.c)) {
-                                let combined = obj.c.join('');
-                                const original = combined.split('').reverse().join('');
-                                return original;
+                            const obj = JSON.parse(encryptedStr);
+                            if(obj.chunks && Array.isArray(obj.chunks)) {
+                                let combined = obj.chunks.join('');
+                                return combined.split('').reverse().join('');
                             }
                             return "";
-                        } catch(e) { return ""; }
+                        } catch(e) { console.error(e); return ""; }
                     }
                 `;
             } else {
-                // plain store content but still password protected (store base64? just store raw but guarded)
-                payloadToStore = btoa(unescape(encodeURIComponent(finalInnerContent))); // base64 avoid injection
-                scriptDecryptLogic = `
+                // no extra encryption: just base64 encode the final content to avoid injection issues
+                const utf8Content = unescape(encodeURIComponent(finalInnerContent));
+                storedData = btoa(utf8Content);
+                decryptFunctionCode = `
                     function decryptContent(encoded) {
                         try {
-                            return decodeURIComponent(escape(atob(encoded)));
+                            const decoded = atob(encoded);
+                            return decodeURIComponent(escape(decoded));
                         } catch(e) { return ""; }
                     }
                 `;
             }
-
-            const storedData = payloadToStore;
-
+            
+            const safePassword = password.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            
             return `<!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><title>Evidence Watchers · Protected Wiki</title>
+            <html lang="en">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${siteTitle} · Protected</title>
             <style>
-                body{background:#f0f2f5;font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
-                .lock-card{background:white;max-width:500px;width:90%;padding:2rem;border-radius:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);text-align:center;}
-                input{padding:10px;width:80%;margin:12px 0;border:1px solid #ccc;border-radius:40px;}
-                button{background:#3366cc;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;}
-                .wiki-content{max-width:1100px;margin:2rem auto;background:white;padding:2rem;border-radius:12px;}
-                .error{color:#b32424;}
+                *{margin:0;padding:0;box-sizing:border-box;}
+                body{background:#eef2f5;font-family:'Segoe UI','Georgia',serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:16px;}
+                .lock-card{background:white;max-width:450px;width:100%;padding:2rem;border-radius:24px;box-shadow:0 20px 35px rgba(0,0,0,0.2);text-align:center;}
+                .lock-card h2{margin-bottom:12px;color:#2c3e50;}
+                .lock-card input{width:100%;padding:12px;margin:16px 0;border:1px solid #cbd5e1;border-radius:40px;font-size:1rem;}
+                .lock-card button{background:#2c6e9e;color:white;border:none;padding:10px 24px;border-radius:40px;font-size:1rem;cursor:pointer;transition:0.2s;}
+                .lock-card button:hover{background:#1b4a6e;}
+                .error{color:#c7254e;margin-top:10px;font-size:0.85rem;}
+                .wiki-container{max-width:1100px;margin:0 auto;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);padding:2rem;}
+                .article-content{line-height:1.6;}
+                .article-content img,.article-content iframe{max-width:100%;border-radius:8px;margin:1rem 0;}
+                .footer{text-align:center;margin-top:2rem;border-top:1px solid #ddd;padding-top:1rem;color:#5a6874;}
+                .hidden{display:none;}
             </style>
             </head>
             <body>
-            <div id="app">
-                <div id="gate" class="lock-card">
+            <div id="root">
+                <div id="passwordGate" class="lock-card">
                     <h2>🔒 Evidence Watchers Wikipedia</h2>
-                    <p>This page is password protected. Enter wiki password to view.</p>
-                    <input type="password" id="passInput" placeholder="wiki password" autocomplete="off">
-                    <br><button id="unlockBtn">Unlock & View</button>
-                    <div id="errMsg" class="error"></div>
+                    <p>This page is password protected.<br>Enter the wiki password to access the evidence.</p>
+                    <input type="password" id="wikiPasswordInput" placeholder="Enter password" autocomplete="off">
+                    <button id="submitPasswordBtn">Unlock & View</button>
+                    <div id="errorMsg" class="error"></div>
                 </div>
-                <div id="wikiViewer" style="display:none;"></div>
+                <div id="wikiContentArea" class="wiki-container hidden"></div>
             </div>
             <script>
-                const CORRECT_PASSWORD = "${password.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}";
-                const STORED_DATA = ${JSON.stringify(storedData)};
-                ${scriptDecryptLogic}
+                const CORRECT_PASSWORD = "${safePassword}";
+                const ENCRYPTED_DATA = ${JSON.stringify(storedData)};
+                ${decryptFunctionCode}
+                
                 function renderWiki(htmlContent) {
-                    const viewer = document.getElementById('wikiViewer');
-                    viewer.style.display = 'block';
-                    viewer.innerHTML = \`<div class="wiki-content">\${htmlContent}<div style="margin-top:2rem; border-top:1px solid #ddd; text-align:center; padding:1rem;">Evidence Watchers · secure snapshot</div></div>\`;
-                    document.getElementById('gate').style.display = 'none';
+                    const gateDiv = document.getElementById('passwordGate');
+                    const wikiDiv = document.getElementById('wikiContentArea');
+                    wikiDiv.innerHTML = '<div class="article-content">' + htmlContent + '</div><div class="footer">Evidence Watchers · password protected snapshot</div>';
+                    gateDiv.classList.add('hidden');
+                    wikiDiv.classList.remove('hidden');
                 }
-                document.getElementById('unlockBtn').addEventListener('click', () => {
-                    const pwd = document.getElementById('passInput').value;
-                    if(pwd === CORRECT_PASSWORD) {
-                        let decryptedContent = "";
+                
+                document.getElementById('submitPasswordBtn').addEventListener('click', function() {
+                    const entered = document.getElementById('wikiPasswordInput').value;
+                    const errorDiv = document.getElementById('errorMsg');
+                    if(entered === CORRECT_PASSWORD) {
+                        let decrypted = "";
                         if(typeof decryptContent === 'function') {
-                            decryptedContent = decryptContent(STORED_DATA);
+                            decrypted = decryptContent(ENCRYPTED_DATA);
                         } else {
-                            decryptedContent = STORED_DATA;
+                            decrypted = ENCRYPTED_DATA;
                         }
-                        if(decryptedContent) {
-                            renderWiki(decryptedContent);
+                        if(decrypted && decrypted.length > 0) {
+                            renderWiki(decrypted);
                         } else {
-                            document.getElementById('errMsg').innerText = 'Decryption failed, content corrupted.';
+                            errorDiv.innerText = 'Error: Content decryption failed. Data may be corrupted.';
                         }
                     } else {
-                        document.getElementById('errMsg').innerText = 'Incorrect password. Access denied.';
+                        errorDiv.innerText = '❌ Incorrect password. Access denied.';
+                        document.getElementById('wikiPasswordInput').value = '';
+                    }
+                });
+                
+                document.getElementById('wikiPasswordInput').addEventListener('keypress', function(e) {
+                    if(e.key === 'Enter') {
+                        document.getElementById('submitPasswordBtn').click();
                     }
                 });
             <\/script>
@@ -482,7 +470,7 @@ Example:
     }
 
     // UI State
-    let isEditMode = true;  // start in edit mode by default (show editor)
+    let isEditMode = true;
     const editorPanel = document.getElementById('editorPanel');
     const viewContainer = document.getElementById('viewContainer');
     const wikiTextarea = document.getElementById('wikiTextarea');
@@ -492,21 +480,24 @@ Example:
     const passwordInput = document.getElementById('wikiPassword');
     const encryptCheckbox = document.getElementById('encryptUrlCheckbox');
 
-    // initial demo content (default example)
-    const defaultContent = `<h1>📜 Welcome to Evidence Watchers Wikipedia</h1>
-<p>This is a <strong>databaseless</strong> wiki. You can embed <strong>anything</strong> using the textarea below.</p>
-<h2>🧪 Example embedded evidence</h2>
-<p>YouTube video:</p>
-https://www.youtube.com/watch?v=dQw4w9WgXcQ
-<p>Image example:</p>
-https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png
-<p>Google Drive Folder preview:</p>
-https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm
-<p>Write any HTML structure, tables, quotes.</p>
-<blockquote>“Evidence stands when shared openly.”</blockquote>`;
+    // default rich demo content
+    const defaultContent = `<h1>📜 Evidence Watchers Wikipedia</h1>
+<p>Welcome to a <strong>databaseless, self-contained wiki</strong>. All content is embedded directly — no server required.</p>
+<h2>🧪 Embedded Evidence Examples</h2>
+<p><strong>YouTube Evidence:</strong><br>
+https://www.youtube.com/watch?v=dQw4w9WgXcQ</p>
+<p><strong>Image Evidence (postimg):</strong><br>
+https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png</p>
+<p><strong>Google Drive Folder Preview:</strong><br>
+https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm</p>
+<p><strong>Custom HTML & Text:</strong></p>
+<blockquote style="border-left:4px solid #3366bb; padding-left:16px;">“Every fact deserves a link, every claim deserves evidence.”</blockquote>
+<p>You can also embed iframes, tables, and more.</p>
+<hr>
+<p>Created with ✨ Evidence Watchers Wikipedia — open knowledge, forever.</p>`;
 
     wikiTextarea.value = defaultContent;
-    // show initial rendered in view mode but also editor visible? toggle: by default editmode true
+    
     function refreshDisplay() {
         if (isEditMode) {
             editorPanel.classList.remove('hidden');
@@ -514,7 +505,6 @@ https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm
         } else {
             editorPanel.classList.add('hidden');
             viewContainer.classList.remove('hidden');
-            // render live preview from textarea content (transformed)
             const raw = wikiTextarea.value;
             const transformed = transformEmbeddedContent(raw);
             wikiRenderDiv.innerHTML = transformed;
@@ -526,48 +516,51 @@ https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm
         refreshDisplay();
     });
     
-    // export: generate new full html page with password & encryption options
+    // FIXED EXPORT: direct new tab without about:blank issues
     function doExport() {
         const content = wikiTextarea.value;
+        if (!content.trim()) {
+            alert("⚠️ Please add some content before exporting.");
+            return;
+        }
         const password = passwordInput.value;
         const encrypt = encryptCheckbox.checked;
-        // If password but encryption not needed, still generate password gate.
         const fullHtml = generateExportedHTML(content, password, (password !== "" && encrypt));
-        // Create a Blob and open new tab? Requirement: "After export, it should take me to the whole page with all the embeds"
-        // Better open in a new window/tab with data uri or blob url
+        
+        // Create Blob and open in new tab - robust cross-browser method
         const blob = new Blob([fullHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const newWin = window.open();
-        if (newWin) {
-            newWin.location.href = url;
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Use window.open with proper handling to avoid about:blank
+        const newTab = window.open();
+        if (newTab) {
+            // Write directly to the new tab to avoid popup blockers causing about:blank
+            newTab.document.write(fullHtml);
+            newTab.document.close();
+            URL.revokeObjectURL(blobUrl);
         } else {
-            alert("Popup blocked? Use allow popups. Fallback: download");
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'evidence_watchers_wiki.html';
-            a.click();
-            URL.revokeObjectURL(url);
+            // Fallback if popup blocked: use an anchor download + info
+            const downloadLink = document.createElement('a');
+            downloadLink.href = blobUrl;
+            downloadLink.download = 'evidence_watchers_export.html';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            setTimeout(() => {
+                URL.revokeObjectURL(blobUrl);
+                alert("⚠️ Popup was blocked. The file has been downloaded. Open it in your browser to view.");
+            }, 100);
         }
     }
     
     exportBtn.addEventListener('click', doExport);
     
-    // initial view mode control: start in edit mode to let user edit
+    // initial mode: edit mode active
     isEditMode = true;
     refreshDisplay();
     
-    // automatically save textarea content to localStorage optionally? but no need databaseless, fine.
-    // Add minor: Preview button? but export itself shows final page.
-    // for usability, we add a "preview in view mode" without export? not required but nice.
-    // But we keep straightforward.
-
-    // Also when user clicks export, clear unnecessary.
-    // Ensure google drive embedded folder preview supports
-    window.transformEmbeddedContent = transformEmbeddedContent;
-    
-    // helper: optionally sync any further.
-    console.log("Evidence Watchers Wikipedia ready — edit, embed YouTube, image, drive links, encrypt with pass");
+    // also add preview when toggling to view mode
+    console.log("Evidence Watchers Wikipedia — fully functional, export opens new tab with password & embed support");
 </script>
 </body>
 </html>
