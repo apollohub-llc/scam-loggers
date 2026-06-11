@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Evidence Watchers Wikipedia · Databaseless Wiki Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f6f6f6;
+            font-family: 'Segoe UI', 'Linux Libertine', 'Georgia', 'Times New Roman', Times, serif;
+            color: #202122;
+            line-height: 1.5;
+        }
+
+        /* Wikipedia white theme container */
+        .wiki-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            min-height: 100vh;
+        }
+
+        /* header */
+        .wiki-header {
+            background: #ffffff;
+            border-bottom: 1px solid #a7d7f9;
+            padding: 1.2rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+        }
+        .site-title {
+            font-size: 1.8rem;
+            font-weight: normal;
+            font-family: 'Linux Libertine', 'Georgia', serif;
+        }
+        .site-title span {
+            font-weight: bold;
+            border-bottom: 2px solid #3366bb;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .wiki-btn {
+            background: #f8f9fa;
+            border: 1px solid #a2a9b1;
+            border-radius: 2px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.1s;
+            font-family: inherit;
+        }
+        .wiki-btn-primary {
+            background: #eaf3ff;
+            border-color: #3366bb;
+            color: #0645ad;
+        }
+        .wiki-btn-primary:hover {
+            background: #d9e8ff;
+        }
+        .wiki-btn:hover {
+            background: #ffffff;
+            border-color: #72777d;
+        }
+        /* editor panel */
+        .editor-panel {
+            background: #fef6e7;
+            border-bottom: 1px solid #ffdfb3;
+            padding: 1.5rem 2rem;
+            transition: all 0.2s;
+        }
+        .editor-title {
+            font-weight: 500;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        textarea {
+            width: 100%;
+            min-height: 280px;
+            font-family: 'Courier New', 'SF Mono', monospace;
+            font-size: 14px;
+            padding: 16px;
+            border: 1px solid #c8ccd1;
+            border-radius: 4px;
+            background: white;
+            resize: vertical;
+            line-height: 1.45;
+        }
+        .embed-helper {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #4d5a6e;
+            background: #fff3e0;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .embed-helper code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .password-section {
+            margin-top: 18px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-top: 1px dashed #ddd;
+            padding-top: 18px;
+        }
+        .pass-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pass-input-group label {
+            font-weight: 500;
+        }
+        input[type="password"], input[type="text"] {
+            padding: 6px 12px;
+            border: 1px solid #c8ccd1;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .warning {
+            color: #bc6c25;
+            font-size: 0.8rem;
+        }
+        /* view mode */
+        .view-mode {
+            padding: 2rem 2rem 3rem 2rem;
+            background: white;
+        }
+        .article-content {
+            font-size: 1.05rem;
+            overflow-wrap: break-word;
+        }
+        .article-content iframe, .article-content img, .article-content .drive-preview {
+            max-width: 100%;
+            margin: 1rem 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .article-content img {
+            max-height: 500px;
+            object-fit: contain;
+        }
+        .article-content iframe {
+            width: 100%;
+            min-height: 315px;
+        }
+        .drive-preview {
+            background: #f0f2f5;
+            padding: 16px;
+            text-align: center;
+            border-radius: 12px;
+            display: inline-block;
+            width: 100%;
+        }
+        hr {
+            margin: 1rem 0;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            border-top: 1px solid #eaecf0;
+            padding: 1rem;
+            color: #6c757d;
+        }
+        .password-overlay {
+            background: rgba(0,0,0,0.75);
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .password-card {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .error-msg {
+            color: #b32424;
+            margin-top: 12px;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 700px) {
+            .wiki-header, .editor-panel, .view-mode {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wiki-container" id="appRoot">
+    <div class="wiki-header">
+        <div class="site-title">📖 <span>Evidence Watchers Wikipedia</span> · the open evidence wiki</div>
+        <div class="action-buttons">
+            <button class="wiki-btn" id="editModeBtn">✏️ Edit / Create</button>
+            <button class="wiki-btn wiki-btn-primary" id="exportWikiBtn">🌍 Export & View Live</button>
+        </div>
+    </div>
+
+    <!-- EDITOR PANEL (visible only in edit mode) -->
+    <div id="editorPanel" class="editor-panel">
+        <div class="editor-title">📝 Full Wiki Content Editor (HTML + embeds supported)</div>
+        <textarea id="wikiTextarea" placeholder="Write your Evidence Watchers entry here... 
+You can embed:
+- YouTube: https://www.youtube.com/watch?v=VIDEOID
+- Images: https://i.postimg.cc/xxx.png
+- Google Drive folders or files (preview will appear)
+- Any HTML, iframes, etc.
+
+Example:
+<h2>Important finding</h2>
+<p>Text with <strong>evidence</strong></p>
+<img src='https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png' width='400'>
+<div class='drive-preview'>📁 <a href='https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm' target='_blank'>Google Drive Folder</a> - preview image auto</div>
+"></textarea>
+        <div class="embed-helper">
+            💡 <strong>Smart embed:</strong> YouTube links convert to iframes, image links become &lt;img&gt;, Google Drive links (folders/files) show clickable preview block. You can also write raw HTML / iframes.
+        </div>
+
+        <!-- Password protection block -->
+        <div class="password-section">
+            <div class="pass-input-group">
+                <label>🔒 Wiki Password (optional):</label>
+                <input type="password" id="wikiPassword" placeholder="leave empty = no password" autocomplete="off">
+            </div>
+            <label class="checkbox-label">
+                <input type="checkbox" id="encryptUrlCheckbox"> ✨ Encrypt URL parameters (split+reverse+chunk scrambling) when password enabled
+            </label>
+            <span class="warning">⚠️ If password set, exported page will ask for password before showing content.</span>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.8rem; text-align: right;">
+            ✅ Everything in textarea becomes final page (innerHTML)
+        </div>
+    </div>
+
+    <!-- VIEW MODE (display wiki content) -->
+    <div id="viewContainer" class="view-mode">
+        <div id="wikiRender" class="article-content">
+            <!-- default welcome text -->
+            <div style="text-align:center; padding: 2rem;">
+                <h2>Evidence Watchers Wikipedia</h2>
+                <p>Click <strong>✏️ Edit / Create</strong> to start building your databaseless wiki.<br>
+                Embed videos, images, Google Drive, custom HTML. Then click <strong>Export & View Live</strong> to see final page (password protected if set).</p>
+                <hr>
+                <i>— every export creates a standalone secured wiki snapshot —</i>
+            </div>
+        </div>
+        <div class="footer-note">
+            Evidence Watchers · Open knowledge, embedded evidence.
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- Helper: smart embed transformer ----------
+    // Converts raw text (textarea content) into HTML with automatic embeds for youtube, image links, google drive preview
+    function transformEmbeddedContent(rawHtml) {
+        // Step 1: Process youtube links (standard youtube.com/watch?v=... or youtu.be)
+        let processed = rawHtml;
+        // youtube regex: match typical youtube links
+        const youtubeRegex = /(https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+)(&[\w=]*)?|https?:\/\/(?:www\.)?youtu\.be\/([\w-]+))/gi;
+        processed = processed.replace(youtubeRegex, (match, p1, p2, p3, p4) => {
+            let videoId = p2 || p4;
+            if (videoId) {
+                return `<div class="video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen style="width:100%; aspect-ratio:16/9; border-radius:8px;"></iframe></div>`;
+            }
+            return match;
+        });
+
+        // Process standalone image links (jpg, png, gif, webp etc)
+        const imageRegex = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?)/gi;
+        processed = processed.replace(imageRegex, (url) => {
+            // avoid double wrapping if already inside img tag (simple heuristic)
+            if (processed.includes(`src="${url}"`) || processed.includes(`src='${url}'`)) return url;
+            return `<img src="${url}" alt="evidence image" style="max-width:100%; border-radius:6px; margin: 8px 0;" loading="lazy">`;
+        });
+
+        // Process Google Drive links: folders or files -> preview block with nice preview image and link
+        const driveRegex = /(https?:\/\/drive\.google\.com\/(drive\/folders\/[a-zA-Z0-9_-]+|file\/d\/[a-zA-Z0-9_-]+.*?\/view))/gi;
+        processed = processed.replace(driveRegex, (driveUrl) => {
+            // Generate preview card: Drive icon + direct link, plus preview image simulation (we use google drive's folder embed preview)
+            let folderIdMatch = driveUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
+            let fileIdMatch = driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            let embedPreviewUrl = '';
+            if (folderIdMatch) {
+                const folderId = folderIdMatch[1];
+                embedPreviewUrl = `https://drive.google.com/embeddedfolderview?id=${folderId}#list`;
+                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:12px; border-radius:12px;">
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <span style="font-size:2rem;">📁</span>
+                                <div><strong>Google Drive Folder</strong><br><a href="${driveUrl}" target="_blank" rel="noopener">Open in Drive →</a></div>
+                            </div>
+                            <div style="margin-top:10px;"><iframe src="${embedPreviewUrl}" style="width:100%; height:220px; border:0; border-radius:8px;" allowfullscreen></iframe></div>
+                            <div style="font-size:0.75rem; margin-top:8px;">📎 Folder preview (embed)</div>
+                        </div>`;
+            } else if (fileIdMatch) {
+                const fileId = fileIdMatch[1];
+                return `<div class="drive-preview" style="border:1px solid #dadde1; background:#fafbfd; padding:12px; border-radius:12px;">
+                            <div style="display:flex; gap:12px;">
+                                <span>📄</span>
+                                <div><strong>Google Drive File</strong><br><a href="${driveUrl}" target="_blank">Open File ↗</a></div>
+                            </div>
+                            <div style="margin-top:10px; background:#eef2f8; text-align:center; padding:10px;">🖼️ <em>preview: Google Drive embedded viewer not available for all files, but you can download.</em></div>
+                        </div>`;
+            }
+            return `<div class="drive-preview"><a href="${driveUrl}" target="_blank">📂 Google Drive Link</a> (click to access)</div>`;
+        });
+
+        // Also handle plain links that are not transformed: but we want to keep user raw html also.
+        // Return final
+        return processed;
+    }
+
+    // function to generate full wiki page source with password protection and embed transformation
+    // If password is used, we generate a self-contained html that demands password.
+    function generateExportedHTML(contentRaw, password, encryptFlag) {
+        let finalInnerContent = transformEmbeddedContent(contentRaw);
+        // Escape content to be safely placed in JS? we'll build full html string.
+        // We must also allow innerhtml assignment in export.
+        // Build a standalone HTML with password gate.
+        const siteTitle = "Evidence Watchers Wikipedia";
+        // if no password -> just full page
+        if (!password || password.trim() === "") {
+            // No password required, straight view
+            return `<!DOCTYPE html>
+            <html lang="en">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${siteTitle}</title>
+            <style>
+                *{margin:0;padding:0;box-sizing:border-box;}
+                body{background:#f6f6f6;font-family:'Segoe UI','Georgia',serif;}
+                .wiki-page{max-width:1100px;margin:0 auto;background:white;box-shadow:0 0 8px rgba(0,0,0,0.05);padding:2rem 2rem 3rem;}
+                h1,h2{font-family:'Linux Libertine',Georgia,serif;border-bottom:1px solid #a2a9b1;}
+                img,iframe{max-width:100%;border-radius:8px;margin:1rem 0;}
+                .drive-preview{background:#f8f9fa;border-radius:12px;padding:1rem;}
+                .footer{text-align:center;margin-top:2rem;border-top:1px solid #eaecf0;padding:1rem;color:#6c757d;}
+            </style>
+            </head>
+            <body><div class="wiki-page"><div class="article-content">${finalInnerContent}</div><div class="footer">Evidence Watchers Wikipedia · open evidence</div></div></body></html>`;
+        } else {
+            // password protection needed: generate html with password challenge + decrypt ability, but since we encrypt url params? 
+            // Export with password: we have two modes: encrypt URL or not. For exported page, we want to store the encrypted payload or raw?
+            // According to requirement: after export, takes to whole page with embeds + text, and if password enabled every exported site should ask first.
+            // We do NOT rely on url params only, but we embed the content inside a variable, then ask password.
+            // Optionally encrypt the content inside script using split/reverse/junk if encryptFlag.
+            let payloadToStore = finalInnerContent;
+            let scriptDecryptLogic = "";
+            if (encryptFlag) {
+                // --- apply encryption: reverse + split into random chunks (simulated enc) on payload string (content)
+                // We apply similar to given spec but on the html content string.
+                const reversed = payloadToStore.split('').reverse().join('');
+                const chunkCount = Math.floor(Math.random() * 20) + 8;  // 8-28
+                const chunkSize = Math.ceil(reversed.length / chunkCount);
+                let chunks = [];
+                for (let i = 0; i < chunkCount; i++) {
+                    let start = i * chunkSize;
+                    if (start < reversed.length) {
+                        chunks.push(reversed.substring(start, start + chunkSize));
+                    }
+                }
+                // store chunks + chunkCount as object stringified
+                const encryptedObj = {
+                    c: chunks,
+                    r: true,  // reversed flag
+                    chunkCount: chunkCount
+                };
+                const encryptedStr = JSON.stringify(encryptedObj);
+                // we will store that, and decryption routine reverses and joins.
+                payloadToStore = encryptedStr;
+                scriptDecryptLogic = `
+                    function decryptContent(encData) {
+                        try {
+                            const obj = JSON.parse(encData);
+                            if(obj.c && Array.isArray(obj.c)) {
+                                let combined = obj.c.join('');
+                                const original = combined.split('').reverse().join('');
+                                return original;
+                            }
+                            return "";
+                        } catch(e) { return ""; }
+                    }
+                `;
+            } else {
+                // plain store content but still password protected (store base64? just store raw but guarded)
+                payloadToStore = btoa(unescape(encodeURIComponent(finalInnerContent))); // base64 avoid injection
+                scriptDecryptLogic = `
+                    function decryptContent(encoded) {
+                        try {
+                            return decodeURIComponent(escape(atob(encoded)));
+                        } catch(e) { return ""; }
+                    }
+                `;
+            }
+
+            const storedData = payloadToStore;
+
+            return `<!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"><title>Evidence Watchers · Protected Wiki</title>
+            <style>
+                body{background:#f0f2f5;font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+                .lock-card{background:white;max-width:500px;width:90%;padding:2rem;border-radius:20px;box-shadow:0 8px 20px rgba(0,0,0,0.2);text-align:center;}
+                input{padding:10px;width:80%;margin:12px 0;border:1px solid #ccc;border-radius:40px;}
+                button{background:#3366cc;color:white;border:none;padding:8px 20px;border-radius:30px;cursor:pointer;}
+                .wiki-content{max-width:1100px;margin:2rem auto;background:white;padding:2rem;border-radius:12px;}
+                .error{color:#b32424;}
+            </style>
+            </head>
+            <body>
+            <div id="app">
+                <div id="gate" class="lock-card">
+                    <h2>🔒 Evidence Watchers Wikipedia</h2>
+                    <p>This page is password protected. Enter wiki password to view.</p>
+                    <input type="password" id="passInput" placeholder="wiki password" autocomplete="off">
+                    <br><button id="unlockBtn">Unlock & View</button>
+                    <div id="errMsg" class="error"></div>
+                </div>
+                <div id="wikiViewer" style="display:none;"></div>
+            </div>
+            <script>
+                const CORRECT_PASSWORD = "${password.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}";
+                const STORED_DATA = ${JSON.stringify(storedData)};
+                ${scriptDecryptLogic}
+                function renderWiki(htmlContent) {
+                    const viewer = document.getElementById('wikiViewer');
+                    viewer.style.display = 'block';
+                    viewer.innerHTML = \`<div class="wiki-content">\${htmlContent}<div style="margin-top:2rem; border-top:1px solid #ddd; text-align:center; padding:1rem;">Evidence Watchers · secure snapshot</div></div>\`;
+                    document.getElementById('gate').style.display = 'none';
+                }
+                document.getElementById('unlockBtn').addEventListener('click', () => {
+                    const pwd = document.getElementById('passInput').value;
+                    if(pwd === CORRECT_PASSWORD) {
+                        let decryptedContent = "";
+                        if(typeof decryptContent === 'function') {
+                            decryptedContent = decryptContent(STORED_DATA);
+                        } else {
+                            decryptedContent = STORED_DATA;
+                        }
+                        if(decryptedContent) {
+                            renderWiki(decryptedContent);
+                        } else {
+                            document.getElementById('errMsg').innerText = 'Decryption failed, content corrupted.';
+                        }
+                    } else {
+                        document.getElementById('errMsg').innerText = 'Incorrect password. Access denied.';
+                    }
+                });
+            <\/script>
+            </body>
+            </html>`;
+        }
+    }
+
+    // UI State
+    let isEditMode = true;  // start in edit mode by default (show editor)
+    const editorPanel = document.getElementById('editorPanel');
+    const viewContainer = document.getElementById('viewContainer');
+    const wikiTextarea = document.getElementById('wikiTextarea');
+    const wikiRenderDiv = document.getElementById('wikiRender');
+    const editBtn = document.getElementById('editModeBtn');
+    const exportBtn = document.getElementById('exportWikiBtn');
+    const passwordInput = document.getElementById('wikiPassword');
+    const encryptCheckbox = document.getElementById('encryptUrlCheckbox');
+
+    // initial demo content (default example)
+    const defaultContent = `<h1>📜 Welcome to Evidence Watchers Wikipedia</h1>
+<p>This is a <strong>databaseless</strong> wiki. You can embed <strong>anything</strong> using the textarea below.</p>
+<h2>🧪 Example embedded evidence</h2>
+<p>YouTube video:</p>
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+<p>Image example:</p>
+https://i.postimg.cc/2SLkQpQv/Screenshot-20260528-175055-mark-via-gp.png
+<p>Google Drive Folder preview:</p>
+https://drive.google.com/drive/folders/1a713MQcgSSBw9R7bsiFxNDzs88G4w1Xm
+<p>Write any HTML structure, tables, quotes.</p>
+<blockquote>“Evidence stands when shared openly.”</blockquote>`;
+
+    wikiTextarea.value = defaultContent;
+    // show initial rendered in view mode but also editor visible? toggle: by default editmode true
+    function refreshDisplay() {
+        if (isEditMode) {
+            editorPanel.classList.remove('hidden');
+            viewContainer.classList.add('hidden');
+        } else {
+            editorPanel.classList.add('hidden');
+            viewContainer.classList.remove('hidden');
+            // render live preview from textarea content (transformed)
+            const raw = wikiTextarea.value;
+            const transformed = transformEmbeddedContent(raw);
+            wikiRenderDiv.innerHTML = transformed;
+        }
+    }
+    
+    editBtn.addEventListener('click', () => {
+        isEditMode = true;
+        refreshDisplay();
+    });
+    
+    // export: generate new full html page with password & encryption options
+    function doExport() {
+        const content = wikiTextarea.value;
+        const password = passwordInput.value;
+        const encrypt = encryptCheckbox.checked;
+        // If password but encryption not needed, still generate password gate.
+        const fullHtml = generateExportedHTML(content, password, (password !== "" && encrypt));
+        // Create a Blob and open new tab? Requirement: "After export, it should take me to the whole page with all the embeds"
+        // Better open in a new window/tab with data uri or blob url
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const newWin = window.open();
+        if (newWin) {
+            newWin.location.href = url;
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } else {
+            alert("Popup blocked? Use allow popups. Fallback: download");
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'evidence_watchers_wiki.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+    
+    exportBtn.addEventListener('click', doExport);
+    
+    // initial view mode control: start in edit mode to let user edit
+    isEditMode = true;
+    refreshDisplay();
+    
+    // automatically save textarea content to localStorage optionally? but no need databaseless, fine.
+    // Add minor: Preview button? but export itself shows final page.
+    // for usability, we add a "preview in view mode" without export? not required but nice.
+    // But we keep straightforward.
+
+    // Also when user clicks export, clear unnecessary.
+    // Ensure google drive embedded folder preview supports
+    window.transformEmbeddedContent = transformEmbeddedContent;
+    
+    // helper: optionally sync any further.
+    console.log("Evidence Watchers Wikipedia ready — edit, embed YouTube, image, drive links, encrypt with pass");
+</script>
+</body>
+</html>
