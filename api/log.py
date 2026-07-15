@@ -2,16 +2,17 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/api/log', methods=['POST'])
+@app.route('/', methods=['POST'])
 def log_data():
     try:
-        # Get the JSON data sent from your phone
         data = request.get_json()
         if data:
-            # Process and log the data
-            print(f"Received data: {data}")
-            # Here you can save the data, log it, or trigger actions
-            return jsonify({"status": "success", "message": "Data received"}), 200
+            print(f"Received: {data}")
+            # TODO: Save to a database or log file
+            return jsonify({"status": "ok"}), 200
+        return jsonify({"status": "error", "message": "No data"}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-    return jsonify({"status": "error", "message": "No data received"}), 400
+
+# Vercel expects the app instance to be named 'app'
+# If you have a different name, Vercel won't find it.
