@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo Hub | Chatlogs</title>
+    <style>
+        :root {
+            --primary-orange: #ff6600;
+            --dark-bg: #0a0a0a;
+            --surface-bg: #1a1a1a;
+            --text-color: #ffffff;
+            --other-bg: #2a2a2a;
+            --neon-glow: 0 0 10px rgba(255, 102, 0, 0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- UI Controls --- */
+        .controls {
+            position: fixed;
+            top: 10px; width: 100%;
+            display: flex; justify-content: space-between;
+            padding: 0 15px; z-index: 100;
+        }
+
+        .btn {
+            background: var(--surface-bg);
+            border: 1px solid var(--primary-orange);
+            color: var(--primary-orange);
+            padding: 8px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold; font-size: 10px;
+            box-shadow: var(--neon-glow);
+        }
+
+        .active-thread-indicator {
+            position: fixed;
+            top: 55px; left: 15px;
+            font-size: 11px; color: var(--primary-orange);
+            font-weight: bold; text-transform: uppercase;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px; border-radius: 4px;
+        }
+
+        /* --- Chat Interface --- */
+        #chat-container {
+            flex: 1;
+            margin-top: 85px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 800px;
+            width: 100%;
+            align-self: center;
+        }
+
+        /* Message Wrapper to align group components */
+        .message-wrapper {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wrapper-me { justify-content: flex-end; }
+        .wrapper-other { justify-content: flex-start; }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .msg-me {
+            background: var(--primary-orange);
+            color: black;
+            border-bottom-right-radius: 2px;
+        }
+
+        .msg-other {
+            background: var(--other-bg);
+            color: white;
+            border-bottom-left-radius: 2px;
+            border-left: 3px solid var(--primary-orange);
+        }
+
+        /* Per-Message Delete Button */
+        .msg-del-btn {
+            background: transparent;
+            border: none;
+            color: #ff3333;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+
+        .msg-del-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* --- Input Area --- */
+        .input-area {
+            padding: 15px;
+            background: #111;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid #333;
+            align-items: flex-end;
+        }
+
+        .toggle-btn {
+            min-width: 45px; height: 45px;
+            padding: 0 8px;
+            border-radius: 22px;
+            border: 2px solid var(--primary-orange);
+            background: var(--surface-bg);
+            color: var(--primary-orange);
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        textarea {
+            flex: 1;
+            background: #000;
+            border: 1px solid #444;
+            color: white;
+            padding: 12px;
+            outline: none;
+            font-size: 14px;
+            resize: none;
+            max-height: 120px;
+            border-radius: 20px;
+        }
+
+        .send-btn {
+            background: var(--primary-orange);
+            color: black;
+            border: none;
+            padding: 0 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 20px;
+            height: 45px;
+        }
+
+        /* --- Modal Styles --- */
+        #manage-modal {
+            display: none; position: fixed;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--surface-bg); border: 2px solid var(--primary-orange);
+            width: 90%; max-width: 380px; padding: 20px; z-index: 200;
+        }
+        .save-list { max-height: 250px; overflow-y: auto; margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        .save-item { display: flex; justify-content: space-between; padding: 10px; background: #222; font-size: 13px; align-items: center; }
+        .save-item.active-item { border: 1px solid var(--primary-orange); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 150; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div>
+            <button class="btn" onclick="toggleModal()">Load</button>
+            <button class="btn" onclick="createNewThread()">+ New</button>
+        </div>
+        <div>
+            <button class="btn" onclick="exportChat()">Export</button>
+            <button class="btn" style="border-color: #ff3333; color: #ff3333;" onclick="clearThreadContent()">Clear</button>
+        </div>
+    </div>
+
+    <div id="active-display" class="active-thread-indicator">Thread: Unsaved</div>
+
+    <div id="chat-container"></div>
+
+    <div class="input-area">
+        <button id="mode-toggle" class="toggle-btn" onclick="toggleMode()">Me</button>
+        <textarea id="chat-input" placeholder="Type message..." rows="1" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">SEND</button>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleModal()"></div>
+    <div id="manage-modal">
+        <div style="color:var(--primary-orange); font-weight:bold; margin-bottom:10px;">CHAT MANAGER</div>
+        <div class="save-list" id="save-list"></div>
+        <button class="btn" style="width: 100%;" onclick="toggleModal()">Close</button>
+    </div>
+
+    <script>
+        let activeSlot = localStorage.getItem('apollo_active_slot') || null;
+        let currentMessages = []; 
+        let currentMode = 'Me'; 
+
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const modeBtn = document.getElementById('mode-toggle');
+        const activeDisplay = document.getElementById('active-display');
+
+        function getOtherName() {
+            return activeSlot || 'Other';
+        }
+
+        if (activeSlot) loadSlotData(activeSlot);
+        else {
+            let raw = localStorage.getItem('apollo_current_chat');
+            currentMessages = raw ? JSON.parse(raw) : [];
+            renderMessages();
+            updateToggleBtnUI();
+        }
+
+        function toggleMode() {
+            currentMode = (currentMode === 'Me') ? getOtherName() : 'Me';
+            updateToggleBtnUI();
+        }
+
+        function updateToggleBtnUI() {
+            modeBtn.textContent = currentMode;
+            modeBtn.title = `Posting as: ${currentMode}`;
+            const isMe = currentMode === 'Me';
+            modeBtn.style.borderColor = isMe ? 'var(--primary-orange)' : '#777';
+            modeBtn.style.color = isMe ? 'var(--primary-orange)' : '#777';
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function renderMessages() {
+            chatContainer.innerHTML = '';
+            currentMessages.forEach((msg, index) => {
+                const wrapper = document.createElement('div');
+                const isMe = msg.sender === 'Me';
+                
+                wrapper.className = `message-wrapper ${isMe ? 'wrapper-me' : 'wrapper-other'}`;
+
+                // Create the Delete Button
+                const delBtn = document.createElement('button');
+                delBtn.className = 'msg-del-btn';
+                delBtn.innerHTML = '✕';
+                delBtn.title = 'Delete message';
+                delBtn.onclick = () => deleteIndividualMessage(index);
+
+                // Create Message Bubble
+                const msgBubble = document.createElement('div');
+                msgBubble.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
+                msgBubble.textContent = msg.text;
+
+                // Structure layout based on sender
+                if (isMe) {
+                    wrapper.appendChild(delBtn);
+                    wrapper.appendChild(msgBubble);
+                } else {
+                    wrapper.appendChild(msgBubble);
+                    wrapper.appendChild(delBtn);
+                }
+
+                chatContainer.appendChild(wrapper);
+            });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            localStorage.setItem('apollo_current_chat', JSON.stringify(currentMessages));
+            if (activeSlot) {
+                let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+                saves[activeSlot] = [...currentMessages];
+                localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                activeDisplay.textContent = `Thread: ${activeSlot}`;
+            } else {
+                activeDisplay.textContent = `Thread: Unsaved`;
+            }
+        }
+
+        function sendMessage() {
+            const val = chatInput.value.trim();
+            if (val) {
+                // Sender will either be "Me" or the active thread name
+                const senderName = currentMode === 'Me' ? 'Me' : getOtherName();
+                currentMessages.push({
+                    sender: senderName,
+                    text: val
+                });
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                renderMessages();
+            }
+        }
+
+        function deleteIndividualMessage(index) {
+            currentMessages.splice(index, 1);
+            renderMessages();
+        }
+
+        function clearThreadContent() {
+            if (confirm("Clear messages?")) {
+                currentMessages = [];
+                renderMessages();
+            }
+        }
+
+        function createNewThread() {
+            const name = prompt("Thread Name:");
+            if (name && name.trim()) {
+                const tName = name.trim();
+                let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+                if (!saves[tName]) saves[tName] = [];
+                localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                loadSlotData(tName);
+            }
+        }
+
+        function loadSlotData(name) {
+            const saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+            currentMessages = saves[name] || [];
+            
+            // Rebrand old saved messages from "Scammer" to the thread name
+            currentMessages = currentMessages.map(msg => ({
+                ...msg,
+                sender: (msg.sender === 'Scammer' || msg.sender === 'Other') ? name : msg.sender
+            }));
+
+            activeSlot = name;
+            localStorage.setItem('apollo_active_slot', name);
+            if (currentMode !== 'Me') currentMode = name;
+            updateToggleBtnUI();
+            renderMessages();
+        }
+
+        function exportChat() {
+            if (currentMessages.length === 0) return;
+            const log = currentMessages.map(m => `${m.sender}: ${m.text}`).join('\n\n');
+            const text = `Apollo Log [${activeSlot || 'Unsaved'}]:\n\n` + log;
+            navigator.clipboard.writeText(text).then(() => alert("Copied log with labels!"));
+        }
+
+        function toggleModal() {
+            const m = document.getElementById('manage-modal');
+            const o = document.getElementById('overlay');
+            const show = m.style.display !== 'block';
+            m.style.display = show ? 'block' : 'none';
+            o.style.display = show ? 'block' : 'none';
+            if (show) updateSaveList();
+        }
+
+        function updateSaveList() {
+            const list = document.getElementById('save-list');
+            const saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+            list.innerHTML = '';
+            Object.keys(saves).forEach(name => {
+                const item = document.createElement('div');
+                item.className = `save-item ${name === activeSlot ? 'active-item' : ''}`;
+                item.innerHTML = `<span>${name}</span><div><button onclick="switchAndLoad('${name}')" style="background:transparent; border:1px solid #444; color:var(--primary-orange); padding:4px 8px; cursor:pointer;">OPEN</button><button onclick="deleteThread('${name}')" style="background:transparent; border:1px solid #444; color:#ff3333; padding:4px 8px; cursor:pointer; margin-left:5px;">DEL</button></div>`;
+                list.appendChild(item);
+            });
+        }
+
+        function switchAndLoad(name) { loadSlotData(name); toggleModal(); }
+
+        function deleteThread(name) {
+            if (confirm(`Delete ${name}?`)) {
+                let saves = JSON.parse(localStorage.getItem('apollo_saves')) || {};
+                delete saves[name];
+                localStorage.setItem('apollo_saves', JSON.stringify(saves));
+                if (activeSlot === name) { 
+                    activeSlot = null; 
+                    localStorage.removeItem('apollo_active_slot');
+                    currentMessages = []; 
+                    currentMode = 'Me';
+                    updateToggleBtnUI();
+                    renderMessages(); 
+                }
+                updateSaveList();
+            }
+        }
+    </script>
+</body>
+</html>
