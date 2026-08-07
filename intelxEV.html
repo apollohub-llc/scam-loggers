@@ -53,69 +53,34 @@
       font-size: 0.8rem;
     }
 
-    .container {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 20px;
-    }
-
-    @media (max-width: 850px) {
-      .container { grid-template-columns: 1fr; }
-    }
-
-    .panel {
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 20px;
-      height: fit-content;
-    }
-
-    .panel h2 {
-      font-size: 1.1rem;
-      color: var(--accent);
+    .status-bar {
       margin-bottom: 15px;
-      text-transform: uppercase;
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 5px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: var(--panel-bg);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
     }
 
-    .form-group { margin-bottom: 12px; }
+    .search-bar { margin-bottom: 20px; }
 
-    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
-
-    input, select {
+    input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background: #07090e;
       border: 1px solid var(--border);
       color: var(--accent);
       border-radius: 4px;
       outline: none;
+      font-size: 0.95rem;
     }
 
-    input:focus, select:focus { border-color: var(--accent); }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      background: var(--accent);
-      color: #000;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-      text-transform: uppercase;
-      transition: 0.2s;
-    }
-
-    button:hover { opacity: 0.9; box-shadow: 0 0 10px var(--accent-glow); }
-
-    .search-bar { margin-bottom: 20px; }
+    input:focus { border-color: var(--accent); }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 15px;
     }
 
@@ -144,23 +109,24 @@
     .card-field span { color: var(--muted); }
 
     .copy-btn {
+      width: 100%;
       margin-top: 10px;
       background: transparent;
       border: 1px solid var(--accent);
       color: var(--accent);
-      font-size: 0.75rem;
-      padding: 6px;
+      font-size: 0.8rem;
+      padding: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      transition: 0.2s;
     }
 
     .copy-btn:hover {
       background: var(--accent);
       color: #000;
-    }
-
-    .status {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 10px;
+      box-shadow: 0 0 10px var(--accent-glow);
     }
   </style>
 </head>
@@ -168,94 +134,75 @@
 
   <header>
     <h1>EV Hybrid IntelXYZ</h1>
-    <div><span class="badge">DATABASE ACTIVE</span></div>
+    <div><span class="badge">READ-ONLY DATABASE</span></div>
   </header>
 
-  <div class="container">
-    <!-- INPUT PANEL -->
-    <div class="panel">
-      <h2>Add Intel Entry</h2>
-      <form id="intelForm">
-        <div class="form-group">
-          <label>NAME / AKA</label>
-          <input type="text" id="name" placeholder="John Doe (aka Hunter)" required>
-        </div>
-        <div class="form-group">
-          <label>AGE</label>
-          <input type="text" id="age" placeholder="25" required>
-        </div>
-        <div class="form-group">
-          <label>GENDER</label>
-          <input type="text" id="gender" placeholder="Male / Female" required>
-        </div>
-        <div class="form-group">
-          <label>ADDRESS / COORDINATES</label>
-          <input type="text" id="address" placeholder="12.34N 56.78E, Sector 7" required>
-        </div>
-        <div class="form-group">
-          <label>CLASSIFICATION / PERPETRATOR TYPE</label>
-          <input type="text" id="classification" placeholder="Scammer / Malicious Actor" required>
-        </div>
-        <button type="submit">Inject Record</button>
-      </form>
-      <div id="status" class="status">Status: Standby</div>
-    </div>
+  <div class="status-bar" id="status">Status: Initializing node network...</div>
 
-    <!-- HOME / MAIN DATABASE -->
-    <div>
-      <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="⚡ Search database by Name, Location, or Type...">
-      </div>
-
-      <div class="grid" id="cardGrid"></div>
-    </div>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="⚡ Search database by Name, Location, or Type...">
   </div>
+
+  <div class="grid" id="cardGrid"></div>
 
   <script>
     const records = [];
 
-    // Fetch files listed in storage.txt
+    // Fetch storage.txt and parse listed paths
     async function loadStorage() {
       const statusEl = document.getElementById('status');
-      statusEl.textContent = 'Status: Reading storage.txt...';
+      statusEl.textContent = 'Status: Reading storage.txt index...';
+      
       try {
-        const res = await fetch('storage.txt');
-        if (!res.ok) throw new Error('storage.txt not found');
+        // Cache bust query to force getting fresh storage.txt from GitHub
+        const res = await fetch('storage.txt?t=' + Date.now());
+        if (!res.ok) throw new Error('storage.txt could not be fetched.');
+        
         const text = await res.text();
         
-        // Extract non-empty lines (handles subfolders like "folder/file.txt")
-        const fileList = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        // Split by lines, strip carriage returns, ignore empty lines
+        const fileList = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+
+        let loadedCount = 0;
 
         for (const filePath of fileList) {
           try {
-            const fileRes = await fetch(filePath);
+            // Prepend relative directory path safely
+            const targetPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+            const fileRes = await fetch(targetPath + '?t=' + Date.now());
+            
             if (fileRes.ok) {
               const fileContent = await fileRes.text();
               parseAndAddRecord(fileContent);
+              loadedCount++;
+            } else {
+              console.warn(`[FAILED] Target file not found: ${targetPath}`);
             }
           } catch (e) {
-            console.warn(`Could not load target file: ${filePath}`);
+            console.warn(`[ERROR] Could not fetch: ${filePath}`);
           }
         }
-        statusEl.textContent = `Status: Loaded ${records.length} records.`;
+
+        statusEl.textContent = `Status: Network Synced. Loaded ${loadedCount} of ${fileList.length} files.`;
       } catch (err) {
-        statusEl.textContent = 'Status: Manual mode (No storage.txt found)';
+        statusEl.textContent = 'Status: ERROR loading storage.txt. Verify file exists in repository root.';
+        console.error(err);
       }
     }
 
-    // Parse specific TXT format
+    // Parse TXT file contents
     function parseAndAddRecord(rawText) {
-      const name = rawText.match(/Name:\s*(.+)/i)?.[1] || 'Unknown';
-      const age = rawText.match(/Age:\s*(.+)/i)?.[1] || 'N/A';
-      const gender = rawText.match(/Gender:\s*(.+)/i)?.[1] || 'N/A';
-      const address = rawText.match(/Address:\s*(.+)/i)?.[1] || 'N/A';
-      const classification = rawText.match(/Classification:\s*(.+)/i)?.[1] || 'Unclassified';
+      const name = rawText.match(/Name:\s*(.+)/i)?.[1]?.trim() || 'Unknown Subject';
+      const age = rawText.match(/Age:\s*(.+)/i)?.[1]?.trim() || 'N/A';
+      const gender = rawText.match(/Gender:\s*(.+)/i)?.[1]?.trim() || 'N/A';
+      const address = rawText.match(/Address:\s*(.+)/i)?.[1]?.trim() || 'N/A';
+      const classification = rawText.match(/Classification:\s*(.+)/i)?.[1]?.trim() || 'Unclassified';
 
       records.push({ name, age, gender, address, classification });
       renderGrid();
     }
 
-    // Render Cards
+    // Render Intel Cards
     function renderGrid(filter = '') {
       const grid = document.getElementById('cardGrid');
       grid.innerHTML = '';
@@ -263,6 +210,11 @@
       const filtered = records.filter(r => 
         Object.values(r).some(val => val.toLowerCase().includes(filter.toLowerCase()))
       );
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="color: var(--muted); grid-column: 1/-1;">No matching target files found in database.</div>`;
+        return;
+      }
 
       filtered.forEach((item, index) => {
         const card = document.createElement('div');
@@ -272,42 +224,27 @@
           <div class="card-field"><span>Age:</span> ${item.age}</div>
           <div class="card-field"><span>Gender:</span> ${item.gender}</div>
           <div class="card-field"><span>Address:</span> ${item.address}</div>
-          <div class="card-field"><span>Type:</span> ${item.classification}</div>
+          <div class="card-field"><span>Classification:</span> ${item.classification}</div>
           <button class="copy-btn" onclick="copyCardInfo(${index})">📋 Copy Info</button>
         `;
         grid.appendChild(card);
       });
     }
 
-    // Copy formatted info to clipboard
+    // Copy formatted info
     function copyCardInfo(index) {
       const item = records[index];
       const textToCopy = `[EV INTEL FILE]\nName: ${item.name}\nAge: ${item.age}\nGender: ${item.gender}\nAddress: ${item.address}\nClassification: ${item.classification}`;
       navigator.clipboard.writeText(textToCopy);
-      alert(`Copied record for: ${item.name}`);
+      alert(`Copied intel file for: ${item.name}`);
     }
 
-    // Form submission
-    document.getElementById('intelForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const newRecord = {
-        name: document.getElementById('name').value,
-        age: document.getElementById('age').value,
-        gender: document.getElementById('gender').value,
-        address: document.getElementById('address').value,
-        classification: document.getElementById('classification').value,
-      };
-      records.unshift(newRecord);
-      renderGrid();
-      e.target.reset();
-    });
-
-    // Search filter listener
+    // Filter query listener
     document.getElementById('searchInput').addEventListener('input', (e) => {
       renderGrid(e.target.value);
     });
 
-    // Initialize
+    // Run
     loadStorage();
   </script>
 </body>
