@@ -6,4 +6,4 @@ perpetrators/Floyd_Omnes.txt
 perpetrators/Jerick_Deleon.txt
 perpetrators/Joyce_Millari.txt
 perpetrators/EzelJoy_Cabinete.txt
-perpetrators/Mark_Javierti.txt
+perpetrators/Mark_Javierto.txt
