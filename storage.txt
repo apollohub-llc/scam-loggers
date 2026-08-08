@@ -8,3 +8,4 @@ perpetrators/Joyce_Millari.txt
 perpetrators/EzelJoy_Cabinete.txt
 perpetrators/Mark_Javierto.txt
 perpetrators/Eula_Salamat.txt
+perpetrators/AJ_Grendez.txt
