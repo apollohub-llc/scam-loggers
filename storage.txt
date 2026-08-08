@@ -7,3 +7,4 @@ perpetrators/Jerick_Deleon.txt
 perpetrators/Joyce_Millari.txt
 perpetrators/EzelJoy_Cabinete.txt
 perpetrators/Mark_Javierto.txt
+perpetrators/Eula_Salamat.txt
