@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV Hybrid IntelXYZ</title>
+  <style>
+    :root {
+      --bg: #0a0d12;
+      --panel-bg: #111622;
+      --border: #1e293b;
+      --accent: #00ff66;
+      --accent-glow: rgba(0, 255, 102, 0.2);
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --danger: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .badge {
+      background: var(--accent);
+      color: #000;
+      padding: 4px 8px;
+      font-weight: bold;
+      border-radius: 3px;
+      font-size: 0.8rem;
+    }
+
+    .status-bar {
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: var(--panel-bg);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      background: #07090e;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      border-radius: 4px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 15px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+
+    .card-field {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .card-field span {
+      color: var(--muted);
+    }
+
+    .subpoena-yes {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .subpoena-no {
+      color: var(--danger);
+      font-weight: bold;
+    }
+
+    .copy-btn {
+      width: 100%;
+      margin-top: 10px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.8rem;
+      padding: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      transition: 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>EV Hybrid IntelZ</h1>
+    <div>
+      <span class="badge">Facebook Scammer Database</span>
+    </div>
+  </header>
+
+  <div class="status-bar" id="status">
+    Status: Initializing node network...
+  </div>
+
+  <div class="search-bar">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="⚡ Search database by Name, Alias, Phone, or Classification..."
+    >
+  </div>
+
+  <div class="grid" id="cardGrid"></div>
+
+  <script>
+    const records = [];
+
+    // Escape HTML so data from TXT files cannot inject HTML/JS.
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Convert common boolean representations into true/false.
+    function parseBoolean(value) {
+      if (!value) return false;
+
+      return [
+        'true',
+        'yes',
+        'y',
+        '1',
+        'accessible',
+        'available'
+      ].includes(value.trim().toLowerCase());
+    }
+
+    // Fetch storage.txt and parse listed paths.
+    async function loadStorage() {
+      const statusEl = document.getElementById('status');
+
+      statusEl.textContent =
+        'Status: Reading storage.txt index...';
+
+      try {
+        const res = await fetch('storage.txt?t=' + Date.now());
+
+        if (!res.ok) {
+          throw new Error('storage.txt could not be fetched.');
+        }
+
+        const text = await res.text();
+
+        const fileList = text
+          .split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+
+        let loadedCount = 0;
+
+        for (const filePath of fileList) {
+          try {
+            const targetPath = filePath.startsWith('/')
+              ? filePath.substring(1)
+              : filePath;
+
+            const fileRes = await fetch(
+              targetPath + '?t=' + Date.now()
+            );
+
+            if (fileRes.ok) {
+              const fileContent = await fileRes.text();
+
+              parseAndAddRecord(fileContent);
+
+              loadedCount++;
+            } else {
+              console.warn(
+                `[FAILED] Target file not found: ${targetPath}`
+              );
+            }
+          } catch (e) {
+            console.warn(
+              `[ERROR] Could not fetch: ${filePath}`
+            );
+          }
+        }
+
+        statusEl.textContent =
+          `Status: Network Synced. Loaded ${loadedCount} of ${fileList.length} files.`;
+
+      } catch (err) {
+        statusEl.textContent =
+          'Status: ERROR loading storage.txt. Verify file exists in repository root.';
+
+        console.error(err);
+      }
+    }
+
+    // Parse TXT file contents.
+    //
+    // Expected fields:
+    // Name:
+    // Facebook Aliases:
+    // Phone Number:
+    // Classification:
+    // Accessible for Subpoena:
+    //
+    // Also accepts a few common alternative labels.
+    function parseAndAddRecord(rawText) {
+      const name =
+        rawText.match(/^Name:\s*(.+)$/im)?.[1]?.trim()
+        || 'Unknown Subject';
+
+      const aliases =
+        rawText.match(
+          /^(?:Facebook Aliases?|FB Aliases?|Aliases?):\s*(.+)$/im
+        )?.[1]?.trim()
+        || 'N/A';
+
+      const phone =
+        rawText.match(
+          /^(?:Phone Number|Phone|Mobile):\s*(.+)$/im
+        )?.[1]?.trim()
+        || 'N/A';
+
+      const classification =
+        rawText.match(
+          /^Classification:\s*(.+)$/im
+        )?.[1]?.trim()
+        || 'Unclassified';
+
+      const subpoenaRaw =
+        rawText.match(
+          /^(?:Accessible for Subpoena|Subpoena Accessible|Accessible for subpoena):\s*(.+)$/im
+        )?.[1]?.trim()
+        || 'false';
+
+      const subpoenaAccessible = parseBoolean(subpoenaRaw);
+
+      records.push({
+        name,
+        aliases,
+        phone,
+        classification,
+        subpoenaAccessible
+      });
+
+      renderGrid();
+    }
+
+    // Render Intel Cards.
+    function renderGrid(filter = '') {
+      const grid = document.getElementById('cardGrid');
+
+      grid.innerHTML = '';
+
+      const normalizedFilter = filter.toLowerCase();
+
+      const filtered = records.filter(record => {
+        return [
+          record.name,
+          record.aliases,
+          record.phone,
+          record.classification,
+          record.subpoenaAccessible ? 'yes' : 'no'
+        ].some(value =>
+          String(value)
+            .toLowerCase()
+            .includes(normalizedFilter)
+        );
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div style="color: var(--muted); grid-column: 1/-1;">
+            No matching records found in database.
+          </div>
+        `;
+
+        return;
+      }
+
+      filtered.forEach((item) => {
+        const card = document.createElement('div');
+
+        card.className = 'card';
+
+        const subpoenaClass =
+          item.subpoenaAccessible
+            ? 'subpoena-yes'
+            : 'subpoena-no';
+
+        const subpoenaText =
+          item.subpoenaAccessible
+            ? 'TRUE'
+            : 'FALSE';
+
+        card.innerHTML = `
+          <div class="card-title">
+            ${escapeHtml(item.name)}
+          </div>
+
+          <div class="card-field">
+            <span>Facebook Aliases:</span>
+            ${escapeHtml(item.aliases)}
+          </div>
+
+          <div class="card-field">
+            <span>Phone Number:</span>
+            ${escapeHtml(item.phone)}
+          </div>
+
+          <div class="card-field">
+            <span>Classification:</span>
+            ${escapeHtml(item.classification)}
+          </div>
+
+          <div class="card-field">
+            <span>Accessible for Subpoena:</span>
+            <strong class="${subpoenaClass}">
+              ${subpoenaText}
+            </strong>
+          </div>
+
+          <button class="copy-btn"
+            onclick="copyCardInfo(this)">
+            📋 Copy Info
+          </button>
+        `;
+
+        card
+          .querySelector('.copy-btn')
+          .dataset.record = JSON.stringify(item);
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Copy formatted record information.
+    function copyCardInfo(button) {
+      const item = JSON.parse(button.dataset.record);
+
+      const textToCopy =
+`[EV INTEL FILE]
+Name: ${item.name}
+Facebook Aliases: ${item.aliases}
+Phone Number: ${item.phone}
+Classification: ${item.classification}
+Accessible for Subpoena: ${item.subpoenaAccessible ? 'TRUE' : 'FALSE'}`;
+
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          alert(`Copied intel file for: ${item.name}`);
+        })
+        .catch(err => {
+          console.error('Copy failed:', err);
+        });
+    }
+
+    // Filter query listener.
+    document
+      .getElementById('searchInput')
+      .addEventListener('input', (e) => {
+        renderGrid(e.target.value);
+      });
+
+    // Run.
+    loadStorage();
+  </script>
+
+</body>
+</html>
