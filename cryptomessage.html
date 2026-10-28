@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>One-time message</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 24px; background: #10131a; color: #f4f6fb;
+      font: 16px/1.5 system-ui, sans-serif;
+    }
+    main {
+      width: min(100%, 560px); padding: 28px; border: 1px solid #303746;
+      border-radius: 18px; background: #191e29;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    p { color: #aeb7c7; }
+    textarea, input, button {
+      width: 100%; border-radius: 10px; font: inherit;
+    }
+    textarea, input {
+      padding: 12px; border: 1px solid #394253; background: #10141c;
+      color: #fff;
+    }
+    textarea { min-height: 150px; resize: vertical; }
+    button {
+      margin-top: 12px; padding: 12px 16px; border: 0;
+      background: #8b7cff; color: #111; font-weight: 700; cursor: pointer;
+    }
+    button:disabled { opacity: .55; cursor: wait; }
+    .hidden { display: none; }
+    .notice { font-size: .9rem; }
+    #status { overflow-wrap: anywhere; }
+    #message { white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+  <section id="create">
+    <h1>One-time message</h1>
+    <p>Encrypt a message in this browser and create a shareable link.</p>
+    <textarea id="input" placeholder="Write your message…"></textarea>
+    <button id="secure">Secure message</button>
+    <p id="status" role="status"></p>
+    <p class="notice">The link contains the encrypted message and its key. Anyone with the full link can read it. This demo cannot enforce global one-time use.</p>
+  </section>
+
+  <section id="open" class="hidden">
+    <h1>Sealed message</h1>
+    <p>Click once to decrypt. This page will remove the secret from its own URL.</p>
+    <button id="openOnce">Open one time</button>
+    <p id="message" class="hidden"></p>
+    <p id="openStatus" role="status"></p>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+function toB64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function fromB64Url(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+  return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+}
+
+async function encryptMessage(text) {
+  const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(text));
+  return { key: toB64Url(keyBytes), iv: toB64Url(iv), data: toB64Url(new Uint8Array(ciphertext)) };
+}
+
+async function decryptMessage(payload, keyText) {
+  const key = await crypto.subtle.importKey(
+    "raw", fromB64Url(keyText), "AES-GCM", false, ["decrypt"]
+  );
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: fromB64Url(payload.iv) }, key, fromB64Url(payload.data)
+  );
+  return dec.decode(plaintext);
+}
+
+const params = new URLSearchParams(location.hash.slice(1));
+const payloadText = params.get("payload");
+const keyText = params.get("key");
+
+if (payloadText && keyText) {
+  $("create").classList.add("hidden");
+  $("open").classList.remove("hidden");
+  $("openOnce").addEventListener("click", async () => {
+    $("openOnce").disabled = true;
+    // Remove the secret from this browser's address bar/history entry.
+    history.replaceState(null, "", location.pathname + location.search);
+    try {
+      const payload = JSON.parse(dec.decode(fromB64Url(payloadText)));
+      $("message").textContent = await decryptMessage(payload, keyText);
+      $("message").classList.remove("hidden");
+      $("openStatus").textContent = "Decrypted in this browser. The original link may still work elsewhere.";
+    } catch {
+      $("openStatus").textContent = "Could not decrypt: the link may be invalid or altered.";
+    }
+  }, { once: true });
+} else {
+  $("secure").addEventListener("click", async () => {
+    const text = $("input").value;
+    if (!text) { $("status").textContent = "Enter a message first."; return; }
+    $("secure").disabled = true;
+    try {
+      const payload = await encryptMessage(text);
+      const packed = toB64Url(enc.encode(JSON.stringify(payload)));
+      const url = new URL(location.href);
+      url.hash = new URLSearchParams({ payload: packed, key: payload.key }).toString();
+      $("status").innerHTML = "";
+      const link = document.createElement("input");
+      link.readOnly = true;
+      link.value = url.href;
+      $("status").append("Copy and share this link:");
+      $("status").append(document.createElement("br"), link);
+      link.select();
+    } catch {
+      $("status").textContent = "Encryption failed. Use a secure HTTPS connection.";
+    } finally {
+      $("secure").disabled = false;
+    }
+  });
+}
+</script>
+</body>
+</html>
