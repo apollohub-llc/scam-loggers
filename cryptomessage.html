@@ -44,13 +44,13 @@
     <textarea id="input" placeholder="Write your message…"></textarea>
     <button id="secure">Secure message</button>
     <p id="status" role="status"></p>
-    <p class="notice">The link contains the encrypted message and its key. Anyone with the full link can read it. This demo cannot enforce global one-time use.</p>
+    <p class="notice">The link contains the encrypted message. Opening this link immediately destroys the parameters in the address bar to prevent reuse via refreshing or history.</p>
   </section>
 
   <section id="open" class="hidden">
     <h1>Sealed message</h1>
-    <p>Click once to decrypt. This page will remove the secret from its own URL.</p>
-    <button id="openOnce">Open one time</button>
+    <p>Click once to reveal. The URL parameters have already been stripped from your address bar.</p>
+    <button id="openOnce">Reveal message</button>
     <p id="message" class="hidden"></p>
     <p id="openStatus" role="status"></p>
   </section>
@@ -90,6 +90,7 @@ async function decryptMessage(payload, keyText) {
   return dec.decode(plaintext);
 }
 
+// 1. Capture parameters immediately upon script load
 const params = new URLSearchParams(location.hash.slice(1));
 const payloadText = params.get("payload");
 const keyText = params.get("key");
@@ -97,15 +98,18 @@ const keyText = params.get("key");
 if (payloadText && keyText) {
   $("create").classList.add("hidden");
   $("open").classList.remove("hidden");
+
+  // 2. DESTROY parameters immediately from the address bar and browser history 
+  // so refreshing or copying from history won't preserve the secret.
+  history.replaceState(null, "", location.pathname + location.search);
+
   $("openOnce").addEventListener("click", async () => {
     $("openOnce").disabled = true;
-    // Remove the secret from this browser's address bar/history entry.
-    history.replaceState(null, "", location.pathname + location.search);
     try {
       const payload = JSON.parse(dec.decode(fromB64Url(payloadText)));
       $("message").textContent = await decryptMessage(payload, keyText);
       $("message").classList.remove("hidden");
-      $("openStatus").textContent = "Decrypted in this browser. The original link may still work elsewhere.";
+      $("openStatus").textContent = "Successfully decrypted.";
     } catch {
       $("openStatus").textContent = "Could not decrypt: the link may be invalid or altered.";
     }
